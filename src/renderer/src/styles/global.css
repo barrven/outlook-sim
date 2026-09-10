@@ -1,0 +1,252 @@
+:root {
+  --border: #c6c6c6;
+  --ribbon-bg: #f3f2f1;
+  --pane-bg: #ffffff;
+  --nav-rail-bg: #f7f7f7;
+  --selected-bg: #cce4f7;
+  --selected-border: #99caeb;
+  --text: #1b1b1b;
+  --text-muted: #6b6b6b;
+  --accent: #0f6cbd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    BlinkMacSystemFont,
+    Tahoma,
+    Arial,
+    sans-serif;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--border);
+}
+
+/* Ribbon */
+
+.ribbon {
+  background: var(--ribbon-bg);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.ribbon-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.ribbon-tab {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid transparent;
+  font-size: 13px;
+  color: var(--text);
+  cursor: default;
+}
+
+.ribbon-tab.active {
+  background: var(--pane-bg);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.ribbon-actions {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.ribbon-action {
+  padding: 6px 12px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: default;
+}
+
+/* Body layout */
+
+.app-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.app-nav-rail {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 200px;
+  border-right: 1px solid var(--border);
+  background: var(--nav-rail-bg);
+  min-height: 0;
+}
+
+/* Folder pane */
+
+.folder-pane {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.folder-pane-header {
+  padding: 8px 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.folder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.folder-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 10px 5px 18px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.folder-item:hover {
+  background: #eaeaea;
+}
+
+.folder-item.selected {
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  padding: 4px 9px 4px 17px;
+}
+
+/* Nav switcher */
+
+.nav-switcher {
+  display: flex;
+  border-top: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.nav-switcher-item {
+  flex: 1 1 0;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.nav-switcher-item:last-child {
+  border-right: none;
+}
+
+.nav-switcher-item.active {
+  background: var(--selected-bg);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Message list pane */
+
+.message-list-pane {
+  flex: 0 0 320px;
+  border-right: 1px solid var(--border);
+  background: var(--pane-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.message-list-header {
+  padding: 8px 10px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.message-list-empty {
+  padding: 16px 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Reading pane */
+
+.reading-pane {
+  flex: 1 1 auto;
+  background: var(--pane-bg);
+  min-height: 0;
+}
+
+.reading-pane-empty {
+  padding: 24px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Calendar view */
+
+.calendar-view {
+  flex: 1 1 auto;
+  background: var(--pane-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.calendar-view-header {
+  display: flex;
+  gap: 2px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-view-tab {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.calendar-view-tab.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.calendar-view-empty {
+  padding: 24px;
+  color: var(--text-muted);
+  font-style: italic;
+}
