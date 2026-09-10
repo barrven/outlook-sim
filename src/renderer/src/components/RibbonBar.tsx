@@ -8,9 +8,10 @@ const CALENDAR_ACTIONS = ['New Event', 'New Meeting', 'Today', 'Day', 'Work Week
 
 interface RibbonBarProps {
   activeModule: ModuleId
+  onNewEmail?: () => void
 }
 
-function RibbonBar({ activeModule }: RibbonBarProps): ReactElement {
+function RibbonBar({ activeModule, onNewEmail }: RibbonBarProps): ReactElement {
   const actions = activeModule === 'mail' ? MAIL_ACTIONS : CALENDAR_ACTIONS
 
   return (
@@ -23,11 +24,20 @@ function RibbonBar({ activeModule }: RibbonBarProps): ReactElement {
         ))}
       </div>
       <div className="ribbon-actions">
-        {actions.map((action) => (
-          <button key={action} type="button" className="ribbon-action" disabled>
-            {action}
-          </button>
-        ))}
+        {actions.map((action) => {
+          const isNewEmail = action === 'New Email' && Boolean(onNewEmail)
+          return (
+            <button
+              key={action}
+              type="button"
+              className="ribbon-action"
+              disabled={!isNewEmail}
+              onClick={isNewEmail ? onNewEmail : undefined}
+            >
+              {action}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

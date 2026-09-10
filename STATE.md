@@ -5,7 +5,7 @@ lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
 - **Phase:** implement
-- **Active feature:** 004 — Mail compose, mock-send & drafts
+- **Active feature:** 005 — Mail reply, reply all & forward
 - **Last updated:** 2026-09-10
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-10 — feature 004 (mail compose, mock-send & drafts) accepted by user; logged to CHANGELOG; active feature set to 005 (mail reply, reply all & forward), phase set to `implement`
+- 2026-09-10 — feature 004 (mail compose, mock-send & drafts) validated: lint/typecheck/build/tests (61/61) all pass; all 5 ACs verified both by the new automated suite and by the round-1 live `/implement` run against the real app; incidentally corroborated by a real draft the user created themselves in the running app between sessions; phase set to `accept`
+- 2026-09-10 — feature 004 (mail compose, mock-send & drafts) tested: added `ComposeWindow.test.tsx` (7 tests) plus new coverage in `RibbonBar`/`ReadingPane`/`MessageListPane`/`ipc` test files (4 more), 61/61 tests pass (up from 48); lint/typecheck/build unaffected; phase set to `validate`
+- 2026-09-10 — feature 004 (mail compose, mock-send & drafts) implemented: compose opens in a real separate Electron window (confirmed with user), with a persona-sourced To dropdown, Subject/Body fields, Send→Sent and Save→Drafts (same row moves, no duplication), and an "Edit draft" reopen path from the reading pane; required new main-process work (`src/main/windows.ts`, a `window:openCompose` IPC handler, and a `data:messages-changed` broadcast on message create/update/delete so the main window refreshes when the compose window saves); live-verified end-to-end via a scripted real-Electron run (multi-window IPC can't be tested by Vitest); lint/typecheck/build pass, 48/48 existing tests still pass (kept compiling via mechanical prop/mock syncing), but zero new test coverage exists yet for the feature itself; phase set to `test`
 - 2026-09-10 — feature 003 (mail folders, message list & reading pane) accepted by user; logged to CHANGELOG; active feature set to 004 (mail compose, mock-send & drafts), phase set to `implement`
 - 2026-09-10 — feature 003 (mail folders, message list & reading pane) validated (round 2): lint/typecheck/build/tests (48/48) all pass; all 5 ACs verified both by the new automated suite and by the round-1 live `/verify` run against the real app and real SQLite DB; phase set to `accept`
 - 2026-09-10 — feature 003 (mail folders, message list & reading pane) tested: added `src/renderer/src/test/mockApi.ts` (shared `window.api` mock) plus new test files for `FolderPane`/`MessageListPane`/`ReadingPane` and a rewritten async-aware `App.test.tsx`; 48/48 tests pass (was 23/28); lint/typecheck/build all still pass; phase set to `validate`

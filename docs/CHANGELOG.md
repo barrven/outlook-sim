@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-10 — Mail compose, mock-send & drafts (features/004-mail-compose-send-drafts.md)
+You can now compose mail. "New Email" on the ribbon opens a real compose
+window with To (choose from your configured personas), Subject, and Body.
+Send moves the message into Sent Items with a timestamp; Save & Close
+stores it in Drafts. Click a draft, then "Edit draft" in the reading pane,
+to reopen it — sending from there moves that same message into Sent rather
+than creating a duplicate. Nothing here touches the network; sending is
+purely local persistence, same as everything else in the app so far.
+
 ## 2026-09-10 — Mail folders, message list & reading pane (features/003-mail-folders-list-reading-pane.md)
 The Mail module is now wired to real data. The folder pane shows the four
 default folders (Inbox, Drafts, Sent Items, Deleted Items) plus any custom

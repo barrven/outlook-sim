@@ -6,13 +6,15 @@ interface MessageListPaneProps {
   selectedFolderName: string
   selectedMessageId: string | null
   onSelectMessage: (messageId: string) => void
+  messagesVersion: number
 }
 
 function MessageListPane({
   selectedFolderId,
   selectedFolderName,
   selectedMessageId,
-  onSelectMessage
+  onSelectMessage,
+  messagesVersion
 }: MessageListPaneProps): ReactElement {
   const [messages, setMessages] = useState<MailMessage[]>([])
 
@@ -24,7 +26,7 @@ function MessageListPane({
     return () => {
       cancelled = true
     }
-  }, [selectedFolderId])
+  }, [selectedFolderId, messagesVersion])
 
   return (
     <div className="message-list-pane">

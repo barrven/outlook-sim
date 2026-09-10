@@ -49,6 +49,10 @@ export function createMockApi(): Window['api'] {
         get: vi.fn().mockResolvedValue([]),
         set: vi.fn().mockResolvedValue(undefined)
       }
-    }
+    },
+    compose: {
+      open: vi.fn().mockResolvedValue(undefined)
+    },
+    onMessagesChanged: vi.fn().mockReturnValue(() => {})
   }
 }

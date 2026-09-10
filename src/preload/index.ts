@@ -49,6 +49,14 @@ const api = {
       get: () => ipcRenderer.invoke('config:personas:get'),
       set: (personas: Persona[]) => ipcRenderer.invoke('config:personas:set', personas)
     }
+  },
+  compose: {
+    open: (draftId?: string) => ipcRenderer.invoke('window:openCompose', draftId)
+  },
+  onMessagesChanged: (callback: () => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('data:messages-changed', listener)
+    return () => ipcRenderer.removeListener('data:messages-changed', listener)
   }
 }
 

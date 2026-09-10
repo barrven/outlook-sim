@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
-import type { Folder } from '../../shared/data-types'
+import type { Folder, MailMessage } from '../../shared/data-types'
 import type { ModuleId } from './types'
 import RibbonBar from './components/RibbonBar'
 import NavSwitcher from './components/NavSwitcher'
@@ -14,6 +14,7 @@ function App(): ReactElement {
   const [folders, setFolders] = useState<Folder[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
+  const [messagesVersion, setMessagesVersion] = useState(0)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -30,16 +31,26 @@ function App(): ReactElement {
     }
   }, [])
 
+  useEffect(() => {
+    return window.api.onMessagesChanged(() => {
+      setMessagesVersion((version) => version + 1)
+    })
+  }, [])
+
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
     setSelectedMessageId(null)
+  }
+
+  function handleEditDraft(message: MailMessage): void {
+    window.api.compose.open(message.id)
   }
 
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
 
   return (
     <div className="app-shell">
-      <RibbonBar activeModule={activeModule} />
+      <RibbonBar activeModule={activeModule} onNewEmail={() => window.api.compose.open()} />
       <div className="app-body">
         <div className="app-nav-rail">
           {activeModule === 'mail' ? (
@@ -61,8 +72,13 @@ function App(): ReactElement {
               selectedFolderName={selectedFolder?.name ?? ''}
               selectedMessageId={selectedMessageId}
               onSelectMessage={setSelectedMessageId}
+              messagesVersion={messagesVersion}
             />
-            <ReadingPane selectedMessageId={selectedMessageId} />
+            <ReadingPane
+              selectedMessageId={selectedMessageId}
+              messagesVersion={messagesVersion}
+              onEditDraft={handleEditDraft}
+            />
           </>
         ) : (
           <CalendarView />

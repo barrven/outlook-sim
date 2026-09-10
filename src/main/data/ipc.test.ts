@@ -6,12 +6,17 @@ import type { MailMessage, CalendarItem, Folder, Settings } from '../../shared/d
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
+type FakeWindow = { webContents: { send: (channel: string) => void } }
+const getAllWindowsMock = vi.fn<() => FakeWindow[]>(() => [])
 
 vi.mock('electron', () => ({
   ipcMain: {
     handle: (channel: string, fn: Handler) => {
       handlers.set(channel, fn)
     }
+  },
+  BrowserWindow: {
+    getAllWindows: () => getAllWindowsMock()
   }
 }))
 
@@ -30,6 +35,7 @@ describe('registerDataIpcHandlers', () => {
     db = new MailDb(baseDir)
     config = new ConfigStore(baseDir)
     handlers.clear()
+    getAllWindowsMock.mockReset().mockReturnValue([])
     registerDataIpcHandlers(db, config)
   })
 
@@ -109,6 +115,31 @@ describe('registerDataIpcHandlers', () => {
     expect((handlers.get('db:calendarItems:list')!(fakeEvent) as CalendarItem[]).map((i) => i.id)).toEqual([
       created.id
     ])
+  })
+
+  it('broadcasts a messages-changed event to every open window on create, update, and delete', () => {
+    const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+    getAllWindowsMock.mockReturnValue([fakeWindow])
+
+    const created = handlers.get('db:messages:create')!(fakeEvent, {
+      folderId: 'inbox',
+      subject: 'Hi',
+      body: 'there',
+      fromName: 'A',
+      fromEmail: 'a@x.com',
+      toName: 'B',
+      toEmail: 'b@x.com',
+      timestamp: 1
+    }) as MailMessage
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+
+    vi.mocked(fakeWindow.webContents.send).mockClear()
+    handlers.get('db:messages:update')!(fakeEvent, created.id, { isRead: true })
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+
+    vi.mocked(fakeWindow.webContents.send).mockClear()
+    handlers.get('db:messages:delete')!(fakeEvent, created.id)
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
   })
 
   it('round-trips settings through the config channels', () => {

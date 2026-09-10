@@ -3,9 +3,11 @@ import type { MailMessage } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
   selectedMessageId: string | null
+  messagesVersion: number
+  onEditDraft: (message: MailMessage) => void
 }
 
-function ReadingPane({ selectedMessageId }: ReadingPaneProps): ReactElement {
+function ReadingPane({ selectedMessageId, messagesVersion, onEditDraft }: ReadingPaneProps): ReactElement {
   const [message, setMessage] = useState<MailMessage | null>(null)
 
   useEffect(() => {
@@ -17,7 +19,7 @@ function ReadingPane({ selectedMessageId }: ReadingPaneProps): ReactElement {
     return () => {
       cancelled = true
     }
-  }, [selectedMessageId])
+  }, [selectedMessageId, messagesVersion])
 
   const displayedMessage = selectedMessageId ? message : null
 
@@ -32,7 +34,18 @@ function ReadingPane({ selectedMessageId }: ReadingPaneProps): ReactElement {
   return (
     <div className="reading-pane">
       <div className="reading-pane-header">
-        <div className="reading-pane-subject">{displayedMessage.subject || '(no subject)'}</div>
+        <div className="reading-pane-subject-row">
+          <div className="reading-pane-subject">{displayedMessage.subject || '(no subject)'}</div>
+          {displayedMessage.folderId === 'drafts' && (
+            <button
+              type="button"
+              className="reading-pane-edit-draft"
+              onClick={() => onEditDraft(displayedMessage)}
+            >
+              Edit draft
+            </button>
+          )}
+        </div>
         <div className="reading-pane-meta">
           <span className="reading-pane-from">
             {displayedMessage.fromName} &lt;{displayedMessage.fromEmail}&gt;

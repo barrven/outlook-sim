@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import type {
   CalendarItemPatch,
   MailMessagePatch,
@@ -13,6 +13,12 @@ import type {
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
 
+function broadcastMessagesChanged(): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('data:messages-changed')
+  }
+}
+
 export function registerDataIpcHandlers(db: MailDb, config: ConfigStore): void {
   ipcMain.handle('db:folders:list', () => db.listFolders())
   ipcMain.handle('db:folders:create', (_event, folder: NewFolder) => db.createFolder(folder))
@@ -21,9 +27,20 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore): void {
 
   ipcMain.handle('db:messages:list', (_event, folderId?: string) => db.listMessages(folderId))
   ipcMain.handle('db:messages:get', (_event, id: string) => db.getMessage(id))
-  ipcMain.handle('db:messages:create', (_event, message: NewMailMessage) => db.createMessage(message))
-  ipcMain.handle('db:messages:update', (_event, id: string, patch: MailMessagePatch) => db.updateMessage(id, patch))
-  ipcMain.handle('db:messages:delete', (_event, id: string) => db.deleteMessage(id))
+  ipcMain.handle('db:messages:create', (_event, message: NewMailMessage) => {
+    const created = db.createMessage(message)
+    broadcastMessagesChanged()
+    return created
+  })
+  ipcMain.handle('db:messages:update', (_event, id: string, patch: MailMessagePatch) => {
+    const updated = db.updateMessage(id, patch)
+    broadcastMessagesChanged()
+    return updated
+  })
+  ipcMain.handle('db:messages:delete', (_event, id: string) => {
+    db.deleteMessage(id)
+    broadcastMessagesChanged()
+  })
 
   ipcMain.handle('db:calendarItems:list', () => db.listCalendarItems())
   ipcMain.handle('db:calendarItems:get', (_event, id: string) => db.getCalendarItem(id))

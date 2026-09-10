@@ -52,12 +52,18 @@ export interface DataApi {
   }
 }
 
+export interface ComposeApi {
+  open: (draftId?: string) => Promise<void>
+}
+
 export {}
 
 declare global {
   interface Window {
     api: {
       data: DataApi
+      compose: ComposeApi
+      onMessagesChanged: (callback: () => void) => () => void
     }
   }
 }

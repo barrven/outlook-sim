@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MessageListPane from './MessageListPane'
 import type { MailMessage } from '../../../shared/data-types'
@@ -32,6 +32,7 @@ describe('MessageListPane', () => {
         selectedFolderName="Inbox"
         selectedMessageId={null}
         onSelectMessage={vi.fn()}
+        messagesVersion={0}
       />
     )
 
@@ -50,6 +51,7 @@ describe('MessageListPane', () => {
         selectedFolderName="Inbox"
         selectedMessageId={null}
         onSelectMessage={vi.fn()}
+        messagesVersion={0}
       />
     )
 
@@ -71,6 +73,7 @@ describe('MessageListPane', () => {
         selectedFolderName="Inbox"
         selectedMessageId={null}
         onSelectMessage={onSelectMessage}
+        messagesVersion={0}
       />
     )
 
@@ -88,6 +91,7 @@ describe('MessageListPane', () => {
         selectedFolderName="Inbox"
         selectedMessageId="a"
         onSelectMessage={vi.fn()}
+        messagesVersion={0}
       />
     )
 
@@ -102,6 +106,7 @@ describe('MessageListPane', () => {
         selectedFolderName="Inbox"
         selectedMessageId={null}
         onSelectMessage={vi.fn()}
+        messagesVersion={0}
       />
     )
     await screen.findByText('No items to show.')
@@ -113,9 +118,36 @@ describe('MessageListPane', () => {
         selectedFolderName="Drafts"
         selectedMessageId={null}
         onSelectMessage={vi.fn()}
+        messagesVersion={0}
       />
     )
 
     expect(window.api.data.messages.list).toHaveBeenCalledWith('drafts')
+  })
+
+  it('refetches when messagesVersion changes (e.g. after a compose window saves)', async () => {
+    const { rerender } = render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('No items to show.')
+    expect(window.api.data.messages.list).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={1}
+      />
+    )
+
+    await waitFor(() => expect(window.api.data.messages.list).toHaveBeenCalledTimes(2))
   })
 })

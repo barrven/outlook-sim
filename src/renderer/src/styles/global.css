@@ -326,10 +326,32 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.reading-pane-subject-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .reading-pane-subject {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 6px;
+}
+
+.reading-pane-subject-row .reading-pane-subject {
+  margin-bottom: 0;
+}
+
+.reading-pane-edit-draft {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  background: var(--pane-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
 }
 
 .reading-pane-meta {
@@ -386,4 +408,74 @@ body {
   padding: 24px;
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* Compose window */
+
+.compose-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pane-bg);
+}
+
+.compose-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: var(--ribbon-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.compose-toolbar button {
+  padding: 6px 14px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.compose-toolbar button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.compose-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.compose-field-row label {
+  flex: 0 0 60px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.compose-field-row select,
+.compose-field-row input {
+  flex: 1 1 auto;
+  padding: 4px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.compose-body {
+  flex: 1 1 auto;
+  padding: 12px;
+  border: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.compose-body:focus {
+  outline: none;
 }
