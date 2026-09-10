@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** implement
+- **Phase:** accept
 - **Active feature:** 002 — Local data layer (SQLite + JSON config store)
-- **Last updated:** 2026-09-09
+- **Last updated:** 2026-09-10
 
 ## Phases
 
@@ -18,6 +18,9 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-10 — feature 002 (local data layer) validated: typecheck/build/tests (28) all pass, all 5 ACs verified against the real `MailDb`/`ConfigStore` classes; full-app launch unverified (same sandbox display limitation as feature 001, not a regression); no lint tooling exists yet (flagged, not blocking); phase set to `accept`
+- 2026-09-09 — feature 002 (local data layer) tested: 20 new Vitest tests (db, config, IPC bridge, no-network check) against real temp-dir-backed stores, 28/28 total passing; switched test env default to `node` for `node:sqlite` support; phase set to `validate`
+- 2026-09-09 — feature 002 (local data layer) implemented: SQLite (`node:sqlite`) store for folders/messages/calendar items + JSON config store (settings/system prompt/identity/personas), exposed via IPC (`window.api.data.*`); no UI, per scope; phase set to `test`
 - 2026-09-09 — feature 001 (app shell) accepted by user after manual launch check; logged to CHANGELOG; active feature set to 002 (local data layer), phase set to `implement`
 - 2026-09-09 — feature 001 (app shell) validated: typecheck/build/tests all pass, manual offscreen-Electron launch confirmed all 5 ACs; no lint tooling exists yet (flagged, not blocking); phase set to `accept`
 - 2026-09-09 — feature 001 (app shell) tested: set up Vitest + React Testing Library, 7 passing tests covering all shell ACs except Windows-launch and pixel styling; phase set to `validate`

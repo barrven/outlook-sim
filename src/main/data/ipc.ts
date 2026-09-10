@@ -1,0 +1,47 @@
+import { ipcMain } from 'electron'
+import type {
+  CalendarItemPatch,
+  MailMessagePatch,
+  NewCalendarItem,
+  NewFolder,
+  NewMailMessage,
+  Persona,
+  Settings,
+  SystemPromptConfig,
+  TraineeIdentity
+} from '../../shared/data-types'
+import type { ConfigStore } from './config'
+import type { MailDb } from './db'
+
+export function registerDataIpcHandlers(db: MailDb, config: ConfigStore): void {
+  ipcMain.handle('db:folders:list', () => db.listFolders())
+  ipcMain.handle('db:folders:create', (_event, folder: NewFolder) => db.createFolder(folder))
+  ipcMain.handle('db:folders:rename', (_event, id: string, name: string) => db.renameFolder(id, name))
+  ipcMain.handle('db:folders:delete', (_event, id: string) => db.deleteFolder(id))
+
+  ipcMain.handle('db:messages:list', (_event, folderId?: string) => db.listMessages(folderId))
+  ipcMain.handle('db:messages:get', (_event, id: string) => db.getMessage(id))
+  ipcMain.handle('db:messages:create', (_event, message: NewMailMessage) => db.createMessage(message))
+  ipcMain.handle('db:messages:update', (_event, id: string, patch: MailMessagePatch) => db.updateMessage(id, patch))
+  ipcMain.handle('db:messages:delete', (_event, id: string) => db.deleteMessage(id))
+
+  ipcMain.handle('db:calendarItems:list', () => db.listCalendarItems())
+  ipcMain.handle('db:calendarItems:get', (_event, id: string) => db.getCalendarItem(id))
+  ipcMain.handle('db:calendarItems:create', (_event, item: NewCalendarItem) => db.createCalendarItem(item))
+  ipcMain.handle('db:calendarItems:update', (_event, id: string, patch: CalendarItemPatch) =>
+    db.updateCalendarItem(id, patch)
+  )
+  ipcMain.handle('db:calendarItems:delete', (_event, id: string) => db.deleteCalendarItem(id))
+
+  ipcMain.handle('config:settings:get', () => config.getSettings())
+  ipcMain.handle('config:settings:set', (_event, settings: Settings) => config.setSettings(settings))
+
+  ipcMain.handle('config:systemPrompt:get', () => config.getSystemPrompt())
+  ipcMain.handle('config:systemPrompt:set', (_event, value: SystemPromptConfig) => config.setSystemPrompt(value))
+
+  ipcMain.handle('config:identity:get', () => config.getIdentity())
+  ipcMain.handle('config:identity:set', (_event, identity: TraineeIdentity) => config.setIdentity(identity))
+
+  ipcMain.handle('config:personas:get', () => config.getPersonas())
+  ipcMain.handle('config:personas:set', (_event, personas: Persona[]) => config.setPersonas(personas))
+}

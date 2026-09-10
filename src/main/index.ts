@@ -1,6 +1,9 @@
 import { join } from 'path'
 import { app, BrowserWindow, screen, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { ConfigStore } from './data/config'
+import { MailDb } from './data/db'
+import { registerDataIpcHandlers } from './data/ipc'
 
 function createMainWindow(): void {
   const workArea = screen.getPrimaryDisplay().workArea
@@ -51,6 +54,11 @@ function createMainWindow(): void {
 }
 
 app.whenReady().then(() => {
+  const userDataDir = app.getPath('userData')
+  const mailDb = new MailDb(userDataDir)
+  const configStore = new ConfigStore(userDataDir)
+  registerDataIpcHandlers(mailDb, configStore)
+
   createMainWindow()
 
   app.on('activate', () => {
