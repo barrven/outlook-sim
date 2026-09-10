@@ -147,6 +147,70 @@ body {
   padding: 4px 9px 4px 17px;
 }
 
+.folder-list-item {
+  display: flex;
+  align-items: center;
+}
+
+.folder-list-item .folder-item {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  padding-right: 6px;
+}
+
+.folder-action-btn {
+  padding: 2px 5px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.folder-action-btn:hover {
+  color: var(--text);
+}
+
+.folder-rename-form,
+.folder-create-form {
+  flex: 1 1 auto;
+  padding: 3px 10px 3px 18px;
+}
+
+.folder-rename-form input,
+.folder-create-form input {
+  width: 100%;
+  font-size: 13px;
+  padding: 2px 4px;
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+}
+
+.folder-new-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.folder-new-btn:hover {
+  background: #eaeaea;
+}
+
 /* Nav switcher */
 
 .nav-switcher {
@@ -199,18 +263,91 @@ body {
   font-style: italic;
 }
 
+.message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.message-list-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  gap: 2px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.message-list-item:hover {
+  background: #eaeaea;
+}
+
+.message-list-item.selected {
+  background: var(--selected-bg);
+}
+
+.message-list-item.unread .message-list-item-subject {
+  font-weight: 600;
+}
+
+.message-list-item-from {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.message-list-item-subject {
+  font-size: 13px;
+  color: var(--text);
+}
+
 /* Reading pane */
 
 .reading-pane {
   flex: 1 1 auto;
   background: var(--pane-bg);
   min-height: 0;
+  overflow-y: auto;
 }
 
 .reading-pane-empty {
   padding: 24px;
   color: var(--text-muted);
   font-style: italic;
+}
+
+.reading-pane-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.reading-pane-subject {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.reading-pane-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reading-pane-to {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.reading-pane-body {
+  padding: 16px 20px;
+  white-space: pre-wrap;
 }
 
 /* Calendar view */

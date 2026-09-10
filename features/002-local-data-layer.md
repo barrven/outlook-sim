@@ -1,7 +1,7 @@
 ---
 id: 002
 title: Local data layer (SQLite + JSON config store)
-status: accept
+status: done
 priority: high
 ---
 
@@ -179,4 +179,4 @@ Deliberately not covered:
 All five acceptance criteria pass. No changes needed.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-10 — User asked where the DB and JSON config files actually live (none visible in the repo). Confirmed they exist at `~/.config/outlook-sim/outlook-sim.db` and `~/.config/outlook-sim/config/*.json` (Electron's default Linux `userData` path), with correct seeded defaults. Also found a stray `~/.config/Electron/outlook-sim.db` + `config/` from an earlier dev run that fell back to Electron's generic default profile dir — user asked to clean it up, done (only the outlook-sim-specific files were removed, not the shared `~/.config/Electron` profile dir itself, since other unpackaged Electron apps may use it too). Decision: **Accepted**.

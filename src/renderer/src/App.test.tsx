@@ -1,16 +1,18 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
+import type { MailMessage } from '../../shared/data-types'
 
 describe('App shell', () => {
-  it('renders the classic three-pane layout with a ribbon on launch', () => {
+  it('renders the classic three-pane layout with a ribbon on launch', async () => {
     render(<App />)
 
     expect(screen.getByRole('tablist', { name: 'Ribbon tabs' })).toBeInTheDocument()
     expect(screen.getByText('Mailbox')).toBeInTheDocument() // left folder pane
-    expect(screen.getByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument() // center message list
+    expect(await screen.findByRole('button', { name: 'Inbox' })).toBeInTheDocument()
+    expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument() // center message list
     expect(screen.getByText('Select an item to read.')).toBeInTheDocument() // right reading pane
   })
 
@@ -30,7 +32,7 @@ describe('App shell', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    expect(screen.getByText('Mailbox')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Inbox' })).toBeInTheDocument()
     expect(screen.queryByText('My Calendars')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: 'Calendar' }))
@@ -57,11 +59,41 @@ describe('App shell', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    expect(screen.getByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
+    expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Drafts' }))
+    await user.click(await screen.findByRole('button', { name: 'Drafts' }))
 
-    expect(screen.getByText('Drafts', { selector: '.message-list-header' })).toBeInTheDocument()
+    expect(await screen.findByText('Drafts', { selector: '.message-list-header' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Drafts' })).toHaveClass('selected')
+  })
+
+  it('selecting a message renders it in the reading pane, and switching folders clears the selection', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      id: 'msg-1',
+      folderId: 'inbox',
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+    render(<App />)
+
+    await user.click(await screen.findByText('Hello there'))
+    expect(await screen.findByText('Body text')).toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: 'Drafts' }))
+    expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
+    expect(screen.queryByText('Body text')).not.toBeInTheDocument()
   })
 })
