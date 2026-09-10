@@ -1,6 +1,13 @@
 import { join } from 'path'
 import { BrowserWindow, screen, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import type { ComposeOpenOptions } from '../shared/data-types'
+
+const COMPOSE_TITLES: Record<NonNullable<ComposeOpenOptions['intent']>, string> = {
+  reply: 'Reply',
+  replyAll: 'Reply All',
+  forward: 'Forward'
+}
 
 function loadRenderer(window: BrowserWindow, query?: Record<string, string>): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -60,13 +67,16 @@ export function createMainWindow(): BrowserWindow {
   return mainWindow
 }
 
-export function createComposeWindow(parent: BrowserWindow, draftId?: string): BrowserWindow {
+export function createComposeWindow(parent: BrowserWindow, options?: ComposeOpenOptions): BrowserWindow {
+  const { draftId, sourceMessageId, intent } = options ?? {}
+  const title = draftId ? 'Edit Draft' : intent ? COMPOSE_TITLES[intent] : 'New Message'
+
   const composeWindow = new BrowserWindow({
     width: 640,
     height: 620,
     parent,
     autoHideMenuBar: true,
-    title: draftId ? 'Edit Draft' : 'New Message',
+    title,
     backgroundColor: '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -79,7 +89,11 @@ export function createComposeWindow(parent: BrowserWindow, draftId?: string): Br
     return { action: 'deny' }
   })
 
-  loadRenderer(composeWindow, draftId ? { compose: '1', draftId } : { compose: '1' })
+  const query: Record<string, string> = { compose: '1' }
+  if (draftId) query.draftId = draftId
+  if (sourceMessageId) query.sourceMessageId = sourceMessageId
+  if (intent) query.intent = intent
+  loadRenderer(composeWindow, query)
 
   return composeWindow
 }

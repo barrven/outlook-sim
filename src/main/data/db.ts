@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS messages (
   from_email TEXT NOT NULL DEFAULT '',
   to_name TEXT NOT NULL DEFAULT '',
   to_email TEXT NOT NULL DEFAULT '',
+  cc TEXT NOT NULL DEFAULT '[]',
   timestamp INTEGER NOT NULL,
   is_read INTEGER NOT NULL DEFAULT 0,
   is_flagged INTEGER NOT NULL DEFAULT 0,
@@ -76,6 +77,7 @@ interface MessageRow {
   from_email: string
   to_name: string
   to_email: string
+  cc: string
   timestamp: number
   is_read: number
   is_flagged: number
@@ -109,6 +111,7 @@ function messageFromRow(row: MessageRow): MailMessage {
     fromEmail: row.from_email,
     toName: row.to_name,
     toEmail: row.to_email,
+    cc: JSON.parse(row.cc),
     timestamp: row.timestamp,
     isRead: row.is_read === 1,
     isFlagged: row.is_flagged === 1,
@@ -142,7 +145,17 @@ export class MailDb {
     mkdirSync(baseDir, { recursive: true })
     this.db = new DatabaseSync(join(baseDir, DB_FILE_NAME))
     this.db.exec(SCHEMA)
+    this.migrateMessagesCcColumn()
     this.seedDefaultFolders()
+  }
+
+  // `CREATE TABLE IF NOT EXISTS` doesn't add new columns to a pre-existing
+  // messages table from an earlier version of the app, so backfill it here.
+  private migrateMessagesCcColumn(): void {
+    const columns = this.db.prepare('PRAGMA table_info(messages)').all() as { name: string }[]
+    if (!columns.some((column) => column.name === 'cc')) {
+      this.db.exec("ALTER TABLE messages ADD COLUMN cc TEXT NOT NULL DEFAULT '[]'")
+    }
   }
 
   private seedDefaultFolders(): void {
@@ -203,13 +216,14 @@ export class MailDb {
       isFlagged: false,
       categories: [],
       attachments: [],
+      cc: [],
       ...message
     }
     this.db
       .prepare(
         `INSERT INTO messages
-          (id, folder_id, subject, body, from_name, from_email, to_name, to_email, timestamp, is_read, is_flagged, categories, attachments)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (id, folder_id, subject, body, from_name, from_email, to_name, to_email, cc, timestamp, is_read, is_flagged, categories, attachments)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         full.id,
@@ -220,6 +234,7 @@ export class MailDb {
         full.fromEmail,
         full.toName,
         full.toEmail,
+        JSON.stringify(full.cc),
         full.timestamp,
         full.isRead ? 1 : 0,
         full.isFlagged ? 1 : 0,
@@ -237,7 +252,7 @@ export class MailDb {
       .prepare(
         `UPDATE messages SET
           folder_id = ?, subject = ?, body = ?, from_name = ?, from_email = ?,
-          to_name = ?, to_email = ?, timestamp = ?, is_read = ?, is_flagged = ?,
+          to_name = ?, to_email = ?, cc = ?, timestamp = ?, is_read = ?, is_flagged = ?,
           categories = ?, attachments = ?
          WHERE id = ?`
       )
@@ -249,6 +264,7 @@ export class MailDb {
         updated.fromEmail,
         updated.toName,
         updated.toEmail,
+        JSON.stringify(updated.cc),
         updated.timestamp,
         updated.isRead ? 1 : 0,
         updated.isFlagged ? 1 : 0,

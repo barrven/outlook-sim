@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import type { MailMessage } from '../../shared/data-types'
@@ -78,6 +78,7 @@ describe('App shell', () => {
       fromEmail: 'alex@example.com',
       toName: 'Trainee',
       toEmail: 'trainee@example.com',
+      cc: [],
       timestamp: Date.now(),
       isRead: false,
       isFlagged: false,
@@ -95,5 +96,42 @@ describe('App shell', () => {
     await user.click(await screen.findByRole('button', { name: 'Drafts' }))
     expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
     expect(screen.queryByText('Body text')).not.toBeInTheDocument()
+  })
+
+  it('opens a reply/reply-all/forward compose window for the selected message', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      id: 'msg-1',
+      folderId: 'inbox',
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+    const { container } = render(<App />)
+
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+    const readingPane = within(container.querySelector('.reading-pane') as HTMLElement)
+
+    await user.click(readingPane.getByRole('button', { name: 'Reply' }))
+    expect(window.api.compose.open).toHaveBeenCalledWith({ sourceMessageId: 'msg-1', intent: 'reply' })
+
+    await user.click(readingPane.getByRole('button', { name: 'Reply All' }))
+    expect(window.api.compose.open).toHaveBeenCalledWith({ sourceMessageId: 'msg-1', intent: 'replyAll' })
+
+    await user.click(readingPane.getByRole('button', { name: 'Forward' }))
+    expect(window.api.compose.open).toHaveBeenCalledWith({ sourceMessageId: 'msg-1', intent: 'forward' })
   })
 })

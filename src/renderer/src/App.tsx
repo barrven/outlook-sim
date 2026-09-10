@@ -43,7 +43,19 @@ function App(): ReactElement {
   }
 
   function handleEditDraft(message: MailMessage): void {
-    window.api.compose.open(message.id)
+    window.api.compose.open({ draftId: message.id })
+  }
+
+  function handleReply(message: MailMessage): void {
+    window.api.compose.open({ sourceMessageId: message.id, intent: 'reply' })
+  }
+
+  function handleReplyAll(message: MailMessage): void {
+    window.api.compose.open({ sourceMessageId: message.id, intent: 'replyAll' })
+  }
+
+  function handleForward(message: MailMessage): void {
+    window.api.compose.open({ sourceMessageId: message.id, intent: 'forward' })
   }
 
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
@@ -78,6 +90,9 @@ function App(): ReactElement {
               selectedMessageId={selectedMessageId}
               messagesVersion={messagesVersion}
               onEditDraft={handleEditDraft}
+              onReply={handleReply}
+              onReplyAll={handleReplyAll}
+              onForward={handleForward}
             />
           </>
         ) : (

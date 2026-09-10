@@ -354,6 +354,22 @@ body {
   cursor: pointer;
 }
 
+.reading-pane-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+
+.reading-pane-actions button {
+  padding: 4px 10px;
+  background: var(--pane-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
 .reading-pane-meta {
   display: flex;
   justify-content: space-between;
@@ -464,6 +480,44 @@ body {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 2px;
+}
+
+.compose-cc-field {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compose-cc-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.compose-cc-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.compose-cc-chip button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
 }
 
 .compose-body {

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+import type { ComposeOpenOptions } from '../shared/data-types'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
 import { registerDataIpcHandlers } from './data/ipc'
@@ -12,8 +13,8 @@ app.whenReady().then(() => {
 
   const mainWindow = createMainWindow()
 
-  ipcMain.handle('window:openCompose', (_event, draftId?: string) => {
-    createComposeWindow(mainWindow, draftId)
+  ipcMain.handle('window:openCompose', (_event, options?: ComposeOpenOptions) => {
+    createComposeWindow(mainWindow, options)
   })
 
   app.on('activate', () => {

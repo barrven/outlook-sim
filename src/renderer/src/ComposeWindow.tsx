@@ -1,17 +1,22 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type { Persona } from '../../shared/data-types'
+import type { ComposeIntent, MessageRecipient, Persona } from '../../shared/data-types'
+import { buildComposeSeed } from './composeIntent'
 
 interface ComposeWindowProps {
   draftId?: string
+  sourceMessageId?: string
+  intent?: ComposeIntent
 }
 
-function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
+function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps): ReactElement {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [toEmail, setToEmail] = useState('')
   const [toName, setToName] = useState('')
+  const [cc, setCc] = useState<MessageRecipient[]>([])
+  const [ccSelection, setCcSelection] = useState('')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
-  const [loaded, setLoaded] = useState(!draftId)
+  const [loaded, setLoaded] = useState(!draftId && !sourceMessageId)
 
   useEffect(() => {
     let cancelled = false
@@ -30,6 +35,7 @@ function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
       if (cancelled || !message) return
       setToEmail(message.toEmail)
       setToName(message.toName)
+      setCc(message.cc)
       setSubject(message.subject)
       setBody(message.body)
       setLoaded(true)
@@ -39,6 +45,37 @@ function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
     }
   }, [draftId])
 
+  useEffect(() => {
+    if (!sourceMessageId || !intent) return
+    let cancelled = false
+    Promise.all([window.api.data.messages.get(sourceMessageId), window.api.data.identity.get()]).then(
+      ([message, identity]) => {
+        if (cancelled || !message) return
+        const seed = buildComposeSeed(intent, message, identity)
+        setToEmail(seed.toEmail)
+        setToName(seed.toName)
+        setCc(seed.cc)
+        setSubject(seed.subject)
+        setBody(seed.body)
+        setLoaded(true)
+      }
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [sourceMessageId, intent])
+
+  function addCc(email: string): void {
+    if (!email || email === toEmail || cc.some((recipient) => recipient.email === email)) return
+    const persona = personas.find((candidate) => candidate.email === email)
+    setCc((prev) => [...prev, { name: persona?.displayName ?? email, email }])
+    setCcSelection('')
+  }
+
+  function removeCc(email: string): void {
+    setCc((prev) => prev.filter((recipient) => recipient.email !== email))
+  }
+
   async function persist(folderId: 'drafts' | 'sent'): Promise<void> {
     const identity = await window.api.data.identity.get()
     const fields = {
@@ -47,6 +84,7 @@ function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
       body,
       toName,
       toEmail,
+      cc,
       fromName: identity.displayName,
       fromEmail: identity.fromEmail,
       timestamp: Date.now()
@@ -64,6 +102,9 @@ function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
   }
 
   const knownEmails = new Set(personas.map((persona) => persona.email))
+  const ccCandidates = personas.filter(
+    (persona) => persona.email !== toEmail && !cc.some((recipient) => recipient.email === persona.email)
+  )
 
   return (
     <div className="compose-window">
@@ -99,6 +140,39 @@ function ComposeWindow({ draftId }: ComposeWindowProps): ReactElement {
             <option value={toEmail}>{toName ? `${toName} <${toEmail}>` : toEmail}</option>
           )}
         </select>
+      </div>
+      <div className="compose-field-row compose-field-row-cc">
+        <label htmlFor="compose-cc">Cc</label>
+        <div className="compose-cc-field">
+          {cc.length > 0 && (
+            <ul className="compose-cc-list">
+              {cc.map((recipient) => (
+                <li key={recipient.email} className="compose-cc-chip">
+                  {recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${recipient.email} from Cc`}
+                    onClick={() => removeCc(recipient.email)}
+                  >
+                    &times;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <select
+            id="compose-cc"
+            value={ccSelection}
+            onChange={(event) => addCc(event.target.value)}
+          >
+            <option value="">Add a Cc recipient…</option>
+            {ccCandidates.map((persona) => (
+              <option key={persona.id} value={persona.email}>
+                {persona.displayName} &lt;{persona.email}&gt;
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="compose-field-row">
         <label htmlFor="compose-subject">Subject</label>

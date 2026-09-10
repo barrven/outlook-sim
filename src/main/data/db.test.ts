@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { DatabaseSync } from 'node:sqlite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MailDb } from './db'
 
@@ -158,6 +159,92 @@ describe('MailDb', () => {
     expect(reopened.getCalendarItem(item.id)).toEqual(item)
     expect(reopened.listFolders().map((f) => f.id)).toContain('projects')
     reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('defaults a new message to an empty Cc list, and round-trips Cc recipients through create/update', () => {
+    const created = db.createMessage({
+      folderId: 'inbox',
+      subject: 'No cc yet',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    expect(created.cc).toEqual([])
+
+    const withCc = db.updateMessage(created.id, {
+      cc: [
+        { name: 'Sam Lee', email: 'sam@example.com' },
+        { name: 'Morgan Rivera', email: 'morgan@example.com' }
+      ]
+    })
+    expect(withCc?.cc).toEqual([
+      { name: 'Sam Lee', email: 'sam@example.com' },
+      { name: 'Morgan Rivera', email: 'morgan@example.com' }
+    ])
+    expect(db.getMessage(created.id)?.cc).toEqual(withCc?.cc)
+  })
+
+  it('accepts an explicit Cc list on create', () => {
+    const created = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Group thread',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [{ name: 'Sam Lee', email: 'sam@example.com' }],
+      timestamp: 1000
+    })
+    expect(created.cc).toEqual([{ name: 'Sam Lee', email: 'sam@example.com' }])
+  })
+
+  it('adds the cc column when opening a database created before Cc support existed', () => {
+    db.close()
+    const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+    raw.exec('DROP TABLE messages')
+    raw.exec(`CREATE TABLE messages (
+      id TEXT PRIMARY KEY,
+      folder_id TEXT NOT NULL DEFAULT '',
+      subject TEXT NOT NULL DEFAULT '',
+      body TEXT NOT NULL DEFAULT '',
+      from_name TEXT NOT NULL DEFAULT '',
+      from_email TEXT NOT NULL DEFAULT '',
+      to_name TEXT NOT NULL DEFAULT '',
+      to_email TEXT NOT NULL DEFAULT '',
+      timestamp INTEGER NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      is_flagged INTEGER NOT NULL DEFAULT 0,
+      categories TEXT NOT NULL DEFAULT '[]',
+      attachments TEXT NOT NULL DEFAULT '[]'
+    )`)
+    raw.exec(
+      `INSERT INTO messages (id, folder_id, subject, body, from_name, from_email, to_name, to_email, timestamp, is_read, is_flagged, categories, attachments)
+       VALUES ('legacy-1', 'inbox', 'Old message', 'body', 'Carol', 'carol@example.com', 'Trainee', 'trainee@example.com', 500, 0, 0, '[]', '[]')`
+    )
+    raw.close()
+
+    const migrated = new MailDb(baseDir)
+    expect(migrated.getMessage('legacy-1')?.cc).toEqual([])
+
+    const created = migrated.createMessage({
+      folderId: 'inbox',
+      subject: 'New after migration',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 600
+    })
+    expect(created.cc).toEqual([])
+
+    migrated.close()
     // reassign so the outer afterEach's db.close() doesn't double-close
     db = new MailDb(baseDir)
   })

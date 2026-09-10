@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ComposeWindow from './ComposeWindow'
 import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
@@ -40,7 +40,11 @@ describe('ComposeWindow', () => {
 
     render(<ComposeWindow />)
 
-    expect(await screen.findByRole('option', { name: 'Morgan Rivera <morgan@example.com>' })).toBeInTheDocument()
+    expect(
+      await within(screen.getByLabelText('To')).findByRole('option', {
+        name: 'Morgan Rivera <morgan@example.com>'
+      })
+    ).toBeInTheDocument()
   })
 
   it('enables Send once a recipient is chosen, and sends into the Sent folder', async () => {
@@ -103,6 +107,7 @@ describe('ComposeWindow', () => {
       fromEmail: '',
       toName: 'Morgan Rivera',
       toEmail: 'morgan@example.com',
+      cc: [],
       timestamp: Date.now(),
       isRead: true,
       isFlagged: false,
@@ -140,6 +145,7 @@ describe('ComposeWindow', () => {
       fromEmail: '',
       toName: 'Old Contact',
       toEmail: 'old@example.com',
+      cc: [],
       timestamp: Date.now(),
       isRead: true,
       isFlagged: false,
@@ -167,5 +173,112 @@ describe('ComposeWindow', () => {
     expect(window.api.data.messages.create).not.toHaveBeenCalled()
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
     expect(close).toHaveBeenCalled()
+  })
+
+  describe('reply / reply all / forward', () => {
+    const SOURCE_MESSAGE: MailMessage = {
+      id: 'src-1',
+      folderId: 'inbox',
+      subject: 'Quarterly numbers',
+      body: 'See attached.',
+      fromName: 'Priya Shah',
+      fromEmail: 'priya@example.com',
+      toName: 'Jordan Trainee',
+      toEmail: 'jordan.trainee@example.com',
+      cc: [{ name: 'Sam Lee', email: 'sam@example.com' }],
+      timestamp: new Date('2026-01-15T10:00:00').getTime(),
+      isRead: true,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+
+    it('reply pre-fills To with the original sender and quotes the original body', async () => {
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="reply" />)
+
+      expect(await screen.findByLabelText('To')).toHaveValue('priya@example.com')
+      expect(screen.getByLabelText('Subject')).toHaveValue('Re: Quarterly numbers')
+      expect((screen.getByLabelText('Message body') as HTMLTextAreaElement).value).toContain('> See attached.')
+      expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+    })
+
+    it('reply mock-sends into Sent the same way as a new compose', async () => {
+      const user = userEvent.setup()
+      const close = mockClose()
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="reply" />)
+
+      await screen.findByDisplayValue('Re: Quarterly numbers')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folderId: 'sent',
+          toEmail: 'priya@example.com',
+          toName: 'Priya Shah',
+          subject: 'Re: Quarterly numbers',
+          fromName: IDENTITY.displayName,
+          fromEmail: IDENTITY.fromEmail
+        })
+      )
+      expect(close).toHaveBeenCalled()
+    })
+
+    it('reply all pre-fills Cc with the other original recipients, and persists Cc on send', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="replyAll" />)
+
+      expect(await screen.findByLabelText('To')).toHaveValue('priya@example.com')
+      expect(await screen.findByText('Sam Lee <sam@example.com>')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folderId: 'sent',
+          toEmail: 'priya@example.com',
+          cc: [{ name: 'Sam Lee', email: 'sam@example.com' }]
+        })
+      )
+    })
+
+    it('forward clears To, keeps the quoted body, and allows picking a new recipient', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="forward" />)
+
+      await screen.findByDisplayValue('Fwd: Quarterly numbers')
+      expect(screen.getByLabelText('To')).toHaveValue('')
+      expect((screen.getByLabelText('Message body') as HTMLTextAreaElement).value).toContain('> See attached.')
+      expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled()
+
+      await user.selectOptions(screen.getByLabelText('To'), 'morgan@example.com')
+
+      expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled()
+
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folderId: 'sent',
+          toEmail: 'morgan@example.com',
+          subject: 'Fwd: Quarterly numbers'
+        })
+      )
+    })
   })
 })

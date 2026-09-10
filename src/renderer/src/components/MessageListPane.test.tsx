@@ -15,6 +15,7 @@ function makeMessage(overrides: Partial<MailMessage> = {}): MailMessage {
     fromEmail: 'alex@example.com',
     toName: 'Trainee',
     toEmail: 'trainee@example.com',
+    cc: [],
     timestamp: Date.now(),
     isRead: false,
     isFlagged: false,

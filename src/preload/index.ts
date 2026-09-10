@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   CalendarItemPatch,
+  ComposeOpenOptions,
   MailMessagePatch,
   NewCalendarItem,
   NewFolder,
@@ -51,7 +52,7 @@ const api = {
     }
   },
   compose: {
-    open: (draftId?: string) => ipcRenderer.invoke('window:openCompose', draftId)
+    open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
   },
   onMessagesChanged: (callback: () => void) => {
     const listener = (): void => callback()

@@ -5,7 +5,7 @@ lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
 - **Phase:** implement
-- **Active feature:** 005 — Mail reply, reply all & forward
+- **Active feature:** 010 — Settings: LLM provider, model & API key storage
 - **Last updated:** 2026-09-10
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-10 — feature 005 (mail reply, reply all & forward) accepted by user; logged to CHANGELOG; active feature set to 010 (settings: LLM provider, model & API key storage), phase set to `implement`
+- 2026-09-10 — feature 005 (mail reply, reply all & forward) validated: lint/typecheck/build/tests (87/87) all pass; all 5 ACs verified by the test suite plus code inspection (AC2 confirmed against the Cc-based design the user approved in `/implement`); additionally verified the SQLite `cc`-column migration against a scratch copy of the user's actual `~/.config/outlook-sim/outlook-sim.db` (untouched original confirmed via mtime); live Electron GUI verification was attempted but blocked by the sandbox (no Xvfb, `apt-get`/`sudo` both require privileges unavailable here) — flagged as a pre-existing, non-blocking environment gap consistent with features 001/002's history, deferred to the user's own check at `/accept`; phase set to `accept`
+- 2026-09-10 — feature 005 (mail reply, reply all & forward) tested: added 26 tests across 5 files (61 → 87, all passing) — a new `composeIntent.test.ts` unit-testing the reply/reply-all/forward prefill+subject-prefix-dedup logic directly, `ComposeWindow`/`ReadingPane`/`App` integration coverage for the UI wiring and mock-send path, and `db.test.ts` coverage for Cc round-tripping plus (most importantly) the `ALTER TABLE` migration path against a simulated pre-existing on-disk DB without the `cc` column; lint/typecheck/build all still pass; live multi-window Electron verification remains deferred to `/validate`; phase set to `validate`
+- 2026-09-10 — feature 005 (mail reply, reply all & forward) implemented: added Cc support to the data model (user-approved scope expansion — Reply and Reply All had nothing to differ on with only a single-recipient message model) via a new `cc: MessageRecipient[]` field, SQLite column + migration for existing DBs; reply/reply-all/forward wired from new ReadingPane buttons through compose-window query params to a pure `buildComposeSeed` helper handling recipient/Cc prefill, quoted body, and dedup'd Re:/Fwd: subject prefixing; all three mock-send via the existing compose persist path unchanged; lint/typecheck/build/tests (61/61) all pass, including compile-only fixture touch-ups in 4 existing test files; live Electron verification deferred to `/validate` (no Playwright/xvfb driver exists in this repo); phase set to `test`
 - 2026-09-10 — feature 004 (mail compose, mock-send & drafts) accepted by user; logged to CHANGELOG; active feature set to 005 (mail reply, reply all & forward), phase set to `implement`
 - 2026-09-10 — feature 004 (mail compose, mock-send & drafts) validated: lint/typecheck/build/tests (61/61) all pass; all 5 ACs verified both by the new automated suite and by the round-1 live `/implement` run against the real app; incidentally corroborated by a real draft the user created themselves in the running app between sessions; phase set to `accept`
 - 2026-09-10 — feature 004 (mail compose, mock-send & drafts) tested: added `ComposeWindow.test.tsx` (7 tests) plus new coverage in `RibbonBar`/`ReadingPane`/`MessageListPane`/`ipc` test files (4 more), 61/61 tests pass (up from 48); lint/typecheck/build unaffected; phase set to `validate`

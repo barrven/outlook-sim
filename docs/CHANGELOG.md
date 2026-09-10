@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-10 — Mail reply, reply all & forward (features/005-mail-reply-reply-all-forward.md)
+From the reading pane you can now Reply, Reply All, or Forward the selected
+message. Each opens a compose window pre-filled accordingly: Reply sets To
+to the original sender and quotes the body; Reply All does the same and
+also fills Cc with the message's other original recipients (compose
+windows gained a Cc field, with add/remove chips, to support this); Forward
+clears To so you can pick a new recipient but keeps the quoted body. All
+three mock-send into Sent exactly like a new compose, and the subject gets
+a Re:/Fwd: prefix that won't stack on repeated replies or forwards.
+
 ## 2026-09-10 — Mail compose, mock-send & drafts (features/004-mail-compose-send-drafts.md)
 You can now compose mail. "New Email" on the ribbon opens a real compose
 window with To (choose from your configured personas), Subject, and Body.

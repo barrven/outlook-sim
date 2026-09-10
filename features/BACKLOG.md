@@ -11,7 +11,7 @@
 | 002 | Local data layer (SQLite + JSON config store) | done | high | 002-local-data-layer.md |
 | 003 | Mail folders, message list & reading pane | done | high | 003-mail-folders-list-reading-pane.md |
 | 004 | Mail compose, mock-send & drafts | done | high | 004-mail-compose-send-drafts.md |
-| 005 | Mail reply, reply all & forward | backlog | high | 005-mail-reply-reply-all-forward.md |
+| 005 | Mail reply, reply all & forward | done | high | 005-mail-reply-reply-all-forward.md |
 | 010 | Settings: LLM provider, model & API key storage | backlog | high | 010-settings-provider-model-api-key.md |
 | 011 | Settings: trainee identity & system prompt | backlog | high | 011-settings-identity-system-prompt.md |
 | 012 | Settings: personas (contacts) CRUD | backlog | high | 012-settings-personas-crud.md |

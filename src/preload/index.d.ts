@@ -1,6 +1,7 @@
 import type {
   CalendarItem,
   CalendarItemPatch,
+  ComposeOpenOptions,
   Folder,
   MailMessage,
   MailMessagePatch,
@@ -53,7 +54,7 @@ export interface DataApi {
 }
 
 export interface ComposeApi {
-  open: (draftId?: string) => Promise<void>
+  open: (options?: ComposeOpenOptions) => Promise<void>
 }
 
 export {}

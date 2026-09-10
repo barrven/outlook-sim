@@ -21,6 +21,11 @@ export interface MessageAttachment {
   filename: string
 }
 
+export interface MessageRecipient {
+  name: string
+  email: string
+}
+
 export interface MailMessage {
   id: string
   folderId: string
@@ -30,6 +35,7 @@ export interface MailMessage {
   fromEmail: string
   toName: string
   toEmail: string
+  cc: MessageRecipient[]
   timestamp: number
   isRead: boolean
   isFlagged: boolean
@@ -37,8 +43,19 @@ export interface MailMessage {
   attachments: MessageAttachment[]
 }
 
-export type NewMailMessage = Omit<MailMessage, 'id' | 'isRead' | 'isFlagged' | 'categories' | 'attachments'> &
-  Partial<Pick<MailMessage, 'isRead' | 'isFlagged' | 'categories' | 'attachments'>>
+export type ComposeIntent = 'reply' | 'replyAll' | 'forward'
+
+export interface ComposeOpenOptions {
+  draftId?: string
+  sourceMessageId?: string
+  intent?: ComposeIntent
+}
+
+export type NewMailMessage = Omit<
+  MailMessage,
+  'id' | 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc'
+> &
+  Partial<Pick<MailMessage, 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc'>>
 
 export type MailMessagePatch = Partial<Omit<MailMessage, 'id'>>
 

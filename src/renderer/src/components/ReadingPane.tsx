@@ -5,9 +5,19 @@ interface ReadingPaneProps {
   selectedMessageId: string | null
   messagesVersion: number
   onEditDraft: (message: MailMessage) => void
+  onReply: (message: MailMessage) => void
+  onReplyAll: (message: MailMessage) => void
+  onForward: (message: MailMessage) => void
 }
 
-function ReadingPane({ selectedMessageId, messagesVersion, onEditDraft }: ReadingPaneProps): ReactElement {
+function ReadingPane({
+  selectedMessageId,
+  messagesVersion,
+  onEditDraft,
+  onReply,
+  onReplyAll,
+  onForward
+}: ReadingPaneProps): ReactElement {
   const [message, setMessage] = useState<MailMessage | null>(null)
 
   useEffect(() => {
@@ -36,7 +46,7 @@ function ReadingPane({ selectedMessageId, messagesVersion, onEditDraft }: Readin
       <div className="reading-pane-header">
         <div className="reading-pane-subject-row">
           <div className="reading-pane-subject">{displayedMessage.subject || '(no subject)'}</div>
-          {displayedMessage.folderId === 'drafts' && (
+          {displayedMessage.folderId === 'drafts' ? (
             <button
               type="button"
               className="reading-pane-edit-draft"
@@ -44,6 +54,18 @@ function ReadingPane({ selectedMessageId, messagesVersion, onEditDraft }: Readin
             >
               Edit draft
             </button>
+          ) : (
+            <div className="reading-pane-actions">
+              <button type="button" onClick={() => onReply(displayedMessage)}>
+                Reply
+              </button>
+              <button type="button" onClick={() => onReplyAll(displayedMessage)}>
+                Reply All
+              </button>
+              <button type="button" onClick={() => onForward(displayedMessage)}>
+                Forward
+              </button>
+            </div>
           )}
         </div>
         <div className="reading-pane-meta">
@@ -56,6 +78,12 @@ function ReadingPane({ selectedMessageId, messagesVersion, onEditDraft }: Readin
         </div>
         <div className="reading-pane-to">
           To: {displayedMessage.toName} &lt;{displayedMessage.toEmail}&gt;
+          {displayedMessage.cc.length > 0 && (
+            <>
+              {' '}
+              &middot; Cc: {displayedMessage.cc.map((recipient) => recipient.name || recipient.email).join(', ')}
+            </>
+          )}
         </div>
       </div>
       <div className="reading-pane-body">{displayedMessage.body}</div>
