@@ -1,7 +1,7 @@
 ---
 id: 014
 title: LLM client integration
-status: accept
+status: done
 priority: high
 ---
 
@@ -199,4 +199,8 @@ deferred to the user's own check at `/accept`.
 **Outcome: all four Acceptance Criteria pass.** Status set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+
+2026-09-11 — Presented the feature summary, AC-by-AC validation results,
+and the live-network sanity-check evidence to the user via
+`AskUserQuestion` (accept / request changes / reject). User selected
+**Accept**. Decision: `status: done`.

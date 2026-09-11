@@ -7,6 +7,19 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — LLM client integration (features/014-llm-client-integration.md)
+Under the hood, the app can now actually talk to an LLM provider. Whatever
+provider/model/key you've set in Settings — OpenAI, Anthropic, Gemini, or
+Grok (xAI) — the app can send it a prompt and get generated text back
+through one common internal interface, with clear, readable errors (bad
+key, network trouble, rate limits) instead of crashing. To try it
+yourself, Settings' LLM Provider section has a new "Test Connection"
+button: enter a real key and model and click it to confirm the app can
+actually reach that provider. Nothing calls this automatically yet — no
+feature sends an LLM-generated reply or message on its own until the
+persona-reply and unsolicited-mail features (next up) are built on top of
+it.
+
 ## 2026-09-11 — Simulated office clock (features/013-simulated-office-clock.md)
 The ribbon bar now shows a simulated clock with Start/Pause and a speed
 multiplier (1x/2x/5x/10x/30x/60x), separate from your computer's actual
