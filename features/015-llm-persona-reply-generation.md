@@ -1,7 +1,7 @@
 ---
 id: 015
 title: LLM persona reply generation
-status: validating
+status: accept
 priority: high
 ---
 
@@ -164,7 +164,89 @@ only one Inbox message is created, from the primary persona.
   above — out of scope per the Implementation Notes' scope decision.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+
+**Automated checks:** lint, typecheck, and build all pass clean. Full
+test suite: 175/175 passing, re-run 3x with no flakiness.
+
+**Scope check:** `git diff` between the pre-015 commit and the tip of
+this feature's work (`0037e2a..5f2709c`) touches exactly the files
+listed in Implementation Notes — no unrelated leakage.
+
+**Live end-to-end sanity check (beyond the mocked unit tests):** bundled
+`personaReply.ts` together with the *real* `MailDb`/`ConfigStore`/
+`SimClock` (not mocks) with `esbuild`, and ran it against a real
+temp-dir-backed SQLite DB + JSON config, with a real (invalid) OpenAI
+key, exercising the full pipeline exactly as production code would:
+persona lookup → thread assembly → real network call → error handling.
+Result: `{"ok":false,"error":"openai API error (401): Incorrect API key
+provided: sk-inval...xxxx. ..."}`, and `inbox count: 0`. This confirms
+the whole chain — real DB persona matching, real config reads, a real
+network round-trip to the real OpenAI endpoint, and error propagation —
+works correctly with no crash and no message inserted, which is
+stronger evidence than the mocked-fetch tests alone provide for AC1's
+"triggers an LLM call" and AC4's "degrades gracefully." As with feature
+014, the *successful*-reply path (a real 2xx response) still can't be
+exercised without a valid API key, and the NO_REPLY decision therefore
+also rests on the mocked tests + prompt inspection, not a live model
+response.
+
+**AC1 (send/reply triggers an LLM call assembling system prompt +
+persona fields + thread history) — PASS.** Confirmed by the live check
+above (real call reaches OpenAI) plus the mocked tests asserting the
+actual request body contains the system prompt, persona role/bio/
+writing-style, and chronologically-ordered thread history while
+excluding unrelated threads. `ComposeWindow.test.tsx` confirms both Send
+and Reply (not just one) trigger it, satisfying the AC's literal
+"sending/replying" wording.
+
+**AC2 (replies appear in Inbox from the correct persona's From address,
+simulated time) — PASS.** Verified by inspection of `personaReply.ts:112-121`
+(`fromName`/`fromEmail` from the matched `Persona`, `toName`/`toEmail`
+from `TraineeIdentity`, `timestamp: clock.now()` — not `Date.now()`) and
+by tests: correct-persona-among-several matching, case-insensitive email
+matching, and a test proving the timestamp tracks the simulated clock
+independently of a differently-stubbed wall clock.
+
+**AC3 (decide not to reply per system-prompt guidance) — PASS.** The
+`NO_REPLY` marker convention is a deliberate, documented tradeoff (see
+Implementation Notes) rather than structured output — verified the
+system prompt actually instructs the model about it (test), and that
+both an exact match and one with incidental whitespace correctly produce
+`replied:false` with nothing inserted. Read `buildSystemPrompt` at
+`personaReply.ts:46-58` directly to confirm the instruction text is
+unambiguous about the exact marker required.
+
+**AC4 (failures degrade gracefully — visible error, no crash, no
+partial/garbled insert) — PASS.** Confirmed at every layer: the live
+real-401 check above (whole pipeline, no mocks below the network
+boundary); unit tests for network failure and a real-shaped HTTP error
+response, both resolving `{ok:false,error}` with zero Inbox rows;
+`ipc.ts:85-93` never calls `broadcastMessagesChanged` on a `!result.ok`
+path (read directly to confirm no code path double-fires both
+broadcasts); `App.tsx`'s banner renders the error and is dismissible
+without the app crashing. One non-blocking robustness observation (not
+a violation of any stated AC, since it's not one of the failure modes
+the AC lists): `generatePersonaReply`'s single `db.createMessage` call
+at the end isn't wrapped in try/catch, so a hypothetical SQLite-level
+failure there (not a stated failure mode, and not expected given
+well-formed input) would reject the fire-and-forget
+`window.api.llm.personaReply(...)` promise in `ComposeWindow.tsx` with
+no `.catch()`, producing an unhandled-rejection console warning rather
+than a crash. Noted for awareness, not blocking acceptance.
+
+**Scope-decision checks (called out explicitly in Implementation
+Notes):** verified by test that a Cc'd persona does not also receive a
+generated reply (only the primary `To` persona does), and that sending
+to a non-persona address makes no LLM call at all (correct no-op, not a
+failure).
+
+**Not verified (flagged, not blocking):** the real Electron multi-window
+path (compose window fires the call and closes; main window shows the
+result later) — no Xvfb/display in this sandbox, same recurring gap as
+every prior feature. The IPC contract and each side's independent
+reaction to it are tested instead.
+
+**Outcome: all four Acceptance Criteria pass.** Status set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
