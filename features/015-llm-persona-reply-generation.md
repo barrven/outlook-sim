@@ -1,7 +1,7 @@
 ---
 id: 015
 title: LLM persona reply generation
-status: testing
+status: validating
 priority: high
 ---
 
@@ -105,7 +105,63 @@ full mock `MailMessage` instead of `undefined`, since the new code reads
 `.id` off the create result).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+
+175/175 passing (169 → 175; 6 new on top of the 18 already written during
+`/implement`, since a testable design was central to the implementation
+itself). Re-ran the full suite 3x — stable.
+
+**AC1 (send/reply triggers an LLM call assembling system prompt + persona
+fields + thread history):** `personaReply.test.ts` asserts the actual
+request body sent to `fetch` contains the configured system prompt, all
+of the matched persona's role/bio/writingStyleNotes, and the thread
+history in chronological order; a new test confirms an *unrelated*
+thread (different subject) is correctly excluded from that same prompt.
+`ComposeWindow.test.tsx` confirms both a fresh Send and a Reply trigger
+`window.api.llm.personaReply` with the right message id (Send: the
+newly-created message's id; existing draft: the draft's id; Reply: the
+newly-created message's id) — covering AC1's "sending/replying" wording
+literally, not just one path. `ipc.test.ts` confirms sending to a
+non-persona address makes no LLM call at all (correct no-op).
+
+**AC2 (replies appear in Inbox from the correct persona, simulated
+time):** new tests cover matching the correct persona out of several
+configured ones (not just "a persona"), case-insensitive email matching,
+and that the timestamp comes from `clock.now()` and is provably
+independent of wall-clock time (mirroring the existing ComposeWindow
+clock test pattern from feature 013) — `Date.now()` and `clock.now()`
+are spied to different values and the inserted message's timestamp
+matches only the simulated one.
+
+**AC3 (decide not to reply per system-prompt guidance):** covered via
+the `NO_REPLY` marker path (exact match and whitespace-tolerant), with
+the system-prompt test confirming the model is actually instructed about
+that marker.
+
+**AC4 (graceful failure — visible error, no crash, no partial/garbled
+insert):** covered at three layers — `personaReply.test.ts` (network
+error and a real-shaped HTTP error response both resolve `{ok:false,
+error}` with nothing inserted, never a thrown exception), `ipc.test.ts`
+(the `llm:personaReply` handler broadcasts `llm:persona-reply-failed`
+with that exact error string and never `data:messages-changed` on
+failure), and `App.test.tsx` (the error renders as a dismissible banner,
+and dismissing clears it — the app doesn't crash and the failure is
+visible).
+
+**Scope-decision coverage:** a new test locks in that a persona who is
+only Cc'd (not the primary To) does *not* also get a generated reply —
+only one Inbox message is created, from the primary persona.
+
+**Deliberately not covered:**
+- Live calls to real provider APIs (same sandbox limitation as 014 — no
+  API keys here; the underlying `generateText` call itself was already
+  validated against real live APIs during 014's `/validate`).
+- The real Electron multi-window path (compose window closes while the
+  main window later shows the reply/error) — Vitest can't drive two real
+  BrowserWindows; the fire-and-forget IPC contract and each side's
+  reaction to it are tested independently instead (ComposeWindow fires
+  the call; ipc.ts broadcasts; App.tsx reacts to the broadcast).
+- Group/multi-persona threads beyond the single Cc-does-not-reply case
+  above — out of scope per the Implementation Notes' scope decision.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

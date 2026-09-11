@@ -147,6 +147,99 @@ describe('generatePersonaReply', () => {
     expect(userMessage.indexOf('Are you free this week?')).toBeLessThan(userMessage.indexOf('Want to grab lunch?'))
   })
 
+  it('excludes unrelated threads (different subject) from the prompt sent to the LLM', async () => {
+    db.createMessage({
+      folderId: 'sent',
+      subject: 'Totally unrelated topic',
+      body: 'This should never be seen by the model for the lunch thread.',
+      fromName: 'Jordan Trainee',
+      fromEmail: 'jordan@example.com',
+      toName: 'Morgan Rivera',
+      toEmail: 'morgan@example.com',
+      timestamp: 500
+    })
+    const message = sendMessage()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    await generatePersonaReply(db, config, clock, message.id)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
+    expect(userMessage).not.toContain('Totally unrelated topic')
+    expect(userMessage).not.toContain('never be seen')
+  })
+
+  it('matches the correct persona among several configured, and stamps the reply from that persona only', async () => {
+    const otherPersona: Persona = {
+      id: 'p2',
+      displayName: 'Alex Chen',
+      email: 'alex@example.com',
+      role: 'Paralegal',
+      bio: '',
+      writingStyleNotes: '',
+      extraPrompt: ''
+    }
+    config.setPersonas([PERSONA, otherPersona])
+    const message = sendMessage({ toEmail: 'alex@example.com', toName: 'Alex Chen' })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sounds good.'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id)
+
+    expect(result).toMatchObject({ ok: true, replied: true })
+    if (result.ok && result.replied) {
+      expect(result.message.fromEmail).toBe('alex@example.com')
+      expect(result.message.fromName).toBe('Alex Chen')
+    }
+  })
+
+  it('matches the persona case-insensitively by email', async () => {
+    config.setPersonas([{ ...PERSONA, email: 'Morgan@Example.com' }])
+    const message = sendMessage({ toEmail: 'morgan@example.com' })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id)
+
+    expect(result).toMatchObject({ ok: true, replied: true })
+  })
+
+  it('stamps the reply with simulated time, independent of wall-clock time', async () => {
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+    vi.spyOn(clock, 'now').mockReturnValue(new Date('2027-06-01T00:00:00').getTime())
+    const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-01T00:00:00').getTime())
+
+    const result = await generatePersonaReply(db, config, clock, message.id)
+
+    expect(result).toMatchObject({ ok: true, replied: true })
+    if (result.ok && result.replied) {
+      expect(result.message.timestamp).toBe(new Date('2027-06-01T00:00:00').getTime())
+    }
+    dateNowSpy.mockRestore()
+  })
+
+  it('only replies as the primary To persona, not as a persona who was only Cc’d', async () => {
+    const ccPersona: Persona = {
+      id: 'p2',
+      displayName: 'Alex Chen',
+      email: 'alex@example.com',
+      role: 'Paralegal',
+      bio: '',
+      writingStyleNotes: '',
+      extraPrompt: ''
+    }
+    config.setPersonas([PERSONA, ccPersona])
+    const message = sendMessage({ cc: [{ name: 'Alex Chen', email: 'alex@example.com' }] })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id)
+
+    expect(result).toMatchObject({ ok: true, replied: true })
+    const inboxMessages = db.listMessages('inbox')
+    expect(inboxMessages).toHaveLength(1)
+    expect(inboxMessages[0].fromEmail).toBe('morgan@example.com')
+  })
+
   it('does not reply, and inserts nothing, when the model responds with the NO_REPLY marker', async () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('NO_REPLY'))

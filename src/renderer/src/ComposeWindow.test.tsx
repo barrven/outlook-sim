@@ -327,6 +327,36 @@ describe('ComposeWindow', () => {
       expect(close).toHaveBeenCalled()
     })
 
+    it('replying also triggers persona reply generation (AC1 covers sending AND replying)', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.data.messages.create).mockResolvedValue({
+        id: 'reply-sent-id',
+        folderId: 'sent',
+        subject: '',
+        body: '',
+        fromName: '',
+        fromEmail: '',
+        toName: '',
+        toEmail: '',
+        cc: [],
+        timestamp: 0,
+        isRead: false,
+        isFlagged: false,
+        categories: [],
+        attachments: []
+      })
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="reply" />)
+
+      await screen.findByDisplayValue('Re: Quarterly numbers')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.llm.personaReply).toHaveBeenCalledWith('reply-sent-id'))
+    })
+
     it('reply all pre-fills Cc with the other original recipients, and persists Cc on send', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
