@@ -1,7 +1,7 @@
 ---
 id: 016
 title: LLM unsolicited incoming mail scheduler
-status: validating
+status: accept
 priority: high
 ---
 
@@ -173,7 +173,87 @@ takes).
   eventually call.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+
+**Automated checks:** lint, typecheck, and build all pass clean. Full
+test suite: 193/193 passing, re-run 3x with no flakiness.
+
+**Scope check:** `git diff` between the pre-016 commit and the tip of
+this feature's work (`037c7a6..38876d6`) touches exactly the files
+listed in Implementation Notes — no unrelated leakage.
+
+**Code-level review (beyond the test suite):** read `scheduler.ts`,
+`index.ts`, and `App.tsx` end to end as a skeptical pass:
+- The sentinel-init branch in `tick()` (`nextDueSimTime === 0` →
+  initialize) correctly falls through to the normal due-time check in
+  the same call rather than generating immediately — confirmed both by
+  reading the code and by the dedicated test.
+- `this.ticking` correctly guards overlapping ticks; `nextDueSimTime` is
+  advanced *before* calling `generateUnsolicitedMail`, so a slow or
+  failing call can't retry every 10 seconds.
+- `index.ts` calls `scheduler.stop()` in the same `before-quit` handler
+  as `simClock.pause()` (AC4), and constructs+`start()`s the scheduler
+  once at app-ready, entirely separate from `registerDataIpcHandlers`
+  (confirmed this doesn't leak a background timer into `ipc.test.ts`'s
+  ~20 tests — that suite still passes with no timer-related warnings).
+- One design nuance worth recording (not a bug, no AC violation): the
+  "upcoming calendar items" filter (`startTime >= now`) excludes
+  deadlines that are already overdue but still unresolved — arguably
+  the most narratively useful case for an escalation email ("you missed
+  this"). `CalendarItem` has no completion/resolved status field to
+  distinguish "overdue and still open" from "overdue and long
+  irrelevant," so this is a reasonable simplification given what the
+  data model currently exposes; worth revisiting once 018/019
+  (calendar UI) land and that distinction becomes possible.
+- The Subject/body text-convention parser has no defense against a
+  model wrapping its response in markdown code fences — a real (if
+  historically uncommon for a plain chat-completion instruction-follow)
+  LLM failure mode that would currently surface as a "not in the
+  expected Subject/body format" error rather than a garbled insert
+  (i.e., it fails safe, it just doesn't parse) — consistent with 015's
+  same class of tradeoff for its `NO_REPLY` marker.
+
+**Live end-to-end check (already run during `/implement`, re-confirmed
+here):** `generateUnsolicitedMail` was exercised against a temp DB/config
+seeded with the real, already-configured Anthropic key/personas/
+identity/system-prompt plus one seeded calendar deadline, producing a
+coherent, in-character email that correctly referenced the seeded
+deadline by name. This is real evidence for AC2, not just the parsing
+contract — see Implementation Notes for the full output.
+
+**AC1 (reasonable interval while running) — PASS.** Verified by test
+that the advanced due time lands within the documented 1–3 simulated-
+hour range, and that persona selection actually varies across multiple
+configured personas rather than being fixed.
+
+**AC2 (personas + coherent mailbox/calendar reference) — PASS.**
+Verified by the live check above (real coherent content), the content-
+assembly tests (system prompt + persona fields + recent correspondence +
+upcoming calendar items all present in the actual request body), the
+past-calendar-exclusion test, and the correspondence-scoping test (a
+second persona's mail doesn't leak in).
+
+**AC3 (no unsolicited mail while paused) — PASS.** Verified by mocked-
+clock tests and, more convincingly, by a real-`SimClock` integration
+test that drives an actual paused → started → paused cycle and confirms
+generation only happens in the running window.
+
+**AC4 (stops cleanly, resumes appropriately) — PASS.** `stop()`/`start()`
+verified with fake timers (a real interval is created and cleared, not
+just method calls in isolation); "resumes appropriately" verified by
+inspection of how `nextDueSimTime` persistence interacts with the
+already-accepted 013 pause-on-quit behavior (no new logic needed, and no
+catch-up flood is possible since simulated time itself doesn't advance
+while the app is closed).
+
+**Not verified (flagged, not blocking):** live network calls to a real
+provider from automated tests (no API keys in this sandbox — mitigated
+by the live check above); the real Electron `app.whenReady`/
+`before-quit` lifecycle actually invoking this wiring (no
+`index.test.ts` exists for any feature in this repo; `scheduler.start()`/
+`.stop()` are tested directly instead); calendar items created through
+the app's own UI (018/019 still backlog).
+
+**Outcome: all four Acceptance Criteria pass.** Status set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
