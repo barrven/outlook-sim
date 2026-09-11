@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type {
   CalendarItemPatch,
   ComposeOpenOptions,
+  LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFolder,
@@ -60,6 +61,10 @@ const api = {
   },
   compose: {
     open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
+  },
+  llm: {
+    generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
+    test: (settings: Settings) => ipcRenderer.invoke('llm:test', settings)
   },
   onMessagesChanged: (callback: () => void) => {
     const listener = (): void => callback()

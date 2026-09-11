@@ -4,6 +4,8 @@ import type {
   ClockState,
   ComposeOpenOptions,
   Folder,
+  LlmGenerateInput,
+  LlmGenerateResult,
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
@@ -65,6 +67,11 @@ export interface ComposeApi {
   open: (options?: ComposeOpenOptions) => Promise<void>
 }
 
+export interface LlmApi {
+  generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
+  test: (settings: Settings) => Promise<LlmGenerateResult>
+}
+
 export {}
 
 declare global {
@@ -72,6 +79,7 @@ declare global {
     api: {
       data: DataApi
       compose: ComposeApi
+      llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
     }
   }

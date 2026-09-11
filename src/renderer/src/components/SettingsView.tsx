@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type { LlmProvider, Settings, TraineeIdentity } from '../../../shared/data-types'
+import type { LlmGenerateResult, LlmProvider, Settings, TraineeIdentity } from '../../../shared/data-types'
 import PersonasSettings from './PersonasSettings'
 
 const PROVIDERS: { id: LlmProvider; label: string }[] = [
@@ -25,6 +25,8 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
   const [model, setModel] = useState('')
   const [apiKeys, setApiKeys] = useState<Record<LlmProvider, string>>(EMPTY_API_KEYS)
   const [providerJustSaved, setProviderJustSaved] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<LlmGenerateResult | null>(null)
 
   const [displayName, setDisplayName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
@@ -62,6 +64,14 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
     const settings: Settings = { provider, model, apiKeys }
     await window.api.data.settings.set(settings)
     setProviderJustSaved(true)
+  }
+
+  async function handleTestConnection(): Promise<void> {
+    setTesting(true)
+    setTestResult(null)
+    const result = await window.api.llm.test({ provider, model, apiKeys })
+    setTestResult(result)
+    setTesting(false)
   }
 
   async function handleSaveIdentity(): Promise<void> {
@@ -107,6 +117,7 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
                 onChange={(event) => {
                   setProvider(event.target.value as LlmProvider)
                   setProviderJustSaved(false)
+                  setTestResult(null)
                 }}
               >
                 {PROVIDERS.map((option) => (
@@ -126,6 +137,7 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
                 onChange={(event) => {
                   setModel(event.target.value)
                   setProviderJustSaved(false)
+                  setTestResult(null)
                 }}
               />
             </div>
@@ -140,6 +152,7 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
                 onChange={(event) => {
                   setApiKeys((prev) => ({ ...prev, [provider]: event.target.value }))
                   setProviderJustSaved(false)
+                  setTestResult(null)
                 }}
               />
             </div>
@@ -151,7 +164,18 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
                 Save
               </button>
               {providerJustSaved && <span className="settings-view-saved">Saved</span>}
+              <button type="button" onClick={handleTestConnection} disabled={testing}>
+                {testing ? 'Testing…' : 'Test Connection'}
+              </button>
             </div>
+            {testResult && (
+              <p
+                className={testResult.ok ? 'settings-test-result-ok' : 'settings-test-result-error'}
+                role="status"
+              >
+                {testResult.ok ? `Success: ${testResult.text}` : testResult.error}
+              </p>
+            )}
           </div>
         </section>
 

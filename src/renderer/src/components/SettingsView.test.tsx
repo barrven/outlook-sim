@@ -133,6 +133,75 @@ describe('SettingsView', () => {
     expect(apiKeyInput).toHaveAttribute('type', 'password')
   })
 
+  describe('Test Connection', () => {
+    it('calls llm.test with the currently displayed (possibly unsaved) provider/model/key', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: true, text: 'pong' })
+
+      render(<SettingsView />)
+
+      const modelInput = await screen.findByLabelText('Model')
+      await user.clear(modelInput)
+      await user.type(modelInput, 'gpt-4o-mini')
+
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+
+      await waitFor(() => expect(window.api.llm.test).toHaveBeenCalled())
+      expect(window.api.llm.test).toHaveBeenCalledWith({
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        apiKeys: SETTINGS.apiKeys
+      })
+    })
+
+    it('shows the returned text on success', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: true, text: 'pong' })
+
+      render(<SettingsView />)
+
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+
+      expect(await providerSection().findByText('Success: pong')).toBeInTheDocument()
+    })
+
+    it('shows the error message on failure, without crashing', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({
+        ok: false,
+        error: 'openai API error (401): Incorrect API key provided.'
+      })
+
+      render(<SettingsView />)
+
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+
+      expect(
+        await providerSection().findByText('openai API error (401): Incorrect API key provided.')
+      ).toBeInTheDocument()
+    })
+
+    it('clears a stale test result when the provider, model, or key changes', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: true, text: 'pong' })
+
+      render(<SettingsView />)
+
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      expect(await providerSection().findByText('Success: pong')).toBeInTheDocument()
+
+      await user.type(screen.getByLabelText('Model'), 'x')
+      expect(providerSection().queryByText('Success: pong')).not.toBeInTheDocument()
+    })
+  })
+
   describe('Trainee Identity', () => {
     it('prefills display name, job title, and from email from saved identity', async () => {
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)

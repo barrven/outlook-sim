@@ -85,6 +85,13 @@ export interface Settings {
   apiKeys: Record<LlmProvider, string>
 }
 
+export interface LlmGenerateInput {
+  systemPrompt?: string
+  userPrompt: string
+}
+
+export type LlmGenerateResult = { ok: true; text: string } | { ok: false; error: string }
+
 export interface SystemPromptConfig {
   systemPrompt: string
 }

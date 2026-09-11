@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
   CalendarItemPatch,
+  LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFolder,
@@ -10,6 +11,7 @@ import type {
   SystemPromptConfig,
   TraineeIdentity
 } from '../../shared/data-types'
+import { generateText } from '../llm/client'
 import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
@@ -68,4 +70,9 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   ipcMain.handle('clock:start', () => clock.start())
   ipcMain.handle('clock:pause', () => clock.pause())
   ipcMain.handle('clock:setSpeed', (_event, speed: number) => clock.setSpeed(speed))
+
+  ipcMain.handle('llm:generate', (_event, input: LlmGenerateInput) => generateText(config.getSettings(), input))
+  ipcMain.handle('llm:test', (_event, settings: Settings) =>
+    generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
+  )
 }

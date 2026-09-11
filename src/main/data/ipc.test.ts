@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CalendarItem, ClockState, Folder, MailMessage, Settings } from '../../shared/data-types'
+import type { CalendarItem, ClockState, Folder, LlmGenerateResult, MailMessage, Settings } from '../../shared/data-types'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
@@ -76,7 +76,9 @@ describe('registerDataIpcHandlers', () => {
         'clock:now',
         'clock:start',
         'clock:pause',
-        'clock:setSpeed'
+        'clock:setSpeed',
+        'llm:generate',
+        'llm:test'
       ].sort()
     )
   })
@@ -177,5 +179,68 @@ describe('registerDataIpcHandlers', () => {
     const paused = handlers.get('clock:pause')!(fakeEvent) as ClockState
     expect(paused.running).toBe(false)
     expect(handlers.get('clock:get')!(fakeEvent)).toEqual(paused)
+  })
+
+  describe('llm channels', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('llm:generate reads provider/model/key from persisted settings, not the caller', async () => {
+      config.setSettings({
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: { openai: 'sk-persisted', anthropic: '', gemini: '', xai: '' }
+      })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve({ choices: [{ message: { content: 'Hi back' } }] })
+      } as Response)
+
+      const result = (await handlers.get('llm:generate')!(fakeEvent, { userPrompt: 'Hi' })) as LlmGenerateResult
+
+      expect(result).toEqual({ ok: true, text: 'Hi back' })
+      expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBe('Bearer sk-persisted')
+    })
+
+    it('llm:test uses the explicit settings passed by the caller, ignoring persisted config', async () => {
+      config.setSettings({
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: { openai: 'sk-persisted', anthropic: '', gemini: '', xai: '' }
+      })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve({ content: [{ type: 'text', text: 'pong' }] })
+      } as Response)
+
+      const unsavedSettings: Settings = {
+        provider: 'anthropic',
+        model: 'claude-x',
+        apiKeys: { openai: '', anthropic: 'sk-unsaved', gemini: '', xai: '' }
+      }
+      const result = (await handlers.get('llm:test')!(fakeEvent, unsavedSettings)) as LlmGenerateResult
+
+      expect(result).toEqual({ ok: true, text: 'pong' })
+      expect(fetchSpy.mock.calls[0][0]).toBe('https://api.anthropic.com/v1/messages')
+      expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>)['x-api-key']).toBe('sk-unsaved')
+    })
+
+    it('llm:generate resolves with an error result instead of rejecting on failure', async () => {
+      config.setSettings({
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: { openai: 'sk-persisted', anthropic: '', gemini: '', xai: '' }
+      })
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+
+      const result = (await handlers.get('llm:generate')!(fakeEvent, { userPrompt: 'Hi' })) as LlmGenerateResult
+
+      expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+    })
   })
 })
