@@ -1,7 +1,7 @@
 ---
 id: 006
 title: Mail delete & Deleted Items
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -10,10 +10,10 @@ Trainee can delete messages from any folder; deleted messages move to
 Deleted Items rather than being destroyed immediately.
 
 ## Acceptance Criteria
-- [ ] Deleting a message from any folder moves it to Deleted Items
-- [ ] Messages in Deleted Items can be permanently deleted or restored to
+- [x] Deleting a message from any folder moves it to Deleted Items
+- [x] Messages in Deleted Items can be permanently deleted or restored to
       their original folder
-- [ ] Deleted Items contents persist across restarts
+- [x] Deleted Items contents persist across restarts
 
 ## Implementation Notes
 "Delete" is a soft move to the `deleted` folder, not a DB delete — reused the
@@ -89,7 +89,48 @@ folder that was itself deleted while the message sat in Deleted Items is
 an edge case the acceptance criteria don't mention and isn't tested.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint: pass. typecheck: pass (both `tsconfig.node.json` and
+`tsconfig.web.json`). build (`electron-vite build`): pass. Full test suite:
+204/204, re-run 3x back-to-back, stable.
+
+Per-AC check:
+
+- **AC1 (delete from any folder moves to Deleted Items):** PASS. Confirmed
+  by the `db.test.ts`/`ReadingPane.test.tsx`/`App.test.tsx` coverage from
+  `/test`, by code inspection (`ReadingPane.tsx` shows a Delete button for
+  every folder except `deleted` itself, including Drafts;
+  `App.tsx#handleDeleteMessage` sets `folderId: 'deleted',
+  previousFolderId: <original>`), and additionally by a live check: bundled
+  `db.ts` standalone with `esbuild` and drove a real `MailDb` (temp-dir
+  SQLite, not mocked) through creating messages in `inbox`, `sent`, and
+  `drafts` and deleting each — all three left their origin folder's list
+  and appeared in `deleted` with the correct `previousFolderId` stamped.
+- **AC2 (restore or permanently delete from Deleted Items):** PASS. Same
+  live check continued: restoring a Deleted-Items message returned it to
+  its stored `previousFolderId` with that field cleared back to `null`;
+  permanently deleting a different Deleted-Items message via the existing
+  `deleteMessage` made `getMessage` return `null`. Matches
+  `ReadingPane.tsx`'s Deleted-Items branch (Restore / Delete permanently)
+  and `App.tsx`'s `handleRestoreMessage`/`handlePermanentDeleteMessage`.
+- **AC3 (Deleted Items persists across restarts):** PASS. `db.test.ts`
+  covers a close/reopen cycle at the `MailDb` level (the only place
+  persistence actually happens — SQLite on disk). Additionally cross-checked
+  against the user's real `~/.config/outlook-sim/outlook-sim.db`: it had
+  already picked up the `previous_folder_id` column (the app was launched
+  for real since `/implement`, running the migration for real, not just in
+  a test), all 8 pre-existing real messages were intact with
+  `previous_folder_id` correctly defaulted to `null`, and the column
+  migration didn't disturb `folder_id`/subjects/etc. — strong non-scripted
+  evidence the migration is safe in production, not just in a scratch copy.
+
+Non-blocking gap, consistent with every prior feature in this project: no
+live multi-window Electron GUI click-through was performed here (no
+Xvfb/Playwright driver in this sandbox) — the real end-to-end behavior was
+instead verified against the real `MailDb` class and the real on-disk
+database rather than through mocks, which is the strongest check available
+in this environment.
+
+All three acceptance criteria verified. No regressions found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
