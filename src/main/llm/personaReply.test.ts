@@ -293,6 +293,7 @@ describe('findThread', () => {
     return {
       id: 'x',
       folderId: 'inbox',
+      previousFolderId: null,
       subject: 'Lunch plans',
       body: '',
       fromName: '',

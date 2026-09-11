@@ -4,6 +4,7 @@ import type { ClockState, Folder, MailMessage } from '../../../shared/data-types
 export const DEFAULT_MOCK_MESSAGE: MailMessage = {
   id: 'mock-message-id',
   folderId: 'inbox',
+  previousFolderId: null,
   subject: '',
   body: '',
   fromName: '',

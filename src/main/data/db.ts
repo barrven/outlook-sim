@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS folders (
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
   folder_id TEXT NOT NULL REFERENCES folders(id),
+  previous_folder_id TEXT REFERENCES folders(id),
   subject TEXT NOT NULL DEFAULT '',
   body TEXT NOT NULL DEFAULT '',
   from_name TEXT NOT NULL DEFAULT '',
@@ -71,6 +72,7 @@ interface FolderRow {
 interface MessageRow {
   id: string
   folder_id: string
+  previous_folder_id: string | null
   subject: string
   body: string
   from_name: string
@@ -105,6 +107,7 @@ function messageFromRow(row: MessageRow): MailMessage {
   return {
     id: row.id,
     folderId: row.folder_id,
+    previousFolderId: row.previous_folder_id,
     subject: row.subject,
     body: row.body,
     fromName: row.from_name,
@@ -146,6 +149,7 @@ export class MailDb {
     this.db = new DatabaseSync(join(baseDir, DB_FILE_NAME))
     this.db.exec(SCHEMA)
     this.migrateMessagesCcColumn()
+    this.migrateMessagesPreviousFolderIdColumn()
     this.seedDefaultFolders()
   }
 
@@ -155,6 +159,13 @@ export class MailDb {
     const columns = this.db.prepare('PRAGMA table_info(messages)').all() as { name: string }[]
     if (!columns.some((column) => column.name === 'cc')) {
       this.db.exec("ALTER TABLE messages ADD COLUMN cc TEXT NOT NULL DEFAULT '[]'")
+    }
+  }
+
+  private migrateMessagesPreviousFolderIdColumn(): void {
+    const columns = this.db.prepare('PRAGMA table_info(messages)').all() as { name: string }[]
+    if (!columns.some((column) => column.name === 'previous_folder_id')) {
+      this.db.exec('ALTER TABLE messages ADD COLUMN previous_folder_id TEXT REFERENCES folders(id)')
     }
   }
 
@@ -212,6 +223,7 @@ export class MailDb {
     const id = generateId()
     const full: MailMessage = {
       id,
+      previousFolderId: null,
       isRead: false,
       isFlagged: false,
       categories: [],
@@ -222,12 +234,13 @@ export class MailDb {
     this.db
       .prepare(
         `INSERT INTO messages
-          (id, folder_id, subject, body, from_name, from_email, to_name, to_email, cc, timestamp, is_read, is_flagged, categories, attachments)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (id, folder_id, previous_folder_id, subject, body, from_name, from_email, to_name, to_email, cc, timestamp, is_read, is_flagged, categories, attachments)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         full.id,
         full.folderId,
+        full.previousFolderId,
         full.subject,
         full.body,
         full.fromName,
@@ -251,13 +264,14 @@ export class MailDb {
     this.db
       .prepare(
         `UPDATE messages SET
-          folder_id = ?, subject = ?, body = ?, from_name = ?, from_email = ?,
+          folder_id = ?, previous_folder_id = ?, subject = ?, body = ?, from_name = ?, from_email = ?,
           to_name = ?, to_email = ?, cc = ?, timestamp = ?, is_read = ?, is_flagged = ?,
           categories = ?, attachments = ?
          WHERE id = ?`
       )
       .run(
         updated.folderId,
+        updated.previousFolderId,
         updated.subject,
         updated.body,
         updated.fromName,

@@ -72,6 +72,7 @@ describe('App shell', () => {
     const message: MailMessage = {
       id: 'msg-1',
       folderId: 'inbox',
+      previousFolderId: null,
       subject: 'Hello there',
       body: 'Body text',
       fromName: 'Alex',
@@ -103,6 +104,7 @@ describe('App shell', () => {
     const message: MailMessage = {
       id: 'msg-1',
       folderId: 'inbox',
+      previousFolderId: null,
       subject: 'Hello there',
       body: 'Body text',
       fromName: 'Alex',

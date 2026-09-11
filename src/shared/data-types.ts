@@ -29,6 +29,9 @@ export interface MessageRecipient {
 export interface MailMessage {
   id: string
   folderId: string
+  // Folder the message lived in before being moved to Deleted Items, so it
+  // can be restored there; null unless the message is currently deleted.
+  previousFolderId: string | null
   subject: string
   body: string
   fromName: string
@@ -53,9 +56,9 @@ export interface ComposeOpenOptions {
 
 export type NewMailMessage = Omit<
   MailMessage,
-  'id' | 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc'
+  'id' | 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc' | 'previousFolderId'
 > &
-  Partial<Pick<MailMessage, 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc'>>
+  Partial<Pick<MailMessage, 'isRead' | 'isFlagged' | 'categories' | 'attachments' | 'cc' | 'previousFolderId'>>
 
 export type MailMessagePatch = Partial<Omit<MailMessage, 'id'>>
 

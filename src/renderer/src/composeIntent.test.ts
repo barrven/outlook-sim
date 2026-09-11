@@ -11,6 +11,7 @@ const IDENTITY: TraineeIdentity = {
 const BASE_MESSAGE: MailMessage = {
   id: 'msg-1',
   folderId: 'inbox',
+  previousFolderId: null,
   subject: 'Quarterly numbers',
   body: 'Line one\nLine two',
   fromName: 'Priya Shah',

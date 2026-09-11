@@ -108,6 +108,7 @@ describe('ComposeWindow', () => {
     vi.mocked(window.api.data.messages.create).mockResolvedValue({
       id: 'new-sent-id',
       folderId: 'sent',
+      previousFolderId: null,
       subject: '',
       body: '',
       fromName: '',
@@ -150,6 +151,7 @@ describe('ComposeWindow', () => {
     const draft: MailMessage = {
       id: 'draft-1',
       folderId: 'drafts',
+      previousFolderId: null,
       subject: 'Existing draft',
       body: 'Existing body',
       fromName: '',
@@ -198,6 +200,7 @@ describe('ComposeWindow', () => {
     const draft: MailMessage = {
       id: 'draft-1',
       folderId: 'drafts',
+      previousFolderId: null,
       subject: 'Existing draft',
       body: 'Existing body',
       fromName: '',
@@ -236,6 +239,7 @@ describe('ComposeWindow', () => {
     const draft: MailMessage = {
       id: 'draft-2',
       folderId: 'drafts',
+      previousFolderId: null,
       subject: '',
       body: '',
       fromName: '',
@@ -276,6 +280,7 @@ describe('ComposeWindow', () => {
     const SOURCE_MESSAGE: MailMessage = {
       id: 'src-1',
       folderId: 'inbox',
+      previousFolderId: null,
       subject: 'Quarterly numbers',
       body: 'See attached.',
       fromName: 'Priya Shah',
@@ -335,6 +340,7 @@ describe('ComposeWindow', () => {
       vi.mocked(window.api.data.messages.create).mockResolvedValue({
         id: 'reply-sent-id',
         folderId: 'sent',
+        previousFolderId: null,
         subject: '',
         body: '',
         fromName: '',

@@ -9,6 +9,7 @@ function makeMessage(overrides: Partial<MailMessage> = {}): MailMessage {
   return {
     id: 'msg-1',
     folderId: 'inbox',
+    previousFolderId: null,
     subject: 'Test subject',
     body: 'Body',
     fromName: 'Alex',

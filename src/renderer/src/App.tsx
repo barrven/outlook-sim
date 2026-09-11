@@ -79,6 +79,27 @@ function App(): ReactElement {
     window.api.compose.open({ sourceMessageId: message.id, intent: 'forward' })
   }
 
+  async function handleDeleteMessage(message: MailMessage): Promise<void> {
+    await window.api.data.messages.update(message.id, {
+      folderId: 'deleted',
+      previousFolderId: message.folderId
+    })
+    setSelectedMessageId(null)
+  }
+
+  async function handleRestoreMessage(message: MailMessage): Promise<void> {
+    await window.api.data.messages.update(message.id, {
+      folderId: message.previousFolderId ?? 'inbox',
+      previousFolderId: null
+    })
+    setSelectedMessageId(null)
+  }
+
+  async function handlePermanentDeleteMessage(message: MailMessage): Promise<void> {
+    await window.api.data.messages.delete(message.id)
+    setSelectedMessageId(null)
+  }
+
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
 
   return (
@@ -127,6 +148,9 @@ function App(): ReactElement {
               onReply={handleReply}
               onReplyAll={handleReplyAll}
               onForward={handleForward}
+              onDelete={handleDeleteMessage}
+              onRestore={handleRestoreMessage}
+              onPermanentDelete={handlePermanentDeleteMessage}
             />
           </>
         ) : (

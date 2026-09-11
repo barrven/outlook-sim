@@ -8,6 +8,9 @@ interface ReadingPaneProps {
   onReply: (message: MailMessage) => void
   onReplyAll: (message: MailMessage) => void
   onForward: (message: MailMessage) => void
+  onDelete: (message: MailMessage) => void
+  onRestore: (message: MailMessage) => void
+  onPermanentDelete: (message: MailMessage) => void
 }
 
 function ReadingPane({
@@ -16,7 +19,10 @@ function ReadingPane({
   onEditDraft,
   onReply,
   onReplyAll,
-  onForward
+  onForward,
+  onDelete,
+  onRestore,
+  onPermanentDelete
 }: ReadingPaneProps): ReactElement {
   const [message, setMessage] = useState<MailMessage | null>(null)
 
@@ -47,13 +53,23 @@ function ReadingPane({
         <div className="reading-pane-subject-row">
           <div className="reading-pane-subject">{displayedMessage.subject || '(no subject)'}</div>
           {displayedMessage.folderId === 'drafts' ? (
-            <button
-              type="button"
-              className="reading-pane-edit-draft"
-              onClick={() => onEditDraft(displayedMessage)}
-            >
-              Edit draft
-            </button>
+            <div className="reading-pane-actions">
+              <button type="button" onClick={() => onEditDraft(displayedMessage)}>
+                Edit draft
+              </button>
+              <button type="button" onClick={() => onDelete(displayedMessage)}>
+                Delete
+              </button>
+            </div>
+          ) : displayedMessage.folderId === 'deleted' ? (
+            <div className="reading-pane-actions">
+              <button type="button" onClick={() => onRestore(displayedMessage)}>
+                Restore
+              </button>
+              <button type="button" onClick={() => onPermanentDelete(displayedMessage)}>
+                Delete permanently
+              </button>
+            </div>
           ) : (
             <div className="reading-pane-actions">
               <button type="button" onClick={() => onReply(displayedMessage)}>
@@ -64,6 +80,9 @@ function ReadingPane({
               </button>
               <button type="button" onClick={() => onForward(displayedMessage)}>
                 Forward
+              </button>
+              <button type="button" onClick={() => onDelete(displayedMessage)}>
+                Delete
               </button>
             </div>
           )}
