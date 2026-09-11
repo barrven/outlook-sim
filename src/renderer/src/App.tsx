@@ -79,12 +79,25 @@ function App(): ReactElement {
     window.api.compose.open({ sourceMessageId: message.id, intent: 'forward' })
   }
 
-  async function handleDeleteMessage(message: MailMessage): Promise<void> {
-    await window.api.data.messages.update(message.id, {
+  async function moveMessageToDeleted(messageId: string, currentFolderId: string): Promise<void> {
+    await window.api.data.messages.update(messageId, {
       folderId: 'deleted',
-      previousFolderId: message.folderId
+      previousFolderId: currentFolderId
     })
     setSelectedMessageId(null)
+  }
+
+  async function handleDeleteMessage(message: MailMessage): Promise<void> {
+    await moveMessageToDeleted(message.id, message.folderId)
+  }
+
+  // Mirrors the Reading Pane's Delete button for whatever message is
+  // currently selected; disabled (via `canDeleteSelected` below) while
+  // viewing Deleted Items, where "Delete" isn't a Reading Pane action
+  // either — Restore/Delete permanently take its place there.
+  function handleRibbonDelete(): void {
+    if (!selectedMessageId) return
+    moveMessageToDeleted(selectedMessageId, selectedFolderId)
   }
 
   async function handleRestoreMessage(message: MailMessage): Promise<void> {
@@ -101,6 +114,7 @@ function App(): ReactElement {
   }
 
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
+  const canDeleteSelected = Boolean(selectedMessageId) && selectedFolderId !== 'deleted'
 
   return (
     <div className="app-shell">
@@ -112,7 +126,11 @@ function App(): ReactElement {
           </button>
         </div>
       )}
-      <RibbonBar activeModule={activeModule} onNewEmail={() => window.api.compose.open()} />
+      <RibbonBar
+        activeModule={activeModule}
+        onNewEmail={() => window.api.compose.open()}
+        onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
+      />
       <div className="app-body">
         <div className="app-nav-rail">
           {activeModule === 'mail' ? (

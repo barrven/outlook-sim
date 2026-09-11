@@ -175,6 +175,79 @@ describe('App shell', () => {
     expect(screen.queryByText('Body text')).not.toBeInTheDocument()
   })
 
+  it('ribbon Delete is disabled with nothing selected, enables once a message is selected, and deletes it', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      id: 'msg-1',
+      folderId: 'inbox',
+      previousFolderId: null,
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+    const { container } = render(<App />)
+    const ribbonActions = within(container.querySelector('.ribbon-actions') as HTMLElement)
+
+    await screen.findByRole('button', { name: 'Inbox' })
+    expect(ribbonActions.getByRole('button', { name: 'Delete' })).toBeDisabled()
+
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+    expect(ribbonActions.getByRole('button', { name: 'Delete' })).toBeEnabled()
+
+    await user.click(ribbonActions.getByRole('button', { name: 'Delete' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', {
+      folderId: 'deleted',
+      previousFolderId: 'inbox'
+    })
+    expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+  })
+
+  it('ribbon Delete stays disabled while viewing Deleted Items even with a message selected', async () => {
+    const user = userEvent.setup()
+    const deletedMessage: MailMessage = {
+      id: 'msg-1',
+      folderId: 'deleted',
+      previousFolderId: 'inbox',
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([deletedMessage])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(deletedMessage)
+
+    const { container } = render(<App />)
+    const ribbonActions = within(container.querySelector('.ribbon-actions') as HTMLElement)
+
+    await user.click(await screen.findByRole('button', { name: 'Deleted Items' }))
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+
+    expect(ribbonActions.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  })
+
   it('restoring a message from Deleted Items returns it to its previous folder and clears the selection', async () => {
     const user = userEvent.setup()
     const deletedMessage: MailMessage = {

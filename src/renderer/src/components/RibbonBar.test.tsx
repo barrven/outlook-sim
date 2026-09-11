@@ -32,4 +32,23 @@ describe('RibbonBar', () => {
 
     expect(onNewEmail).toHaveBeenCalledTimes(1)
   })
+
+  it('leaves Delete disabled when no onDelete handler is provided', () => {
+    render(<RibbonBar activeModule="mail" />)
+
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  })
+
+  it('enables Delete and calls onDelete when a handler is provided', async () => {
+    const user = userEvent.setup()
+    const onDelete = vi.fn()
+    render(<RibbonBar activeModule="mail" onDelete={onDelete} />)
+
+    const button = screen.getByRole('button', { name: 'Delete' })
+    expect(button).toBeEnabled()
+
+    await user.click(button)
+
+    expect(onDelete).toHaveBeenCalledTimes(1)
+  })
 })

@@ -49,6 +49,28 @@ Verified the schema migration is safe against a scratch copy of the real
 intact, values default to `null`). lint/typecheck/build pass;
 existing test suite still 193/193 (no new tests yet — that's `/test`).
 
+**Addendum (post-accept feedback):** the ribbon's "Delete" button (visible
+in `RibbonBar.tsx` since feature 001, always rendered `disabled` with no
+distinct disabled styling — so it looked clickable but silently did
+nothing for every ribbon action except New Email) was flagged by the user
+as confusing now that Delete has a real implementation elsewhere. Wired it
+up: `RibbonBar` takes an optional `onDelete` prop and now maps each ribbon
+action name to an optional handler (`{ 'New Email': onNewEmail, Delete:
+onDelete }`) instead of special-casing New Email alone; a button is
+enabled exactly when its handler is defined. `App.tsx` computes
+`canDeleteSelected = Boolean(selectedMessageId) && selectedFolderId !==
+'deleted'` and passes `onDelete={canDeleteSelected ? handleRibbonDelete :
+undefined}`; `handleRibbonDelete` reuses a new shared
+`moveMessageToDeleted(messageId, currentFolderId)` helper that both it and
+`handleDeleteMessage` call, using `selectedFolderId` as the "current
+folder" since the message list is always filtered to that folder.
+Deliberately disabled while viewing Deleted Items — the Reading Pane has
+no "Delete" action there either (only Restore/Delete permanently), and
+blindly running the soft-delete logic in that folder would overwrite
+`previousFolderId` with `'deleted'`, losing the original folder and
+breaking AC2's restore path. Reply/Reply All/Forward in the ribbon remain
+disabled placeholders, unchanged — out of scope for what was reported.
+
 ## Test Notes
 Added 11 tests on top of the coverage written during `/implement` (193 → 204,
 all passing; re-ran full suite 3x, stable):
@@ -87,6 +109,16 @@ Playwright/xvfb driver exists in this repo to drive a real multi-process
 restart (same known gap as every prior feature). Restoring into a custom
 folder that was itself deleted while the message sat in Deleted Items is
 an edge case the acceptance criteria don't mention and isn't tested.
+
+**Addendum (ribbon Delete wiring):** added 4 more tests (204 → 208, all
+passing; re-ran full suite 3x, stable) — `RibbonBar.test.tsx` covers Delete
+staying disabled with no `onDelete` handler and becoming enabled/firing
+once one is provided (mirroring the existing New Email coverage);
+`App.test.tsx` covers ribbon Delete being disabled with nothing selected,
+enabling once a message is selected and correctly calling
+`messages.update` with the same `{ folderId: 'deleted', previousFolderId
+}` shape as the Reading Pane's Delete button, and staying disabled while
+viewing Deleted Items even with a message selected there.
 
 ## Validation Notes
 lint: pass. typecheck: pass (both `tsconfig.node.json` and
@@ -132,5 +164,19 @@ in this environment.
 
 All three acceptance criteria verified. No regressions found.
 
+**Re-validation after the ribbon-Delete addendum:** lint/typecheck/build
+still pass; full suite now 208/208, re-run 3x, stable. No AC re-check
+needed — the ribbon wiring is an additional entry point onto the same
+`db:messages:update` path already verified above, not a new behavior.
+
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+- 2026-09-11 — user noted, while reviewing the accepted feature: "I noticed
+  that the delete button in the main ribbon menu does not delete
+  anything." Decision: changes requested. Root cause: the ribbon's Delete
+  button had been a disabled, unstyled-as-disabled placeholder since
+  feature 001 (same as Reply/Reply All/Forward there) — pre-existing, not
+  introduced by this feature, but newly misleading now that Delete has a
+  real implementation in the Reading Pane. Asked the user how to handle it
+  (wire it up now / log as a separate bug / leave as-is); they chose to
+  wire it up now. Implemented, tested (4 new tests), and re-validated in
+  the same pass — see the addenda above.
