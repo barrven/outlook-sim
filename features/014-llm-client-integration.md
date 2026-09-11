@@ -1,7 +1,7 @@
 ---
 id: 014
 title: LLM client integration
-status: testing
+status: validating
 priority: high
 ---
 
@@ -77,7 +77,51 @@ button at `/accept`, same pattern as prior features' live-Electron gaps.
 `renderer/src/test/mockApi.ts` (+`llm` mock).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+
+151/151 passing (148 → 151; 3 new tests added on top of the substantial
+suite already written during `/implement`, since building a testable
+client was central to the implementation itself). Re-ran the full suite
+3x — stable.
+
+**AC1 (calls all four providers, returns text):** `client.test.ts` has
+one test per provider (openai, xai, anthropic, gemini) mocking `fetch`
+and asserting both the outgoing request (URL, auth header shape, body)
+and the extracted reply text match that provider's documented API.
+Real live-API verification is out of reach here (no API keys in this
+sandbox) — same gap called out in Implementation Notes, deferred to the
+user's own check via the new Test Connection button at `/accept`.
+
+**AC2 (clear error state, no crash):** `client.test.ts` covers missing
+key, missing model, HTTP 401 (bad key), HTTP 429 (rate limit), network
+failure (rejected fetch), and an empty/no-text response — every path
+resolves `{ok:false,error}` rather than throwing. `SettingsView.test.tsx`
+covers the UI side: an error result renders inline without the component
+crashing, and the error text is exactly what `llm:test` returned.
+`ipc.test.ts` covers a rejected `fetch` surfacing as a resolved (not
+rejected) IPC call.
+
+**AC3 (one common interface, no provider leakage):** a new test in
+`client.test.ts` calls `generateText` with the identical `(settings,
+input)` shape across all four providers and asserts an identical
+`{ok:true,text}` result shape — nothing about the call site differs by
+provider. Provider branching is structurally confined to `client.ts`
+(private `buildRequest`/`extractText`); confirmed by inspection that no
+other file (`ipc.ts`, `SettingsView.tsx`) references `LlmProvider` values
+or provider-specific URLs/headers.
+
+**AC4 (no call without explicit trigger):** two new tests assert the
+*absence* of a call: `SettingsView.test.tsx` mounts and loads Settings
+and asserts neither `llm.generate` nor `llm.test` was called until the
+button is clicked; `ipc.test.ts` asserts that registering the IPC
+handlers alone triggers no `fetch`. There is no scheduler yet (016) and
+no persona-reply caller yet (015), so "only send/reply or scheduler tick
+trigger a call" can't be tested end-to-end from a real trigger — only
+that 014 itself introduces none. Re-verify this once 015/016 land.
+
+**Deliberately not covered:** live network calls to real provider APIs
+(no keys available); the Electron multi-window "does the Settings window
+actually reach a real API over the real internet" path (same live-app
+gap as every prior feature — no Xvfb/display in this sandbox).
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

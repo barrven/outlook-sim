@@ -135,4 +135,24 @@ describe('generateText', () => {
 
     expect(result).toEqual({ ok: false, error: 'The provider returned no text.' })
   })
+
+  it('exposes one identical call shape and result shape across all four providers', async () => {
+    // Same (settings, input) -> Promise<{ok,text}|{ok,error}> call regardless of provider: this is
+    // the whole of what a caller (e.g. the persona-reply feature) needs to know.
+    const providerResponses: Record<LlmProvider, unknown> = {
+      openai: { choices: [{ message: { content: 'reply' } }] },
+      xai: { choices: [{ message: { content: 'reply' } }] },
+      anthropic: { content: [{ type: 'text', text: 'reply' }] },
+      gemini: { candidates: [{ content: { parts: [{ text: 'reply' }] } }] }
+    }
+
+    for (const provider of Object.keys(providerResponses) as LlmProvider[]) {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(200, providerResponses[provider]))
+
+      const result = await generateText(baseSettings(provider), { systemPrompt: 'sys', userPrompt: 'Hi' })
+
+      expect(result).toEqual({ ok: true, text: 'reply' })
+      vi.restoreAllMocks()
+    }
+  })
 })

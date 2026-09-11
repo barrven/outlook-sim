@@ -134,6 +134,16 @@ describe('SettingsView', () => {
   })
 
   describe('Test Connection', () => {
+    it('makes no LLM call merely by mounting or loading Settings — only the button click triggers one', async () => {
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+
+      expect(window.api.llm.generate).not.toHaveBeenCalled()
+      expect(window.api.llm.test).not.toHaveBeenCalled()
+    })
+
     it('calls llm.test with the currently displayed (possibly unsaved) provider/model/key', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 014 — LLM client integration
 - **Last updated:** 2026-09-11
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 014 (LLM client integration) tested: added 3 tests on top of the already-substantial suite written during `/implement` (148 → 151, all passing; re-ran full suite 3x, stable) — a `client.test.ts` test proving one identical call/result shape across all four providers (AC3), a `SettingsView.test.tsx` test proving no LLM call happens merely from mounting/loading Settings (AC4), and an `ipc.test.ts` test proving registering the IPC handlers alone triggers no `fetch` (AC4); lint/typecheck/build all still pass; AC1's live-API verification and AC4's "no scheduler/persona-reply exists yet to test the real trigger path" remain flagged limitations (no API keys in this sandbox; 015/016 not built yet) — see feature file Test Notes; phase set to `validate`
 - 2026-09-11 — feature 014 (LLM client integration) implemented: new provider-agnostic `generateText(settings, input)` in `src/main/llm/client.ts` calling OpenAI/xAI (`/v1/chat/completions`), Anthropic (`/v1/messages`), and Gemini (`generateContent`) directly via `fetch` (no SDKs added), never throwing — always resolving `{ok:true,text}` or `{ok:false,error}`; exposed via two thin IPC wrappers (`llm:generate` reads persisted Settings, `llm:test` takes explicit settings) and `window.api.llm.*`; added a "Test Connection" button to Settings' LLM Provider section as the explicit, user-triggered way to exercise AC1/AC2 end-to-end (015/016, the real triggered callers, don't exist yet, and AC4 forbids any automatic call); lint/typecheck/build pass, tests 131→148 (16 new: client unit tests against mocked `fetch` per provider + error paths, IPC channel tests, SettingsView Test Connection tests); AC1's "successfully call the real APIs" verified only against mocked responses shaped like each documented API (no API keys available in this sandbox) — deferred to the user's manual check at `/accept`; also caught up a backlog of prior-session work that had never been committed (feature 013 simulated office clock, B001 Settings-close bug fix, and the commit/push step added to the dev-loop skill files themselves) in two separate commits before starting 014, per user's explicit choice when asked; a `seed-data/` folder with what looks like sensitive scenario data was deliberately left uncommitted; phase set to `test`
 - 2026-09-11 — set up `BUGS.md` as the ad-hoc bug tracker (outside the active-feature loop); backfilled B001 (Settings screen had no way to close) into it
 - 2026-09-11 — ad-hoc bug fix (outside the active-feature loop, feature stays 014, phase stays `implement`): Settings screen had no way to close once opened; see `BUGS.md` B001 for details. Tests + typecheck pass.

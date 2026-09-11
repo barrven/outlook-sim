@@ -186,6 +186,13 @@ describe('registerDataIpcHandlers', () => {
       vi.restoreAllMocks()
     })
 
+    it('registering the IPC handlers makes no network call by itself', () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch')
+      handlers.clear()
+      registerDataIpcHandlers(db, config, clock)
+      expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
     it('llm:generate reads provider/model/key from persisted settings, not the caller', async () => {
       config.setSettings({
         provider: 'openai',
