@@ -1,7 +1,7 @@
 ---
 id: 016
 title: LLM unsolicited incoming mail scheduler
-status: testing
+status: validating
 priority: high
 ---
 
@@ -122,7 +122,55 @@ rename), `renderer/src/test/mockApi.ts` (+`onUnsolicitedMailFailed`),
 `main/data/config.test.ts` (+scheduler-state coverage).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+
+193/193 passing (189 → 193; 4 new on top of the 14 already written during
+`/implement`, since a testable design was central to the implementation
+itself). Re-ran the full suite 3x — stable.
+
+**AC1 (reasonable interval, running clock):** the "generates once due"
+test now asserts the advanced `nextDueSimTime` falls within the
+documented 1–3 simulated-hour range (`MIN_INTERVAL_SIM_MS`/
+`MAX_INTERVAL_SIM_MS`), not just "some value greater than now." A new
+"picks among several configured personas" test runs `generateUnsolicitedMail`
+20 times with two personas configured and asserts every generated
+message's `fromEmail` is one of the two — proving persona selection
+actually varies rather than being hardcoded to the first entry.
+
+**AC2 (personas + coherent mailbox/calendar reference):** in addition to
+the existing content-assembly and past-calendar-exclusion tests, a new
+test seeds correspondence with a *second*, non-selected persona and
+confirms it never leaks into the chosen persona's prompt (participant
+scoping is correct, not just "any mail mentioning this trainee").
+
+**AC3 (no unsolicited mail while paused):** in addition to the existing
+mocked-`clock.getState()` tests, a new integration-style test wires
+`UnsolicitedMailScheduler` to a *real* `SimClock` (not a stub) and drives
+it through paused → started → paused again, confirming generation only
+happens in the running window — higher-fidelity evidence than mocking
+`getState()` return values by hand.
+
+**AC4 (stops cleanly, resumes appropriately):** the existing `start()`/
+`stop()` fake-timer test remains the main real-time-polling proof. A new
+concurrency test makes `fetch` hang mid-flight, calls `tick()` twice
+without awaiting the first, and confirms only one `fetch` call and one
+Inbox insert happen — proving the overlap guard (relevant since `start()`
+polls every 10 real seconds regardless of how long a prior generation
+takes).
+
+**Deliberately not covered:**
+- Live network calls to a real provider from an automated test (same
+  sandbox limitation as 014/015 — no API keys here); the Subject/body
+  parsing contract was instead verified against a real Claude response
+  during `/implement` (see Implementation Notes) and again below during
+  `/validate`.
+- The real Electron app lifecycle actually invoking `before-quit` /
+  `app.whenReady` — `index.ts` itself has never been unit-tested in this
+  repo (no `index.test.ts` exists for any prior feature either); the
+  scheduler's own `start()`/`stop()` are tested directly instead.
+- Calendar items created through the app's own UI — no such UI exists
+  yet (018/019 are still backlog); tests seed calendar items directly
+  via `db.createCalendarItem`, the same interface a future UI would
+  eventually call.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
