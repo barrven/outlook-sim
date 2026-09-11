@@ -240,6 +240,180 @@ body {
   color: var(--accent);
 }
 
+.settings-nav-button {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  text-align: left;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.settings-nav-button:hover {
+  background: var(--selected-bg);
+  color: var(--text);
+}
+
+/* Settings view */
+
+.settings-view {
+  flex: 1 1 auto;
+  background: var(--pane-bg);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.settings-view-scroll {
+  max-width: 480px;
+}
+
+.settings-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section-header {
+  margin: 0;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.settings-section-body {
+  padding: 16px 20px;
+}
+
+.settings-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.settings-field-row label {
+  flex: 0 0 90px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.settings-field-row select,
+.settings-field-row input {
+  flex: 1 1 auto;
+  padding: 5px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.settings-view-note {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.settings-system-prompt {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin-bottom: 12px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  resize: vertical;
+}
+
+.settings-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-view-actions button {
+  padding: 6px 16px;
+  background: var(--pane-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.settings-view-saved {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.persona-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.persona-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.persona-list-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.persona-list-item-name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.persona-list-item-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.persona-list-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.persona-list-item-actions button {
+  padding: 3px 8px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.persona-editor {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.persona-textarea {
+  flex: 1 1 auto;
+  min-height: 56px;
+  padding: 5px 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  resize: vertical;
+}
+
 /* Message list pane */
 
 .message-list-pane {

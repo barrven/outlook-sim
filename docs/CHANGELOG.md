@@ -7,6 +7,30 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-10 — Settings: personas (contacts) CRUD (features/012-settings-personas-crud.md)
+The Settings screen gets a 4th section: Personas. Create, edit, and delete
+contacts with a display name, email, role, bio, writing-style notes, and
+an optional extra prompt. These personas are the same ones that show up
+as selectable recipients in mail compose's To field, and this is where
+you manage that list.
+
+## 2026-09-10 — Settings: trainee identity & system prompt (features/011-settings-identity-system-prompt.md)
+The Settings screen now has two more sections. "Trainee Identity" lets you
+set your Display Name, Job Title, and From Email — this is what's used as
+the From name/email on every message you send. "System Prompt" is a
+free-text box for the domain, goals, tone, and rules that will drive the
+simulation once the LLM integration lands. Each section saves
+independently.
+
+## 2026-09-10 — Settings: LLM provider, model & API key storage (features/010-settings-provider-model-api-key.md)
+There's now a Settings screen (a new "Settings" button below the Mail/
+Calendar switcher in the nav rail). Pick a provider — OpenAI, Anthropic,
+Gemini, or Grok (xAI) — type in the model you want to use, and enter an
+API key for that provider. Switching providers shows that provider's own
+key without losing what you typed for the others; Save persists everything
+to local JSON. No LLM calls happen yet (that's a later feature) — this is
+just where the configuration lives.
+
 ## 2026-09-10 — Mail reply, reply all & forward (features/005-mail-reply-reply-all-forward.md)
 From the reading pane you can now Reply, Reply All, or Forward the selected
 message. Each opens a compose window pre-filled accordingly: Reply sets To

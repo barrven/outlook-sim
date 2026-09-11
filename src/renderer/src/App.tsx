@@ -8,9 +8,11 @@ import CalendarFolderPane from './components/CalendarFolderPane'
 import MessageListPane from './components/MessageListPane'
 import ReadingPane from './components/ReadingPane'
 import CalendarView from './components/CalendarView'
+import SettingsView from './components/SettingsView'
 
 function App(): ReactElement {
   const [activeModule, setActiveModule] = useState<ModuleId>('mail')
+  const [showSettings, setShowSettings] = useState(false)
   const [folders, setFolders] = useState<Folder[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
@@ -40,6 +42,11 @@ function App(): ReactElement {
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
     setSelectedMessageId(null)
+  }
+
+  function handleSelectModule(moduleId: ModuleId): void {
+    setActiveModule(moduleId)
+    setShowSettings(false)
   }
 
   function handleEditDraft(message: MailMessage): void {
@@ -75,9 +82,14 @@ function App(): ReactElement {
           ) : (
             <CalendarFolderPane />
           )}
-          <NavSwitcher activeModule={activeModule} onSelectModule={setActiveModule} />
+          <NavSwitcher activeModule={activeModule} onSelectModule={handleSelectModule} />
+          <button type="button" className="settings-nav-button" onClick={() => setShowSettings(true)}>
+            Settings
+          </button>
         </div>
-        {activeModule === 'mail' ? (
+        {showSettings ? (
+          <SettingsView />
+        ) : activeModule === 'mail' ? (
           <>
             <MessageListPane
               selectedFolderId={selectedFolderId}

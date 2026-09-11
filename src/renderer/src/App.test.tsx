@@ -134,4 +134,38 @@ describe('App shell', () => {
     await user.click(readingPane.getByRole('button', { name: 'Forward' }))
     expect(window.api.compose.open).toHaveBeenCalledWith({ sourceMessageId: 'msg-1', intent: 'forward' })
   })
+
+  it('opens Settings from the nav rail, replacing the mail panes, and returns to Mail when that tab is clicked', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+
+    expect(await screen.findByLabelText('Provider')).toBeInTheDocument()
+    expect(screen.queryByText('Inbox', { selector: '.message-list-header' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Select an item to read.')).not.toBeInTheDocument()
+    // nav rail (folder pane + module switcher) stays visible while Settings is open
+    expect(screen.getByText('Mailbox')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Mail' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Mail' }))
+
+    expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
+  })
+
+  it('leaving Settings via the Calendar tab shows the calendar, not stale mail panes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }))
+    await screen.findByLabelText('Provider')
+
+    await user.click(screen.getByRole('tab', { name: 'Calendar' }))
+
+    expect(screen.getByText('My Calendars')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
+  })
 })
