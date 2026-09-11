@@ -1,7 +1,7 @@
 ---
 id: 016
 title: LLM unsolicited incoming mail scheduler
-status: accept
+status: done
 priority: high
 ---
 
@@ -256,4 +256,9 @@ the app's own UI (018/019 still backlog).
 **Outcome: all four Acceptance Criteria pass.** Status set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+
+2026-09-11 — Presented the feature summary, AC-by-AC validation results,
+and the live-generation evidence (a real coherent, in-character email
+referencing a seeded calendar deadline) to the user via
+`AskUserQuestion` (accept / request changes / reject). User selected
+**Accept**. Decision: `status: done`.

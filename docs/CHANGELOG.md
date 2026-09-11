@@ -7,6 +7,18 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — LLM unsolicited incoming mail scheduler (features/016-llm-unsolicited-mail-scheduler.md)
+Your Inbox is no longer only reactive. While the simulated clock is
+running, your configured personas will occasionally send you mail on
+their own — a status update, a reminder, a demand, a new request —
+without you having written to them first. Each one references what's
+actually going on: recent correspondence with that persona and any
+upcoming calendar deadlines, so it reads as a continuation of an
+ongoing working relationship rather than a random ping. Nothing arrives
+while the clock is paused, and the schedule survives closing and
+reopening the app. If generation ever fails, a dismissible banner
+explains why instead of failing silently.
+
 ## 2026-09-11 — LLM persona reply generation (features/015-llm-persona-reply-generation.md)
 Sending or replying to a message addressed to one of your configured
 personas now actually gets a response. The app assembles the system
