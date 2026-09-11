@@ -1,5 +1,22 @@
 import { vi } from 'vitest'
-import type { ClockState, Folder } from '../../../shared/data-types'
+import type { ClockState, Folder, MailMessage } from '../../../shared/data-types'
+
+export const DEFAULT_MOCK_MESSAGE: MailMessage = {
+  id: 'mock-message-id',
+  folderId: 'inbox',
+  subject: '',
+  body: '',
+  fromName: '',
+  fromEmail: '',
+  toName: '',
+  toEmail: '',
+  cc: [],
+  timestamp: 0,
+  isRead: false,
+  isFlagged: false,
+  categories: [],
+  attachments: []
+}
 
 export const DEFAULT_MOCK_FOLDERS: Folder[] = [
   { id: 'inbox', name: 'Inbox', type: 'system', sortOrder: 0 },
@@ -27,8 +44,8 @@ export function createMockApi(): Window['api'] {
       messages: {
         list: vi.fn().mockResolvedValue([]),
         get: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue(undefined),
-        update: vi.fn().mockResolvedValue(undefined),
+        create: vi.fn().mockResolvedValue(DEFAULT_MOCK_MESSAGE),
+        update: vi.fn().mockResolvedValue(DEFAULT_MOCK_MESSAGE),
         delete: vi.fn().mockResolvedValue(undefined)
       },
       calendarItems: {
@@ -69,8 +86,10 @@ export function createMockApi(): Window['api'] {
     },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),
-      test: vi.fn().mockResolvedValue({ ok: true, text: '' })
+      test: vi.fn().mockResolvedValue({ ok: true, text: '' }),
+      personaReply: vi.fn().mockResolvedValue(undefined)
     },
-    onMessagesChanged: vi.fn().mockReturnValue(() => {})
+    onMessagesChanged: vi.fn().mockReturnValue(() => {}),
+    onPersonaReplyFailed: vi.fn().mockReturnValue(() => {})
   }
 }

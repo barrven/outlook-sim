@@ -6,7 +6,7 @@ import type { CalendarItem, ClockState, Folder, LlmGenerateResult, MailMessage, 
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
-type FakeWindow = { webContents: { send: (channel: string) => void } }
+type FakeWindow = { webContents: { send: (channel: string, ...args: unknown[]) => void } }
 const getAllWindowsMock = vi.fn<() => FakeWindow[]>(() => [])
 
 vi.mock('electron', () => ({
@@ -78,7 +78,8 @@ describe('registerDataIpcHandlers', () => {
         'clock:pause',
         'clock:setSpeed',
         'llm:generate',
-        'llm:test'
+        'llm:test',
+        'llm:personaReply'
       ].sort()
     )
   })
@@ -248,6 +249,114 @@ describe('registerDataIpcHandlers', () => {
       const result = (await handlers.get('llm:generate')!(fakeEvent, { userPrompt: 'Hi' })) as LlmGenerateResult
 
       expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+    })
+
+    describe('llm:personaReply', () => {
+      it('broadcasts data:messages-changed when the persona replies', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: ''
+          }
+        ])
+        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        const sent = db.createMessage({
+          folderId: 'sent',
+          subject: 'Hi',
+          body: 'Hello',
+          fromName: 'Jordan',
+          fromEmail: 'jordan@example.com',
+          toName: 'Morgan Rivera',
+          toEmail: 'morgan@example.com',
+          timestamp: 1
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'Hi there!' } }] })
+        } as Response)
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toHaveLength(1)
+      })
+
+      it('broadcasts llm:persona-reply-failed with the error, and inserts nothing, on failure', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: ''
+          }
+        ])
+        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        const sent = db.createMessage({
+          folderId: 'sent',
+          subject: 'Hi',
+          body: 'Hello',
+          fromName: 'Jordan',
+          fromEmail: 'jordan@example.com',
+          toName: 'Morgan Rivera',
+          toEmail: 'morgan@example.com',
+          timestamp: 1
+        })
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith(
+          'llm:persona-reply-failed',
+          'Network error: fetch failed'
+        )
+        expect(fakeWindow.webContents.send).not.toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toEqual([])
+      })
+
+      it('does nothing (no broadcast, no message) when the recipient is not a persona', async () => {
+        const sent = db.createMessage({
+          folderId: 'sent',
+          subject: 'Hi',
+          body: 'Hello',
+          fromName: 'Jordan',
+          fromEmail: 'jordan@example.com',
+          toName: 'Stranger',
+          toEmail: 'stranger@example.com',
+          timestamp: 1
+        })
+        const fetchSpy = vi.spyOn(globalThis, 'fetch')
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+
+        expect(fetchSpy).not.toHaveBeenCalled()
+        expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+      })
     })
   })
 })

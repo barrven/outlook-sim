@@ -156,6 +156,24 @@ describe('App shell', () => {
     expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
   })
 
+  it('shows a dismissible banner when a persona reply generation fails, and does not show one otherwise', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    const [onPersonaReplyFailed] = vi.mocked(window.api.onPersonaReplyFailed).mock.calls[0]
+    onPersonaReplyFailed('openai API error (401): Incorrect API key provided.')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Persona reply failed: openai API error (401): Incorrect API key provided.'
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('leaving Settings via the Calendar tab shows the calendar, not stale mail panes', async () => {
     const user = userEvent.setup()
     render(<App />)

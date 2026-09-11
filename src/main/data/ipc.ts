@@ -12,6 +12,7 @@ import type {
   TraineeIdentity
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
+import { generatePersonaReply } from '../llm/personaReply'
 import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
@@ -19,6 +20,12 @@ import type { MailDb } from './db'
 function broadcastMessagesChanged(): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('data:messages-changed')
+  }
+}
+
+function broadcastPersonaReplyFailed(error: string): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('llm:persona-reply-failed', error)
   }
 }
 
@@ -75,4 +82,13 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   ipcMain.handle('llm:test', (_event, settings: Settings) =>
     generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
   )
+  ipcMain.handle('llm:personaReply', async (_event, sentMessageId: string) => {
+    const result = await generatePersonaReply(db, config, clock, sentMessageId)
+    if (!result.ok) {
+      broadcastPersonaReplyFailed(result.error)
+    } else if (result.replied) {
+      broadcastMessagesChanged()
+    }
+    return result
+  })
 }

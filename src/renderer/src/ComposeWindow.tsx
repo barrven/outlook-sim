@@ -89,10 +89,18 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       fromEmail: identity.fromEmail,
       timestamp
     }
+    let messageId: string
     if (draftId) {
       await window.api.data.messages.update(draftId, fields)
+      messageId = draftId
     } else {
-      await window.api.data.messages.create(fields)
+      const created = await window.api.data.messages.create(fields)
+      messageId = created.id
+    }
+    if (folderId === 'sent') {
+      // Fire-and-forget: this window is about to close, so any resulting
+      // reply (or failure) surfaces later in the main window instead.
+      void window.api.llm.personaReply(messageId)
     }
     window.close()
   }

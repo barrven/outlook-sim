@@ -17,6 +17,7 @@ function App(): ReactElement {
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
   const [messagesVersion, setMessagesVersion] = useState(0)
+  const [personaReplyError, setPersonaReplyError] = useState<string | null>(null)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -36,6 +37,12 @@ function App(): ReactElement {
   useEffect(() => {
     return window.api.onMessagesChanged(() => {
       setMessagesVersion((version) => version + 1)
+    })
+  }, [])
+
+  useEffect(() => {
+    return window.api.onPersonaReplyFailed((error) => {
+      setPersonaReplyError(error)
     })
   }, [])
 
@@ -70,6 +77,14 @@ function App(): ReactElement {
 
   return (
     <div className="app-shell">
+      {personaReplyError && (
+        <div className="persona-reply-error-banner" role="alert">
+          <span>Persona reply failed: {personaReplyError}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setPersonaReplyError(null)}>
+            &times;
+          </button>
+        </div>
+      )}
       <RibbonBar activeModule={activeModule} onNewEmail={() => window.api.compose.open()} />
       <div className="app-body">
         <div className="app-nav-rail">

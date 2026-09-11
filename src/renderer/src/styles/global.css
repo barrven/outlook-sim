@@ -40,6 +40,27 @@ body {
   border: 1px solid var(--border);
 }
 
+.persona-reply-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background: #fde7e9;
+  border-bottom: 1px solid #d13438;
+  color: #a4262c;
+  font-size: 12px;
+}
+
+.persona-reply-error-banner button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
 /* Ribbon */
 
 .ribbon {

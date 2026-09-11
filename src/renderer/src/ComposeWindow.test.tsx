@@ -100,6 +100,81 @@ describe('ComposeWindow', () => {
     dateNowSpy.mockRestore()
   })
 
+  it('triggers persona reply generation (fire-and-forget) with the newly created message id on Send', async () => {
+    const user = userEvent.setup()
+    mockClose()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+    vi.mocked(window.api.data.messages.create).mockResolvedValue({
+      id: 'new-sent-id',
+      folderId: 'sent',
+      subject: '',
+      body: '',
+      fromName: '',
+      fromEmail: '',
+      toName: '',
+      toEmail: '',
+      cc: [],
+      timestamp: 0,
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    })
+
+    render(<ComposeWindow />)
+
+    await user.selectOptions(await screen.findByLabelText('To'), 'morgan@example.com')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+
+    await waitFor(() => expect(window.api.llm.personaReply).toHaveBeenCalledWith('new-sent-id'))
+  })
+
+  it('does not trigger persona reply generation on Save & Close (drafts)', async () => {
+    const user = userEvent.setup()
+    mockClose()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    render(<ComposeWindow />)
+
+    await user.type(screen.getByLabelText('Subject'), 'Draft subject')
+    await user.click(screen.getByRole('button', { name: 'Save & Close' }))
+
+    await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+    expect(window.api.llm.personaReply).not.toHaveBeenCalled()
+  })
+
+  it('triggers persona reply generation using the draft id on Send from an existing draft', async () => {
+    const user = userEvent.setup()
+    mockClose()
+    const draft: MailMessage = {
+      id: 'draft-1',
+      folderId: 'drafts',
+      subject: 'Existing draft',
+      body: 'Existing body',
+      fromName: '',
+      fromEmail: '',
+      toName: 'Morgan Rivera',
+      toEmail: 'morgan@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: true,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(draft)
+    vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+    render(<ComposeWindow draftId="draft-1" />)
+
+    await screen.findByDisplayValue('Existing draft')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+
+    await waitFor(() => expect(window.api.llm.personaReply).toHaveBeenCalledWith('draft-1'))
+  })
+
   it('Save & Close saves into Drafts without requiring a recipient', async () => {
     const user = userEvent.setup()
     const close = mockClose()

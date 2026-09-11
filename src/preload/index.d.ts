@@ -70,6 +70,7 @@ export interface ComposeApi {
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
+  personaReply: (sentMessageId: string) => Promise<void>
 }
 
 export {}
@@ -81,6 +82,7 @@ declare global {
       compose: ComposeApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
+      onPersonaReplyFailed: (callback: (error: string) => void) => () => void
     }
   }
 }

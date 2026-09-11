@@ -64,12 +64,18 @@ const api = {
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
-    test: (settings: Settings) => ipcRenderer.invoke('llm:test', settings)
+    test: (settings: Settings) => ipcRenderer.invoke('llm:test', settings),
+    personaReply: (sentMessageId: string) => ipcRenderer.invoke('llm:personaReply', sentMessageId)
   },
   onMessagesChanged: (callback: () => void) => {
     const listener = (): void => callback()
     ipcRenderer.on('data:messages-changed', listener)
     return () => ipcRenderer.removeListener('data:messages-changed', listener)
+  },
+  onPersonaReplyFailed: (callback: (error: string) => void) => {
+    const listener = (_event: unknown, error: string): void => callback(error)
+    ipcRenderer.on('llm:persona-reply-failed', listener)
+    return () => ipcRenderer.removeListener('llm:persona-reply-failed', listener)
   }
 }
 
