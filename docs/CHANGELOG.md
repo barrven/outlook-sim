@@ -7,6 +7,18 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — LLM persona reply generation (features/015-llm-persona-reply-generation.md)
+Sending or replying to a message addressed to one of your configured
+personas now actually gets a response. The app assembles the system
+prompt, that persona's details (role, bio, writing style), and the
+thread history so far, and asks the LLM to reply in character — the
+reply lands in Inbox from that persona, timestamped with the simulated
+clock. If a reply genuinely isn't warranted for that message (e.g. a
+pure FYI), the persona may not reply at all, same as a real person
+would. If generation fails (bad key, network trouble, rate limit), a
+dismissible banner explains what went wrong instead of silently doing
+nothing or crashing.
+
 ## 2026-09-11 — LLM client integration (features/014-llm-client-integration.md)
 Under the hood, the app can now actually talk to an LLM provider. Whatever
 provider/model/key you've set in Settings — OpenAI, Anthropic, Gemini, or

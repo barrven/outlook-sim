@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 015 — LLM persona reply generation
+- **Phase:** implement
+- **Active feature:** 016 — LLM unsolicited incoming mail scheduler
 - **Last updated:** 2026-09-11
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 015 (LLM persona reply generation) accepted by user, who independently confirmed it live in the running app first (sent "please respond" to persona Patricia Sim, got a real in-character reply in Inbox 2 seconds later); logged to CHANGELOG; active feature set to 016 (LLM unsolicited incoming mail scheduler), phase set to `implement`
 - 2026-09-11 — feature 015 (LLM persona reply generation) validated: lint/typecheck/build pass; full test suite (175/175) re-run 3x, stable; all 4 ACs verified by tests + code inspection; additionally ran a real live end-to-end sanity check — bundled `personaReply.ts` with the real `MailDb`/`ConfigStore`/`SimClock` (temp-dir-backed, not mocked) and a real invalid OpenAI key, confirming the whole pipeline (persona lookup → thread assembly → real network call → error handling) works correctly with zero Inbox rows and no crash; one non-blocking robustness observation noted (an uncaught hypothetical DB-insert failure would produce an unhandled-rejection warning, not a crash — not one of AC4's stated failure modes); live Electron multi-window verification not attempted (no Xvfb, same non-blocking sandbox gap as prior features); phase set to `accept`
 - 2026-09-11 — feature 015 (LLM persona reply generation) tested: added 6 tests on top of the 18 already written during `/implement` (169 → 175, all passing; re-ran full suite 3x, stable) — thread exclusion (unrelated subject stays out of the prompt), correct-persona matching among several configured personas, case-insensitive persona email matching, simulated-vs-wall-clock timestamp independence, a Cc-only persona not also getting a reply (locks in the scope decision), and the Reply flow (not just fresh Send) triggering persona-reply generation; lint/typecheck/build all still pass; live-API and real multi-window Electron paths remain flagged, non-blocking limitations — see feature file Test Notes; phase set to `validate`
 - 2026-09-11 — feature 015 (LLM persona reply generation) implemented: new `generatePersonaReply(db, config, clock, sentMessageId)` in `src/main/llm/personaReply.ts`, triggered (fire-and-forget) from `ComposeWindow.tsx`'s Send path via a new `llm:personaReply` IPC channel; matches the sent message's `toEmail` against configured Personas, assembles system prompt + persona fields + a thread history found via normalized-subject/participant matching (no explicit conversation id in the schema), calls the existing `generateText` (014) with instructions to respond with a literal `NO_REPLY` marker when a reply isn't warranted, and inserts into Inbox (persona as From, simulated `clock.now()` timestamp) only on a genuine successful reply decision; failures broadcast a new `llm:persona-reply-failed` event shown as a dismissible banner in `App.tsx` (no such error-surfacing mechanism existed before); lint/typecheck/build pass, tests 151→169 (18 new: personaReply unit tests incl. thread-matching, ipc handler tests, ComposeWindow trigger-wiring tests, App banner test); scope deliberately limited to the primary To persona only (no fan-out to Cc'd personas); phase set to `test`

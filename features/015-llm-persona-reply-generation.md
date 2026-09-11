@@ -1,7 +1,7 @@
 ---
 id: 015
 title: LLM persona reply generation
-status: accept
+status: done
 priority: high
 ---
 
@@ -249,4 +249,17 @@ reaction to it are tested instead.
 **Outcome: all four Acceptance Criteria pass.** Status set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+
+2026-09-11 — Before this formal accept step, the user independently
+verified the feature live in the running app: sent "please respond" to
+persona Patricia Sim (psim@grillo.ca) and received a real, in-character
+generated reply in Inbox within 2 seconds ("This doesn't give me enough
+to go on. What file, what issue, what deadline? Send me the specifics
+and I'll get back to you. Patricia"). An earlier test message ("Saying
+hello") had gotten no reply; investigation (comparing real message-id
+creation timestamps against the running Electron process's start time)
+showed that message was sent against a stale pre-restart process, not a
+bug in the feature itself. Presented the feature summary, AC-by-AC
+validation results, and this live confirmation to the user via
+`AskUserQuestion` (accept / request changes / reject). User selected
+**Accept**. Decision: `status: done`.
