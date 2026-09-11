@@ -22,5 +22,13 @@ actually delivered.
    - **Something fails:** set `status: implementing`, `STATE.md` **Phase**
      back to `implement`, and write exactly what needs to change into
      Implementation Notes so `/implement` doesn't have to rediscover it.
-6. Update `features/BACKLOG.md`, append a `STATE.md` History line, and tell
-   the user the outcome and what's next.
+6. Update `features/BACKLOG.md`, append a `STATE.md` History line.
+7. Commit and push:
+   - `git status` / `git diff` to see what this stage touched.
+   - Stage those paths specifically — never a blind `git add -A`.
+   - Commit with `Validate NNN: <title>.`
+   - If `git commit` fails on missing `user.name`/`user.email`, stop and ask
+     rather than inventing an identity.
+   - If `origin` exists, `git push origin master`. If the push fails, report
+     it and continue — don't force-push or rewrite history to work around it.
+8. Tell the user the outcome and what's next.

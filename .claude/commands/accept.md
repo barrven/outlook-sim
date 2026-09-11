@@ -27,4 +27,16 @@ Never auto-approve this yourself, even when running inside `/dev-loop`.
    - **Reject:** ask the user whether to drop the feature entirely or send it
      back to `/features` for rethinking; act accordingly (`status: blocked`
      or remove it from the backlog per their answer).
-6. Append a `STATE.md` History line and tell the user what's next.
+6. Append a `STATE.md` History line.
+7. Commit and push:
+   - `git status` / `git diff` to see what this stage touched (`STATE.md`,
+     the feature file, `docs/CHANGELOG.md`, `features/BACKLOG.md`, and any
+     other files changed while reaching this decision).
+   - Stage those paths specifically — never a blind `git add -A`.
+   - Commit with an imperative one-liner naming the feature: `Accept NNN:
+     <title>.` / `Request changes on NNN: <title>.` / `Reject NNN: <title>.`
+   - If `git commit` fails on missing `user.name`/`user.email`, stop and ask
+     rather than inventing an identity.
+   - If `origin` exists, `git push origin master`. If the push fails, report
+     it and continue — don't force-push or rewrite history to work around it.
+8. Tell the user what's next.

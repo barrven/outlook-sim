@@ -16,4 +16,12 @@ You are running the **test** stage of the dev loop's inner cycle.
    deliberately not, and why.
 5. Set `status: validating`, update `features/BACKLOG.md`, set `STATE.md`
    **Phase** to `validate`, append a History line.
-6. Tell the user tests pass and `/validate` is next.
+6. Commit and push:
+   - `git status` / `git diff` to see what this stage touched.
+   - Stage those paths specifically — never a blind `git add -A`.
+   - Commit with `Test NNN: <title>.`
+   - If `git commit` fails on missing `user.name`/`user.email`, stop and ask
+     rather than inventing an identity.
+   - If `origin` exists, `git push origin master`. If the push fails, report
+     it and continue — don't force-push or rewrite history to work around it.
+7. Tell the user tests pass and `/validate` is next.

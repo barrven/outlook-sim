@@ -21,5 +21,14 @@ You are running the **features** stage of the dev loop.
    ordered by priority.
 6. Update `STATE.md`: set **Active feature** to the first `backlog`-status
    feature by priority, set **Phase** to `implement`, append a History line.
-7. Report the backlog to the user (table form) and name the active feature.
+7. Commit and push:
+   - `git status` / `git diff` to see what this stage touched.
+   - Stage those paths specifically — never a blind `git add -A`.
+   - Commit with `Schedule iteration N feature slice.` (N = the current
+     **Outer iteration** from `STATE.md`).
+   - If `git commit` fails on missing `user.name`/`user.email`, stop and ask
+     rather than inventing an identity.
+   - If `origin` exists, `git push origin master`. If the push fails, report
+     it and continue — don't force-push or rewrite history to work around it.
+8. Report the backlog to the user (table form) and name the active feature.
    Don't start implementing — that's `/implement`'s job.
