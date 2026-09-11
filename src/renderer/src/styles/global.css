@@ -50,7 +50,13 @@ body {
 
 .ribbon-tabs {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   border-bottom: 1px solid var(--border);
+}
+
+.ribbon-tabs-list {
+  display: flex;
 }
 
 .ribbon-tab {
@@ -84,6 +90,37 @@ body {
   font-size: 12px;
   color: var(--text);
   cursor: default;
+}
+
+.office-clock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.office-clock-time {
+  white-space: nowrap;
+}
+
+.office-clock-toggle {
+  padding: 3px 10px;
+  background: var(--pane-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.office-clock-speed {
+  padding: 3px 4px;
+  font-size: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
 }
 
 /* Body layout */
@@ -260,14 +297,47 @@ body {
 /* Settings view */
 
 .settings-view {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   background: var(--pane-bg);
-  overflow-y: auto;
   min-height: 0;
+}
+
+.settings-view-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-view-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.settings-view-close {
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.settings-view-close:hover {
+  background: var(--selected-bg);
+  color: var(--text);
 }
 
 .settings-view-scroll {
   max-width: 480px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .settings-section {

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { ModuleId } from '../types'
+import OfficeClock from './OfficeClock'
 
 const TABS = ['File', 'Home', 'Send / Receive', 'Folder', 'View']
 
@@ -16,12 +17,15 @@ function RibbonBar({ activeModule, onNewEmail }: RibbonBarProps): ReactElement {
 
   return (
     <div className="ribbon">
-      <div className="ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
-        {TABS.map((tab, index) => (
-          <button key={tab} type="button" className={`ribbon-tab${index === 1 ? ' active' : ''}`} disabled>
-            {tab}
-          </button>
-        ))}
+      <div className="ribbon-tabs">
+        <div className="ribbon-tabs-list" role="tablist" aria-label="Ribbon tabs">
+          {TABS.map((tab, index) => (
+            <button key={tab} type="button" className={`ribbon-tab${index === 1 ? ' active' : ''}`} disabled>
+              {tab}
+            </button>
+          ))}
+        </div>
+        <OfficeClock />
       </div>
       <div className="ribbon-actions">
         {actions.map((action) => {

@@ -77,7 +77,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
   }
 
   async function persist(folderId: 'drafts' | 'sent'): Promise<void> {
-    const identity = await window.api.data.identity.get()
+    const [identity, timestamp] = await Promise.all([window.api.data.identity.get(), window.api.data.clock.now()])
     const fields = {
       folderId,
       subject,
@@ -87,7 +87,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       cc,
       fromName: identity.displayName,
       fromEmail: identity.fromEmail,
-      timestamp: Date.now()
+      timestamp
     }
     if (draftId) {
       await window.api.data.messages.update(draftId, fields)

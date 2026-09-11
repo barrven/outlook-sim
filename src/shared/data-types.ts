@@ -108,3 +108,13 @@ export interface Persona {
 export interface PersonasConfig {
   personas: Persona[]
 }
+
+export interface ClockState {
+  // Simulated time (ms epoch) as of the last start/pause/speed-change boundary.
+  anchorSimTime: number
+  // Real wall-clock time (ms epoch) at that same boundary.
+  anchorRealTime: number
+  running: boolean
+  // Multiplier applied to elapsed real time while running (1 = real-time).
+  speed: number
+}

@@ -10,6 +10,7 @@ import type {
   SystemPromptConfig,
   TraineeIdentity
 } from '../../shared/data-types'
+import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
 
@@ -19,7 +20,7 @@ function broadcastMessagesChanged(): void {
   }
 }
 
-export function registerDataIpcHandlers(db: MailDb, config: ConfigStore): void {
+export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: SimClock): void {
   ipcMain.handle('db:folders:list', () => db.listFolders())
   ipcMain.handle('db:folders:create', (_event, folder: NewFolder) => db.createFolder(folder))
   ipcMain.handle('db:folders:rename', (_event, id: string, name: string) => db.renameFolder(id, name))
@@ -61,4 +62,10 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore): void {
 
   ipcMain.handle('config:personas:get', () => config.getPersonas())
   ipcMain.handle('config:personas:set', (_event, personas: Persona[]) => config.setPersonas(personas))
+
+  ipcMain.handle('clock:get', () => clock.getState())
+  ipcMain.handle('clock:now', () => clock.now())
+  ipcMain.handle('clock:start', () => clock.start())
+  ipcMain.handle('clock:pause', () => clock.pause())
+  ipcMain.handle('clock:setSpeed', (_event, speed: number) => clock.setSpeed(speed))
 }

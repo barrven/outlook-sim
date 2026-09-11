@@ -78,6 +78,28 @@ describe('ComposeWindow', () => {
     expect(close).toHaveBeenCalled()
   })
 
+  it('stamps a sent message with the simulated clock time, not wall-clock time', async () => {
+    const user = userEvent.setup()
+    mockClose()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+    const simulatedTime = new Date('2027-06-01T00:00:00').getTime()
+    vi.mocked(window.api.data.clock.now).mockResolvedValue(simulatedTime)
+    const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-01T00:00:00').getTime())
+
+    render(<ComposeWindow />)
+
+    await user.selectOptions(await screen.findByLabelText('To'), 'morgan@example.com')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+
+    await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+    expect(window.api.data.messages.create).toHaveBeenCalledWith(
+      expect.objectContaining({ timestamp: simulatedTime })
+    )
+
+    dateNowSpy.mockRestore()
+  })
+
   it('Save & Close saves into Drafts without requiring a recipient', async () => {
     const user = userEvent.setup()
     const close = mockClose()

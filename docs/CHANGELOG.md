@@ -7,6 +7,17 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Simulated office clock (features/013-simulated-office-clock.md)
+The ribbon bar now shows a simulated clock with Start/Pause and a speed
+multiplier (1x/2x/5x/10x/30x/60x), separate from your computer's actual
+clock. New message timestamps use this simulated time instead of the real
+wall clock, so a training scenario can compress days into minutes.
+Pausing freezes the simulated time exactly where it is; resuming picks up
+from there, and the clock's position survives quitting and relaunching
+the app rather than jumping back to wall-clock time. Reminder firing will
+also use this clock once the calendar/reminders feature exists — there's
+nothing to wire it into yet.
+
 ## 2026-09-10 — Settings: personas (contacts) CRUD (features/012-settings-personas-crud.md)
 The Settings screen gets a 4th section: Personas. Create, edit, and delete
 contacts with a display name, email, role, bio, writing-style notes, and

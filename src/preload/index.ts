@@ -49,6 +49,13 @@ const api = {
     personas: {
       get: () => ipcRenderer.invoke('config:personas:get'),
       set: (personas: Persona[]) => ipcRenderer.invoke('config:personas:set', personas)
+    },
+    clock: {
+      get: () => ipcRenderer.invoke('clock:get'),
+      now: () => ipcRenderer.invoke('clock:now'),
+      start: () => ipcRenderer.invoke('clock:start'),
+      pause: () => ipcRenderer.invoke('clock:pause'),
+      setSpeed: (speed: number) => ipcRenderer.invoke('clock:setSpeed', speed)
     }
   },
   compose: {

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import type { ComposeOpenOptions } from '../shared/data-types'
+import { SimClock } from './data/clock'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
 import { registerDataIpcHandlers } from './data/ipc'
@@ -9,12 +10,20 @@ app.whenReady().then(() => {
   const userDataDir = app.getPath('userData')
   const mailDb = new MailDb(userDataDir)
   const configStore = new ConfigStore(userDataDir)
-  registerDataIpcHandlers(mailDb, configStore)
+  const simClock = new SimClock(userDataDir)
+  registerDataIpcHandlers(mailDb, configStore, simClock)
 
   const mainWindow = createMainWindow()
 
   ipcMain.handle('window:openCompose', (_event, options?: ComposeOpenOptions) => {
     createComposeWindow(mainWindow, options)
+  })
+
+  // Freeze simulated time on quit so it doesn't silently advance while the
+  // app is closed — reopening should resume exactly where it left off, not
+  // jump forward by however long the app was shut.
+  app.on('before-quit', () => {
+    simClock.pause()
   })
 
   app.on('activate', () => {

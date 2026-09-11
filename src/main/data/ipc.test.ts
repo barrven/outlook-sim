@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MailMessage, CalendarItem, Folder, Settings } from '../../shared/data-types'
+import type { CalendarItem, ClockState, Folder, MailMessage, Settings } from '../../shared/data-types'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
@@ -23,20 +23,23 @@ vi.mock('electron', () => ({
 const { registerDataIpcHandlers } = await import('./ipc')
 const { MailDb } = await import('./db')
 const { ConfigStore } = await import('./config')
+const { SimClock } = await import('./clock')
 
 describe('registerDataIpcHandlers', () => {
   let baseDir: string
   let db: InstanceType<typeof MailDb>
   let config: InstanceType<typeof ConfigStore>
+  let clock: InstanceType<typeof SimClock>
   const fakeEvent = {} as never
 
   beforeEach(() => {
     baseDir = mkdtempSync(join(tmpdir(), 'outlook-sim-ipc-'))
     db = new MailDb(baseDir)
     config = new ConfigStore(baseDir)
+    clock = new SimClock(baseDir)
     handlers.clear()
     getAllWindowsMock.mockReset().mockReturnValue([])
-    registerDataIpcHandlers(db, config)
+    registerDataIpcHandlers(db, config, clock)
   })
 
   afterEach(() => {
@@ -68,7 +71,12 @@ describe('registerDataIpcHandlers', () => {
         'config:identity:get',
         'config:identity:set',
         'config:personas:get',
-        'config:personas:set'
+        'config:personas:set',
+        'clock:get',
+        'clock:now',
+        'clock:start',
+        'clock:pause',
+        'clock:setSpeed'
       ].sort()
     )
   })
@@ -151,5 +159,23 @@ describe('registerDataIpcHandlers', () => {
     const settings = handlers.get('config:settings:get')!(fakeEvent) as Settings
     expect(settings.provider).toBe('anthropic')
     expect(settings.apiKeys.anthropic).toBe('k')
+  })
+
+  it('drives the simulated clock through the IPC channels', () => {
+    const initial = handlers.get('clock:get')!(fakeEvent) as ClockState
+    expect(initial.running).toBe(false)
+
+    const started = handlers.get('clock:start')!(fakeEvent) as ClockState
+    expect(started.running).toBe(true)
+
+    const sped = handlers.get('clock:setSpeed')!(fakeEvent, 10) as ClockState
+    expect(sped.speed).toBe(10)
+
+    const now = handlers.get('clock:now')!(fakeEvent) as number
+    expect(typeof now).toBe('number')
+
+    const paused = handlers.get('clock:pause')!(fakeEvent) as ClockState
+    expect(paused.running).toBe(false)
+    expect(handlers.get('clock:get')!(fakeEvent)).toEqual(paused)
   })
 })

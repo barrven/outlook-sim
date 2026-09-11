@@ -15,8 +15,8 @@
 | 010 | Settings: LLM provider, model & API key storage | done | high | 010-settings-provider-model-api-key.md |
 | 011 | Settings: trainee identity & system prompt | done | high | 011-settings-identity-system-prompt.md |
 | 012 | Settings: personas (contacts) CRUD | done | high | 012-settings-personas-crud.md |
-| 013 | Simulated office clock | backlog | high | 013-simulated-office-clock.md |
-| 014 | LLM client integration | backlog | high | 014-llm-client-integration.md |
+| 013 | Simulated office clock | done | high | 013-simulated-office-clock.md |
+| 014 | LLM client integration | implementing | high | 014-llm-client-integration.md |
 | 015 | LLM persona reply generation | backlog | high | 015-llm-persona-reply-generation.md |
 | 016 | LLM unsolicited incoming mail scheduler | backlog | high | 016-llm-unsolicited-mail-scheduler.md |
 | 006 | Mail delete & Deleted Items | backlog | medium | 006-mail-delete-deleted-items.md |

@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { Folder } from '../../../shared/data-types'
+import type { ClockState, Folder } from '../../../shared/data-types'
 
 export const DEFAULT_MOCK_FOLDERS: Folder[] = [
   { id: 'inbox', name: 'Inbox', type: 'system', sortOrder: 0 },
@@ -7,6 +7,13 @@ export const DEFAULT_MOCK_FOLDERS: Folder[] = [
   { id: 'sent', name: 'Sent Items', type: 'system', sortOrder: 2 },
   { id: 'deleted', name: 'Deleted Items', type: 'system', sortOrder: 3 }
 ]
+
+export const DEFAULT_MOCK_CLOCK_STATE: ClockState = {
+  anchorSimTime: 0,
+  anchorRealTime: 0,
+  running: false,
+  speed: 1
+}
 
 export function createMockApi(): Window['api'] {
   return {
@@ -48,6 +55,13 @@ export function createMockApi(): Window['api'] {
       personas: {
         get: vi.fn().mockResolvedValue([]),
         set: vi.fn().mockResolvedValue(undefined)
+      },
+      clock: {
+        get: vi.fn().mockResolvedValue(DEFAULT_MOCK_CLOCK_STATE),
+        now: vi.fn().mockResolvedValue(0),
+        start: vi.fn().mockResolvedValue({ ...DEFAULT_MOCK_CLOCK_STATE, running: true }),
+        pause: vi.fn().mockResolvedValue(DEFAULT_MOCK_CLOCK_STATE),
+        setSpeed: vi.fn().mockResolvedValue(DEFAULT_MOCK_CLOCK_STATE)
       }
     },
     compose: {

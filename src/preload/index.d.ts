@@ -1,6 +1,7 @@
 import type {
   CalendarItem,
   CalendarItemPatch,
+  ClockState,
   ComposeOpenOptions,
   Folder,
   MailMessage,
@@ -50,6 +51,13 @@ export interface DataApi {
   personas: {
     get: () => Promise<Persona[]>
     set: (personas: Persona[]) => Promise<void>
+  }
+  clock: {
+    get: () => Promise<ClockState>
+    now: () => Promise<number>
+    start: () => Promise<ClockState>
+    pause: () => Promise<ClockState>
+    setSpeed: (speed: number) => Promise<ClockState>
   }
 }
 

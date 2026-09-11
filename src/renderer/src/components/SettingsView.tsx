@@ -16,7 +16,11 @@ const EMPTY_API_KEYS: Record<LlmProvider, string> = {
   xai: ''
 }
 
-function SettingsView(): ReactElement {
+interface SettingsViewProps {
+  onClose?: () => void
+}
+
+function SettingsView({ onClose }: SettingsViewProps): ReactElement {
   const [provider, setProvider] = useState<LlmProvider>('openai')
   const [model, setModel] = useState('')
   const [apiKeys, setApiKeys] = useState<Record<LlmProvider, string>>(EMPTY_API_KEYS)
@@ -71,12 +75,26 @@ function SettingsView(): ReactElement {
     setSystemPromptJustSaved(true)
   }
 
+  const header = (
+    <div className="settings-view-header">
+      <h1 className="settings-view-title">Settings</h1>
+      <button type="button" className="settings-view-close" aria-label="Close settings" onClick={onClose}>
+        ✕
+      </button>
+    </div>
+  )
+
   if (!loaded) {
-    return <div className="settings-view" />
+    return (
+      <div className="settings-view">
+        {header}
+      </div>
+    )
   }
 
   return (
     <div className="settings-view">
+      {header}
       <div className="settings-view-scroll">
         <section className="settings-section" aria-label="LLM Provider">
           <h2 className="settings-section-header">LLM Provider</h2>

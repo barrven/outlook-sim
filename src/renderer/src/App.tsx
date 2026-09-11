@@ -42,6 +42,7 @@ function App(): ReactElement {
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
     setSelectedMessageId(null)
+    setShowSettings(false)
   }
 
   function handleSelectModule(moduleId: ModuleId): void {
@@ -88,7 +89,7 @@ function App(): ReactElement {
           </button>
         </div>
         {showSettings ? (
-          <SettingsView />
+          <SettingsView onClose={() => setShowSettings(false)} />
         ) : activeModule === 'mail' ? (
           <>
             <MessageListPane
