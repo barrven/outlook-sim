@@ -1,6 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import type { LlmProvider, Persona, PersonasConfig, Settings, SystemPromptConfig, TraineeIdentity } from '../../shared/data-types'
+import type {
+  LlmProvider,
+  Persona,
+  PersonasConfig,
+  SchedulerState,
+  Settings,
+  SystemPromptConfig,
+  TraineeIdentity
+} from '../../shared/data-types'
 
 const CONFIG_DIR_NAME = 'config'
 
@@ -29,6 +37,10 @@ const DEFAULT_PERSONAS: PersonasConfig = {
   personas: []
 }
 
+const DEFAULT_SCHEDULER_STATE: SchedulerState = {
+  nextDueSimTime: 0
+}
+
 function readJsonFile<T>(path: string, fallback: T): T {
   if (!existsSync(path)) {
     writeFileSync(path, JSON.stringify(fallback, null, 2))
@@ -46,6 +58,7 @@ export class ConfigStore {
   private systemPromptPath: string
   private identityPath: string
   private personasPath: string
+  private schedulerPath: string
 
   constructor(baseDir: string) {
     const configDir = join(baseDir, CONFIG_DIR_NAME)
@@ -54,12 +67,14 @@ export class ConfigStore {
     this.systemPromptPath = join(configDir, 'system-prompt.json')
     this.identityPath = join(configDir, 'identity.json')
     this.personasPath = join(configDir, 'personas.json')
+    this.schedulerPath = join(configDir, 'scheduler.json')
 
     // Ensure every config file exists on first run.
     readJsonFile(this.settingsPath, DEFAULT_SETTINGS)
     readJsonFile(this.systemPromptPath, DEFAULT_SYSTEM_PROMPT)
     readJsonFile(this.identityPath, DEFAULT_IDENTITY)
     readJsonFile(this.personasPath, DEFAULT_PERSONAS)
+    readJsonFile(this.schedulerPath, DEFAULT_SCHEDULER_STATE)
   }
 
   getSettings(): Settings {
@@ -92,5 +107,13 @@ export class ConfigStore {
 
   setPersonas(personas: Persona[]): void {
     writeJsonFile(this.personasPath, { personas })
+  }
+
+  getSchedulerState(): SchedulerState {
+    return readJsonFile(this.schedulerPath, DEFAULT_SCHEDULER_STATE)
+  }
+
+  setSchedulerState(state: SchedulerState): void {
+    writeJsonFile(this.schedulerPath, state)
   }
 }

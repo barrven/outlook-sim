@@ -90,6 +90,7 @@ export function createMockApi(): Window['api'] {
       personaReply: vi.fn().mockResolvedValue(undefined)
     },
     onMessagesChanged: vi.fn().mockReturnValue(() => {}),
-    onPersonaReplyFailed: vi.fn().mockReturnValue(() => {})
+    onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),
+    onUnsolicitedMailFailed: vi.fn().mockReturnValue(() => {})
   }
 }

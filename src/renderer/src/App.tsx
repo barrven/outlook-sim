@@ -17,7 +17,7 @@ function App(): ReactElement {
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
   const [messagesVersion, setMessagesVersion] = useState(0)
-  const [personaReplyError, setPersonaReplyError] = useState<string | null>(null)
+  const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -42,7 +42,13 @@ function App(): ReactElement {
 
   useEffect(() => {
     return window.api.onPersonaReplyFailed((error) => {
-      setPersonaReplyError(error)
+      setLlmBackgroundError(`Persona reply failed: ${error}`)
+    })
+  }, [])
+
+  useEffect(() => {
+    return window.api.onUnsolicitedMailFailed((error) => {
+      setLlmBackgroundError(`Unsolicited mail generation failed: ${error}`)
     })
   }, [])
 
@@ -77,10 +83,10 @@ function App(): ReactElement {
 
   return (
     <div className="app-shell">
-      {personaReplyError && (
-        <div className="persona-reply-error-banner" role="alert">
-          <span>Persona reply failed: {personaReplyError}</span>
-          <button type="button" aria-label="Dismiss" onClick={() => setPersonaReplyError(null)}>
+      {llmBackgroundError && (
+        <div className="llm-error-banner" role="alert">
+          <span>{llmBackgroundError}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setLlmBackgroundError(null)}>
             &times;
           </button>
         </div>

@@ -76,6 +76,11 @@ const api = {
     const listener = (_event: unknown, error: string): void => callback(error)
     ipcRenderer.on('llm:persona-reply-failed', listener)
     return () => ipcRenderer.removeListener('llm:persona-reply-failed', listener)
+  },
+  onUnsolicitedMailFailed: (callback: (error: string) => void) => {
+    const listener = (_event: unknown, error: string): void => callback(error)
+    ipcRenderer.on('llm:unsolicited-mail-failed', listener)
+    return () => ipcRenderer.removeListener('llm:unsolicited-mail-failed', listener)
   }
 }
 

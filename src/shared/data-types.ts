@@ -125,3 +125,10 @@ export interface ClockState {
   // Multiplier applied to elapsed real time while running (1 = real-time).
   speed: number
 }
+
+export interface SchedulerState {
+  // Simulated time (ms epoch) at which the next unsolicited message is due.
+  // 0 means "never scheduled yet" (sentinel — real simulated timestamps are
+  // always far larger).
+  nextDueSimTime: number
+}

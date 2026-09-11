@@ -40,7 +40,7 @@ body {
   border: 1px solid var(--border);
 }
 
-.persona-reply-error-banner {
+.llm-error-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -52,7 +52,7 @@ body {
   font-size: 12px;
 }
 
-.persona-reply-error-banner button {
+.llm-error-banner button {
   background: none;
   border: none;
   color: inherit;

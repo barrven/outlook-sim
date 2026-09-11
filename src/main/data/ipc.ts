@@ -17,7 +17,7 @@ import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
 
-function broadcastMessagesChanged(): void {
+export function broadcastMessagesChanged(): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('data:messages-changed')
   }
@@ -26,6 +26,12 @@ function broadcastMessagesChanged(): void {
 function broadcastPersonaReplyFailed(error: string): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('llm:persona-reply-failed', error)
+  }
+}
+
+export function broadcastUnsolicitedMailFailed(error: string): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('llm:unsolicited-mail-failed', error)
   }
 }
 

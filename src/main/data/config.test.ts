@@ -17,9 +17,9 @@ describe('ConfigStore', () => {
     rmSync(baseDir, { recursive: true, force: true })
   })
 
-  it('creates all four config files with empty defaults on first run', () => {
+  it('creates all five config files with empty defaults on first run', () => {
     const configDir = join(baseDir, 'config')
-    for (const file of ['settings.json', 'system-prompt.json', 'identity.json', 'personas.json']) {
+    for (const file of ['settings.json', 'system-prompt.json', 'identity.json', 'personas.json', 'scheduler.json']) {
       expect(existsSync(join(configDir, file))).toBe(true)
     }
 
@@ -31,6 +31,7 @@ describe('ConfigStore', () => {
     expect(config.getSystemPrompt()).toEqual({ systemPrompt: '' })
     expect(config.getIdentity()).toEqual({ displayName: '', jobTitle: '', fromEmail: '' })
     expect(config.getPersonas()).toEqual([])
+    expect(config.getSchedulerState()).toEqual({ nextDueSimTime: 0 })
   })
 
   it('writes real JSON to disk, not just in-memory state', () => {
@@ -74,7 +75,12 @@ describe('ConfigStore', () => {
     expect(config.getPersonas()[0].displayName).toBe('Carol')
   })
 
-  it('persists all four stores across a close/reopen cycle', () => {
+  it('round-trips scheduler state', () => {
+    config.setSchedulerState({ nextDueSimTime: 123456789 })
+    expect(config.getSchedulerState()).toEqual({ nextDueSimTime: 123456789 })
+  })
+
+  it('persists all five stores across a close/reopen cycle', () => {
     config.setSettings({
       provider: 'gemini',
       model: 'gemini-x',
@@ -93,11 +99,13 @@ describe('ConfigStore', () => {
         extraPrompt: 'Always mention the deadline.'
       }
     ])
+    config.setSchedulerState({ nextDueSimTime: 555 })
 
     const reopened = new ConfigStore(baseDir)
     expect(reopened.getSettings().provider).toBe('gemini')
     expect(reopened.getSystemPrompt().systemPrompt).toBe('Domain: insurance office.')
     expect(reopened.getIdentity().displayName).toBe('Trainee Two')
     expect(reopened.getPersonas()).toEqual(config.getPersonas())
+    expect(reopened.getSchedulerState()).toEqual({ nextDueSimTime: 555 })
   })
 })

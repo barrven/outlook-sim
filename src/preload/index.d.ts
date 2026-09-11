@@ -83,6 +83,7 @@ declare global {
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (error: string) => void) => () => void
+      onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
     }
   }
 }

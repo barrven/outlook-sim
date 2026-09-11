@@ -3,7 +3,8 @@ import type { ComposeOpenOptions } from '../shared/data-types'
 import { SimClock } from './data/clock'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
-import { registerDataIpcHandlers } from './data/ipc'
+import { broadcastMessagesChanged, broadcastUnsolicitedMailFailed, registerDataIpcHandlers } from './data/ipc'
+import { UnsolicitedMailScheduler } from './llm/scheduler'
 import { createComposeWindow, createMainWindow } from './windows'
 
 app.whenReady().then(() => {
@@ -12,6 +13,15 @@ app.whenReady().then(() => {
   const configStore = new ConfigStore(userDataDir)
   const simClock = new SimClock(userDataDir)
   registerDataIpcHandlers(mailDb, configStore, simClock)
+
+  const scheduler = new UnsolicitedMailScheduler(
+    mailDb,
+    configStore,
+    simClock,
+    () => broadcastMessagesChanged(),
+    (error) => broadcastUnsolicitedMailFailed(error)
+  )
+  scheduler.start()
 
   const mainWindow = createMainWindow()
 
@@ -24,6 +34,7 @@ app.whenReady().then(() => {
   // jump forward by however long the app was shut.
   app.on('before-quit', () => {
     simClock.pause()
+    scheduler.stop()
   })
 
   app.on('activate', () => {

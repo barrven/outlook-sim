@@ -174,6 +174,24 @@ describe('App shell', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('shows a dismissible banner when unsolicited mail generation fails', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    const [onUnsolicitedMailFailed] = vi.mocked(window.api.onUnsolicitedMailFailed).mock.calls[0]
+    onUnsolicitedMailFailed('Network error: fetch failed')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Unsolicited mail generation failed: Network error: fetch failed'
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('leaving Settings via the Calendar tab shows the calendar, not stale mail panes', async () => {
     const user = userEvent.setup()
     render(<App />)
