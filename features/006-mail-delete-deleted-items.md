@@ -1,7 +1,7 @@
 ---
 id: 006
 title: Mail delete & Deleted Items
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -50,7 +50,43 @@ intact, values default to `null`). lint/typecheck/build pass;
 existing test suite still 193/193 (no new tests yet — that's `/test`).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 11 tests on top of the coverage written during `/implement` (193 → 204,
+all passing; re-ran full suite 3x, stable):
+
+- `db.test.ts` (5 new): a fresh message defaults `previousFolderId` to
+  `null`; `updateMessage` moves a message into `deleted` while stamping
+  `previousFolderId` with its old folder, and a follow-up `updateMessage`
+  restores it back out (covers AC1 + the restore half of AC2); a message
+  already in Deleted Items can still be permanently removed via the
+  existing `deleteMessage` (the delete half of AC2); a message moved to
+  Deleted Items survives a close/reopen cycle of `MailDb` (AC3); opening a
+  pre-existing DB from before this feature (no `previous_folder_id` column)
+  auto-migrates and behaves identically going forward, mirroring the
+  existing `cc`-column migration test.
+- `ReadingPane.test.tsx` (3 new): Delete shows and fires for a message
+  outside Drafts/Deleted Items; Delete also shows and fires alongside Edit
+  draft for a Drafts message (AC1 covers "any folder"); a Deleted Items
+  message shows only Restore + Delete permanently (no Reply/Reply
+  All/Forward/Delete/Edit draft) and each button calls the right handler
+  with the message.
+- `App.test.tsx` (3 new): clicking Delete calls
+  `window.api.data.messages.update(id, { folderId: 'deleted',
+  previousFolderId: <original folder> })` and clears the selection;
+  clicking Restore on a Deleted Items message calls `update` with
+  `folderId` set back to the stored `previousFolderId` and
+  `previousFolderId: null`, and clears the selection; clicking Delete
+  permanently calls the real `messages.delete(id)` and clears the
+  selection.
+
+Deliberately not covered: persistence of the *restored* state and of a
+*permanently-deleted* absence across a real Electron restart specifically
+through the UI layer — the DB-level persistence test (AC3) plus the
+existing close/reopen coverage for `updateMessage`/`deleteMessage` already
+establish this at the layer that actually persists data, and no
+Playwright/xvfb driver exists in this repo to drive a real multi-process
+restart (same known gap as every prior feature). Restoring into a custom
+folder that was itself deleted while the message sat in Deleted Items is
+an edge case the acceptance criteria don't mention and isn't tested.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

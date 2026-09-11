@@ -137,6 +137,115 @@ describe('App shell', () => {
     expect(window.api.compose.open).toHaveBeenCalledWith({ sourceMessageId: 'msg-1', intent: 'forward' })
   })
 
+  it('deleting a message moves it to Deleted Items and clears the selection', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      id: 'msg-1',
+      folderId: 'inbox',
+      previousFolderId: null,
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+    const { container } = render(<App />)
+
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+    const readingPane = within(container.querySelector('.reading-pane') as HTMLElement)
+
+    await user.click(readingPane.getByRole('button', { name: 'Delete' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', {
+      folderId: 'deleted',
+      previousFolderId: 'inbox'
+    })
+    expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+    expect(screen.queryByText('Body text')).not.toBeInTheDocument()
+  })
+
+  it('restoring a message from Deleted Items returns it to its previous folder and clears the selection', async () => {
+    const user = userEvent.setup()
+    const deletedMessage: MailMessage = {
+      id: 'msg-1',
+      folderId: 'deleted',
+      previousFolderId: 'sent',
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([deletedMessage])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(deletedMessage)
+
+    const { container } = render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Deleted Items' }))
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+    const readingPane = within(container.querySelector('.reading-pane') as HTMLElement)
+
+    await user.click(readingPane.getByRole('button', { name: 'Restore' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', {
+      folderId: 'sent',
+      previousFolderId: null
+    })
+    expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+  })
+
+  it('permanently deleting a message from Deleted Items removes it and clears the selection', async () => {
+    const user = userEvent.setup()
+    const deletedMessage: MailMessage = {
+      id: 'msg-1',
+      folderId: 'deleted',
+      previousFolderId: 'inbox',
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([deletedMessage])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(deletedMessage)
+
+    const { container } = render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Deleted Items' }))
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+    const readingPane = within(container.querySelector('.reading-pane') as HTMLElement)
+
+    await user.click(readingPane.getByRole('button', { name: 'Delete permanently' }))
+
+    expect(window.api.data.messages.delete).toHaveBeenCalledWith('msg-1')
+    expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+  })
+
   it('opens Settings from the nav rail, replacing the mail panes, and returns to Mail when that tab is clicked', async () => {
     const user = userEvent.setup()
     render(<App />)

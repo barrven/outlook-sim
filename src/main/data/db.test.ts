@@ -108,6 +108,124 @@ describe('MailDb', () => {
     expect(db.getMessage(message.id)).toBeNull()
   })
 
+  it('defaults a new message to no previous folder', () => {
+    const message = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Fresh',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    expect(message.previousFolderId).toBeNull()
+  })
+
+  it('moves a message to Deleted Items tracking its previous folder, then restores it back', () => {
+    const message = db.createMessage({
+      folderId: 'sent',
+      subject: 'Oops',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+
+    const deleted = db.updateMessage(message.id, { folderId: 'deleted', previousFolderId: 'sent' })
+    expect(deleted?.folderId).toBe('deleted')
+    expect(deleted?.previousFolderId).toBe('sent')
+    expect(db.listMessages('sent')).toEqual([])
+    expect(db.listMessages('deleted').map((m) => m.id)).toEqual([message.id])
+
+    const restored = db.updateMessage(message.id, { folderId: 'sent', previousFolderId: null })
+    expect(restored?.folderId).toBe('sent')
+    expect(restored?.previousFolderId).toBeNull()
+    expect(db.listMessages('deleted')).toEqual([])
+    expect(db.listMessages('sent').map((m) => m.id)).toEqual([message.id])
+  })
+
+  it('permanently deletes a message once it is in Deleted Items', () => {
+    const message = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Gone for good',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    db.updateMessage(message.id, { folderId: 'deleted', previousFolderId: 'inbox' })
+
+    db.deleteMessage(message.id)
+
+    expect(db.getMessage(message.id)).toBeNull()
+    expect(db.listMessages('deleted')).toEqual([])
+  })
+
+  it('persists a moved-to-Deleted-Items message across a close/reopen cycle', () => {
+    const message = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Still deleted after restart',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    const deleted = db.updateMessage(message.id, { folderId: 'deleted', previousFolderId: 'inbox' })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getMessage(message.id)).toEqual(deleted)
+    expect(reopened.listMessages('deleted').map((m) => m.id)).toEqual([message.id])
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('adds the previous_folder_id column when opening a database created before delete/restore support existed', () => {
+    db.close()
+    const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+    raw.exec('DROP TABLE messages')
+    raw.exec(`CREATE TABLE messages (
+      id TEXT PRIMARY KEY,
+      folder_id TEXT NOT NULL DEFAULT '',
+      subject TEXT NOT NULL DEFAULT '',
+      body TEXT NOT NULL DEFAULT '',
+      from_name TEXT NOT NULL DEFAULT '',
+      from_email TEXT NOT NULL DEFAULT '',
+      to_name TEXT NOT NULL DEFAULT '',
+      to_email TEXT NOT NULL DEFAULT '',
+      cc TEXT NOT NULL DEFAULT '[]',
+      timestamp INTEGER NOT NULL,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      is_flagged INTEGER NOT NULL DEFAULT 0,
+      categories TEXT NOT NULL DEFAULT '[]',
+      attachments TEXT NOT NULL DEFAULT '[]'
+    )`)
+    raw.exec(
+      `INSERT INTO messages (id, folder_id, subject, body, from_name, from_email, to_name, to_email, cc, timestamp, is_read, is_flagged, categories, attachments)
+       VALUES ('legacy-1', 'inbox', 'Old message', 'body', 'Carol', 'carol@example.com', 'Trainee', 'trainee@example.com', '[]', 500, 0, 0, '[]', '[]')`
+    )
+    raw.close()
+
+    const migrated = new MailDb(baseDir)
+    expect(migrated.getMessage('legacy-1')?.previousFolderId).toBeNull()
+
+    const moved = migrated.updateMessage('legacy-1', { folderId: 'deleted', previousFolderId: 'inbox' })
+    expect(moved?.folderId).toBe('deleted')
+    expect(moved?.previousFolderId).toBe('inbox')
+
+    migrated.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
   it('creates, updates, and deletes calendar items', () => {
     const item = db.createCalendarItem({
       title: 'Filing deadline',

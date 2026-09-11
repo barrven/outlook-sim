@@ -141,6 +141,94 @@ describe('ReadingPane', () => {
     expect(screen.queryByRole('button', { name: 'Forward' })).not.toBeInTheDocument()
   })
 
+  it('shows a Delete button alongside Reply/Reply All/Forward for a message outside Drafts/Deleted Items, and calls onDelete with it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
+    const onDelete = vi.fn()
+
+    render(
+      <ReadingPane
+        selectedMessageId="msg-1"
+        messagesVersion={0}
+        onEditDraft={vi.fn()}
+        onReply={vi.fn()}
+        onReplyAll={vi.fn()}
+        onForward={vi.fn()}
+        onDelete={onDelete}
+        onRestore={vi.fn()}
+        onPermanentDelete={vi.fn()}
+      />
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Delete' }))
+    expect(onDelete).toHaveBeenCalledWith(MESSAGE)
+  })
+
+  it('shows a Delete button alongside Edit draft for a message in Drafts, and calls onDelete with it', async () => {
+    const user = userEvent.setup()
+    const draftMessage: MailMessage = { ...MESSAGE, id: 'draft-1', folderId: 'drafts' }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(draftMessage)
+    const onDelete = vi.fn()
+
+    render(
+      <ReadingPane
+        selectedMessageId="draft-1"
+        messagesVersion={0}
+        onEditDraft={vi.fn()}
+        onReply={vi.fn()}
+        onReplyAll={vi.fn()}
+        onForward={vi.fn()}
+        onDelete={onDelete}
+        onRestore={vi.fn()}
+        onPermanentDelete={vi.fn()}
+      />
+    )
+
+    await screen.findByRole('button', { name: 'Edit draft' })
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(onDelete).toHaveBeenCalledWith(draftMessage)
+  })
+
+  it('shows Restore and Delete permanently (not Reply/Reply All/Forward/Delete) for a message in Deleted Items, and calls the right handler with it', async () => {
+    const user = userEvent.setup()
+    const deletedMessage: MailMessage = {
+      ...MESSAGE,
+      id: 'deleted-1',
+      folderId: 'deleted',
+      previousFolderId: 'inbox'
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(deletedMessage)
+    const onRestore = vi.fn()
+    const onPermanentDelete = vi.fn()
+
+    render(
+      <ReadingPane
+        selectedMessageId="deleted-1"
+        messagesVersion={0}
+        onEditDraft={vi.fn()}
+        onReply={vi.fn()}
+        onReplyAll={vi.fn()}
+        onForward={vi.fn()}
+        onDelete={vi.fn()}
+        onRestore={onRestore}
+        onPermanentDelete={onPermanentDelete}
+      />
+    )
+
+    await screen.findByText('Quarterly numbers')
+    expect(screen.queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reply All' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Forward' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit draft' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Restore' }))
+    expect(onRestore).toHaveBeenCalledWith(deletedMessage)
+
+    await user.click(screen.getByRole('button', { name: 'Delete permanently' }))
+    expect(onPermanentDelete).toHaveBeenCalledWith(deletedMessage)
+  })
+
   it('shows Cc recipients in the header when present', async () => {
     const messageWithCc: MailMessage = {
       ...MESSAGE,
