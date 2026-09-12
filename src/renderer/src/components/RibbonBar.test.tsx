@@ -20,6 +20,33 @@ describe('RibbonBar', () => {
     expect(screen.queryByRole('button', { name: 'New Email' })).not.toBeInTheDocument()
   })
 
+  it('leaves New Event disabled when no onNewEvent handler is provided', () => {
+    render(<RibbonBar activeModule="calendar" />)
+
+    expect(screen.getByRole('button', { name: 'New Event' })).toBeDisabled()
+  })
+
+  it('enables New Event and calls onNewEvent when a handler is provided', async () => {
+    const user = userEvent.setup()
+    const onNewEvent = vi.fn()
+    render(<RibbonBar activeModule="calendar" onNewEvent={onNewEvent} />)
+
+    const button = screen.getByRole('button', { name: 'New Event' })
+    expect(button).toBeEnabled()
+
+    await user.click(button)
+
+    expect(onNewEvent).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves Today, Day, Work Week, Week, Month, and New Meeting as disabled placeholders', () => {
+    render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
+
+    for (const label of ['New Meeting', 'Today', 'Day', 'Work Week', 'Week', 'Month']) {
+      expect(screen.getByRole('button', { name: label })).toBeDisabled()
+    }
+  })
+
   it('enables New Email and calls onNewEmail when a handler is provided', async () => {
     const user = userEvent.setup()
     const onNewEmail = vi.fn()

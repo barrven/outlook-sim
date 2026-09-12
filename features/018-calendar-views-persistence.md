@@ -1,7 +1,7 @@
 ---
 id: 018
 title: Calendar views & persistence
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -59,7 +59,46 @@ after 005 wired equivalent UI elsewhere): view switching lives in `CalendarView`
 is an explicit spec non-goal.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 32 tests on top of the manual esbuild sanity-check done during `/implement` (244 → 276, all
+passing; re-ran the full suite 3x, stable).
+
+- `calendarDates.test.ts` (19 tests, new): `startOfDayMs`/`addDaysMs`/`isSameDay`/`startOfWeekMs`
+  directly, including a DST-spring-forward day-add and a year-rollover; `getVisibleDays` for all
+  four views against known Mon–Sun dates around a fixed Wednesday anchor, plus a month-grid test
+  confirming it contains both the 1st and last day of the month, starts on a Sunday, and is in
+  strictly increasing order, and a leap-year February case (contains Feb 29); `shiftAnchor` for
+  day/week/workWeek plus the month-view edge cases called out in Implementation Notes (Jan 31 + 1
+  month lands on Feb, not an overflowed March date; both directions across a year boundary);
+  `formatRangeLabel` content checks for all four views.
+- `CalendarView.test.tsx` (9 tests, new): confirms the component actually calls
+  `calendarItems.list()` on mount (AC4 — proves the UI reads the persisted store rather than any
+  local/hardcoded data, so persistence at the DB layer — already covered by `db.test.ts`'s
+  close/reopen test from feature 002 — genuinely reaches the screen); the empty state; switching
+  between all four view tabs updates `aria-selected` correctly (AC2); Previous/Next change the
+  displayed range; **the core AC3 test** — creating an event via the form makes it appear in Day
+  view, and it's still visible after switching to Week and then Month without any extra fetch;
+  Cancel makes no create call; a blank title shows the validation error and leaves the form open;
+  reopening the form after a cancel starts with empty fields again (locks in the
+  remount-resets-state design from Implementation Notes); an event outside the viewed day does not
+  leak into Day view (the negative case for AC3's bucketing).
+- `RibbonBar.test.tsx` (+3 tests): New Event stays disabled with no handler, enables and fires
+  `onNewEvent` with one (mirrors the existing Delete coverage), and Today/Day/Work
+  Week/Week/Month/New Meeting all stay disabled placeholders (locks in the "view-switching lives in
+  CalendarView's own tabs, not the ribbon" decision from Implementation Notes).
+- `App.test.tsx` (+1 test): the ribbon's New Event button actually opens `CalendarView`'s dialog
+  end-to-end, and switching modules away and back closes it (via the `showNewEventForm` reset in
+  `handleSelectModule`).
+
+Deliberately not covered: AC1 (calendar reachable from left nav) has no new test — it's unchanged
+since feature 001 and already covered by pre-existing `App.test.tsx` module-switch tests. AC4's
+actual "survives a real app restart" is not re-tested at the UI layer (that would need a real
+Electron process); it rests on the pre-existing `db.test.ts` DB-level persistence test plus this
+stage's new proof that the UI genuinely reads through `window.api.data.calendarItems.list()`. No
+live Electron GUI click-through attempted — no Xvfb in this sandbox, same non-blocking gap as every
+prior feature, deferred to `/validate`. `datetime-local` input editing (typing a custom start/end
+time) isn't exercised via `userEvent` — jsdom's handling of segmented native date/time inputs is
+unreliable for scripted typing, so tests rely on the form's own sane default (anchor time) instead,
+which already exercises the underlying create path fully.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

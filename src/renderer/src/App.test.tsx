@@ -43,6 +43,22 @@ describe('App shell', () => {
     expect(screen.queryByText('Select an item to read.')).not.toBeInTheDocument()
   })
 
+  it('ribbon New Event opens the calendar create-event form, and switching modules closes it', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('tab', { name: 'Calendar' }))
+    expect(screen.queryByRole('dialog', { name: 'New Event' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'New Event' }))
+    expect(await screen.findByRole('dialog', { name: 'New Event' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Mail' }))
+    await user.click(screen.getByRole('tab', { name: 'Calendar' }))
+
+    expect(screen.queryByRole('dialog', { name: 'New Event' })).not.toBeInTheDocument()
+  })
+
   it('switches the ribbon actions when the active module changes', async () => {
     const user = userEvent.setup()
     render(<App />)
