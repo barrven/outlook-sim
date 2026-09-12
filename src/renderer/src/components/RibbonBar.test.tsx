@@ -39,10 +39,10 @@ describe('RibbonBar', () => {
     expect(onNewEvent).toHaveBeenCalledTimes(1)
   })
 
-  it('leaves New Meeting as a disabled placeholder', () => {
+  it('hides New Meeting until meeting invites/RSVP are actually built', () => {
     render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
 
-    expect(screen.getByRole('button', { name: 'New Meeting' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'New Meeting' })).not.toBeInTheDocument()
   })
 
   it('does not duplicate the Today/Day/Work Week/Week/Month view switcher in the ribbon', () => {

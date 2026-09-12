@@ -165,5 +165,13 @@ persistence logic those ACs cover). Phase stays `accept`.
    is unchanged.
 Re-ran lint/typecheck/build/full suite (279/279) — all pass. Phase stays `accept`.
 
+**Third accept-stage UI fix (same round):** user asked what distinguishes a Meeting from an Event
+(a Meeting adds attendees who get invited and can accept/tentative/decline — explicitly a v1
+non-goal per `docs/SPEC.md`'s "Meeting invite workflow... and RSVP") and asked to hide the ribbon's
+"New Meeting" button until that's actually built, rather than leave a dead button that can never be
+wired. Removed it from `RibbonBar.tsx`'s `CALENDAR_ACTIONS` (now just `['New Event']`); updated the
+corresponding `RibbonBar.test.tsx` test to assert it's absent rather than disabled. Re-ran
+lint/typecheck/build/full suite (279/279) — all pass. Phase stays `accept`.
+
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

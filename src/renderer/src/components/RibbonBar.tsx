@@ -7,7 +7,10 @@ const TABS = ['File', 'Home', 'Send / Receive', 'Folder', 'View']
 const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']
 // Day/Work Week/Week/Month/Today live in CalendarView's own view-tab header,
 // not here — no need to duplicate the view switcher in the ribbon too.
-const CALENDAR_ACTIONS = ['New Event', 'New Meeting']
+// New Meeting is hidden until meeting invites/RSVP (an explicit spec
+// non-goal for v1) actually get built — no point showing a button that can
+// never be wired up.
+const CALENDAR_ACTIONS = ['New Event']
 
 interface RibbonBarProps {
   activeModule: ModuleId
