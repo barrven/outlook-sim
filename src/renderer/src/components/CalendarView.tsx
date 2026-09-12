@@ -131,17 +131,28 @@ function CalendarEventForm({ initialStartMs, onCreate, onCancel }: CalendarEvent
 function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps): ReactElement {
   const [view, setView] = useState<CalendarViewId>('day')
   const [anchorMs, setAnchorMs] = useState(() => Date.now())
-  const [today] = useState(() => startOfDayMs(Date.now()))
+  const [today, setToday] = useState(() => startOfDayMs(Date.now()))
   const [items, setItems] = useState<CalendarItem[]>([])
 
   function refreshItems(): void {
     window.api.data.calendarItems.list().then(setItems)
   }
 
+  // "Today" follows the simulated office clock, not the real wall clock —
+  // same convention as every other time-driven part of the app.
+  function goToToday(): void {
+    window.api.data.clock.now().then((simNow) => {
+      setAnchorMs(simNow)
+      setToday(startOfDayMs(simNow))
+    })
+  }
+
   useEffect(() => {
     let cancelled = false
     window.api.data.clock.now().then((simNow) => {
-      if (!cancelled) setAnchorMs(simNow)
+      if (cancelled) return
+      setAnchorMs(simNow)
+      setToday(startOfDayMs(simNow))
     })
     return () => {
       cancelled = true
@@ -181,7 +192,7 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
         <button type="button" aria-label="Previous" onClick={() => setAnchorMs((ms) => shiftAnchor(view, ms, -1))}>
           ‹
         </button>
-        <button type="button" onClick={() => setAnchorMs(Date.now())}>
+        <button type="button" onClick={goToToday}>
           Today
         </button>
         <button type="button" aria-label="Next" onClick={() => setAnchorMs((ms) => shiftAnchor(view, ms, 1))}>

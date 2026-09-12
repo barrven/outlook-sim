@@ -185,6 +185,49 @@ describe('CalendarView', () => {
     expect(within(dialog).getByLabelText('Title')).toHaveValue('')
   })
 
+  it('"today" highlighting follows the simulated clock, not the real wall clock', async () => {
+    // Pick a simulated date guaranteed to differ from whatever the real
+    // system date is when this test runs.
+    const simulatedToday = new Date(2031, 5, 17, 10, 0).getTime()
+    setAnchorClock(simulatedToday)
+    // The month grid only renders once there's at least one calendar item
+    // anywhere (an existing, deliberate empty-state design decision) — this
+    // item just needs to exist somewhere in the visible month.
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([
+      makeItem({ startTime: new Date(2031, 5, 1, 9, 0).getTime() })
+    ])
+
+    render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+    await waitFor(() => expect(window.api.data.calendarItems.list).toHaveBeenCalled())
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('tab', { name: 'Month' }))
+    await screen.findByText('June 2031')
+
+    const todayCells = document.querySelectorAll('.calendar-month-cell.today')
+    expect(todayCells).toHaveLength(1)
+    expect(todayCells[0].textContent).toContain('17')
+    expect(screen.getByText('June 2031')).toBeInTheDocument()
+  })
+
+  it('the Today button returns to the simulated clock\'s date, not the real date, after navigating away', async () => {
+    const user = userEvent.setup()
+    const simulatedToday = new Date(2031, 5, 17, 10, 0).getTime()
+    setAnchorClock(simulatedToday)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+
+    render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+    await screen.findByText('No calendar items to show.')
+    expect(await screen.findByText(/June 17, 2031/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.queryByText(/June 17, 2031/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Today' }))
+    expect(await screen.findByText(/June 17, 2031/)).toBeInTheDocument()
+  })
+
   it('an event outside the currently viewed day does not appear in Day view', async () => {
     setAnchorClock(ANCHOR_MS)
     const farAway = makeItem({ id: 'evt-2', title: 'Next month thing', startTime: ANCHOR_MS + 40 * 24 * 60 * 60 * 1000 })

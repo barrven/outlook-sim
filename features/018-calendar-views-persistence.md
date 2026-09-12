@@ -138,5 +138,18 @@ disabled placeholders by design (view switching lives in `CalendarView`'s own ta
 invite workflow is an explicit spec non-goal) — confirmed these are deliberate via direct code
 inspection of `RibbonBar.tsx`'s `actionHandlers` map, not an oversight.
 
+**Accept-stage bug fixed (found by the user live in the running app, after this validation passed):**
+"today" highlighting and the "Today" nav button used the real wall clock (`Date.now()`) instead of
+the simulated office clock — an inconsistency the initial-load path didn't have (it correctly fetched
+`clock.now()`), but two other `Date.now()` call sites did: the `today` state's initializer, and the
+Today button's `onClick`. Fixed by routing both through `window.api.data.clock.now()` (`today` is now
+`useState` + `setToday`, updated alongside `anchorMs` in the mount effect; the Today button calls a
+new `goToToday()` that re-fetches simulated now and updates both). Added 2 regression tests in
+`CalendarView.test.tsx` using a simulated date far from the real system date — confirmed both fail
+against the pre-fix code (asserting on the real date instead) and pass after the fix. Re-ran
+lint/typecheck/build/full suite (278/278, up from 276) — all pass; AC3/AC4 conclusions above are
+unaffected (this bug was in the "today" marker and default nav target, not the event-bucketing or
+persistence logic those ACs cover). Phase stays `accept`.
+
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
