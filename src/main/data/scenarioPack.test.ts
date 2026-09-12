@@ -6,7 +6,7 @@ import type { ScenarioPack } from '../../shared/data-types'
 import { SimClock } from './clock'
 import { ConfigStore } from './config'
 import { MailDb } from './db'
-import { applyScenarioPack, validateScenarioPack } from './scenarioPack'
+import { applyScenarioPack, buildScenarioPack, validateScenarioPack } from './scenarioPack'
 
 const VALID_PERSONA = {
   displayName: 'Morgan Rivera',
@@ -359,5 +359,261 @@ describe('applyScenarioPack', () => {
     expect(db.listMessages()).toEqual([])
     expect(db.listCalendarItems()).toEqual([])
     expect(config.getScheduledScenarioMessages()).toEqual([])
+  })
+})
+
+describe('buildScenarioPack', () => {
+  let baseDir: string
+  let db: MailDb
+  let config: ConfigStore
+  let clock: SimClock
+
+  beforeEach(() => {
+    baseDir = mkdtempSync(join(tmpdir(), 'outlook-sim-scenario-pack-build-'))
+    db = new MailDb(baseDir)
+    config = new ConfigStore(baseDir)
+    clock = new SimClock(baseDir)
+    vi.spyOn(clock, 'now').mockReturnValue(1_000_000)
+  })
+
+  afterEach(() => {
+    db.close()
+    rmSync(baseDir, { recursive: true, force: true })
+    vi.restoreAllMocks()
+  })
+
+  it('includes the given name and description', () => {
+    const pack = buildScenarioPack(db, config, clock, 'My Pack', 'A description')
+    expect(pack.name).toBe('My Pack')
+    expect(pack.description).toBe('A description')
+  })
+
+  it('defaults description to an empty string when omitted', () => {
+    const pack = buildScenarioPack(db, config, clock, 'My Pack')
+    expect(pack.description).toBe('')
+  })
+
+  it('includes current personas, dropping the internal id', () => {
+    config.setPersonas([{ id: 'p1', ...VALID_PERSONA }])
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.personas).toEqual([VALID_PERSONA])
+  })
+
+  it('includes only inbox-folder messages, converting timestamp to offsetMinutes relative to clock.now()', () => {
+    db.createMessage({
+      folderId: 'inbox',
+      subject: 'In the inbox',
+      body: 'body',
+      fromName: 'A',
+      fromEmail: 'a@example.com',
+      toName: 'B',
+      toEmail: 'b@example.com',
+      timestamp: 1_000_000 - 120 * 60_000
+    })
+    db.createMessage({
+      folderId: 'sent',
+      subject: 'Not in the inbox',
+      body: '',
+      fromName: 'B',
+      fromEmail: 'b@example.com',
+      toName: 'A',
+      toEmail: 'a@example.com',
+      timestamp: 1_000_000
+    })
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.inbox).toHaveLength(1)
+    expect(pack.inbox[0]).toMatchObject({
+      subject: 'In the inbox',
+      fromEmail: 'a@example.com',
+      toEmail: 'b@example.com',
+      offsetMinutes: -120
+    })
+  })
+
+  it('includes calendar items with offsetMinutes/durationMinutes computed from startTime/endTime', () => {
+    db.createCalendarItem({
+      title: 'Deadline',
+      description: 'desc',
+      startTime: 1_000_000 + 180 * 60_000,
+      endTime: 1_000_000 + 210 * 60_000,
+      allDay: false,
+      reminderMinutesBefore: 15,
+      recurrenceRule: null,
+      itemType: 'deadline'
+    })
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.calendarItems).toEqual([
+      {
+        title: 'Deadline',
+        description: 'desc',
+        offsetMinutes: 180,
+        durationMinutes: 30,
+        allDay: false,
+        reminderMinutesBefore: 15,
+        itemType: 'deadline'
+      }
+    ])
+  })
+
+  it('a calendar item with endTime: null gets durationMinutes: null', () => {
+    db.createCalendarItem({
+      title: 'No end time',
+      description: '',
+      startTime: 1_000_000,
+      endTime: null,
+      allDay: true,
+      reminderMinutesBefore: null,
+      recurrenceRule: null,
+      itemType: 'event'
+    })
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.calendarItems[0].durationMinutes).toBeNull()
+  })
+
+  it('includes pending scheduled scenario messages as timedMessages', () => {
+    config.setScheduledScenarioMessages([
+      {
+        id: 'sched-1',
+        dueSimTime: 1_000_000 + 300_000,
+        subject: 'Later',
+        body: 'later body',
+        fromName: 'A',
+        fromEmail: 'a@example.com',
+        toName: 'B',
+        toEmail: 'b@example.com'
+      }
+    ])
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.timedMessages).toEqual([
+      {
+        subject: 'Later',
+        body: 'later body',
+        fromName: 'A',
+        fromEmail: 'a@example.com',
+        toName: 'B',
+        toEmail: 'b@example.com',
+        offsetMinutes: 5
+      }
+    ])
+  })
+
+  it('never includes Settings/API keys, even when a real key is configured', () => {
+    config.setSettings({
+      provider: 'openai',
+      model: 'gpt-4',
+      apiKeys: { openai: 'sk-super-secret-key', anthropic: '', gemini: '', xai: '' }
+    })
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(JSON.stringify(pack)).not.toContain('sk-super-secret-key')
+    expect(pack).not.toHaveProperty('apiKeys')
+    expect(pack).not.toHaveProperty('settings')
+  })
+
+  it('an empty mailbox/calendar/personas/schedule produces an empty pack', () => {
+    const pack = buildScenarioPack(db, config, clock, 'Empty')
+    expect(pack).toEqual({
+      name: 'Empty',
+      description: '',
+      personas: [],
+      inbox: [],
+      calendarItems: [],
+      timedMessages: []
+    })
+  })
+
+  it('round-trips through validateScenarioPack and applyScenarioPack without data loss', () => {
+    config.setPersonas([{ id: 'p1', ...VALID_PERSONA }])
+    db.createMessage({
+      folderId: 'inbox',
+      subject: 'Hello',
+      body: 'body text',
+      fromName: 'Morgan Rivera',
+      fromEmail: 'morgan@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1_000_000 - 60_000
+    })
+    db.createCalendarItem({
+      title: 'Discovery deadline',
+      description: 'File discovery response',
+      startTime: 1_000_000 + 120_000,
+      endTime: 1_000_000 + 180_000,
+      allDay: false,
+      reminderMinutesBefore: 15,
+      recurrenceRule: null,
+      itemType: 'deadline'
+    })
+    config.setScheduledScenarioMessages([
+      {
+        id: 'sched-1',
+        dueSimTime: 1_000_000 + 300_000,
+        subject: 'Later',
+        body: 'later body',
+        fromName: 'Morgan Rivera',
+        fromEmail: 'morgan@example.com',
+        toName: 'Trainee',
+        toEmail: 'trainee@example.com'
+      }
+    ])
+
+    const built = buildScenarioPack(db, config, clock, 'Round Trip Pack', 'desc')
+
+    // Simulate a save-to-disk-then-load-from-disk round trip via JSON (de)serialization.
+    const validated = validateScenarioPack(JSON.parse(JSON.stringify(built)))
+    expect(validated.ok).toBe(true)
+    if (!validated.ok) return
+
+    const baseDir2 = mkdtempSync(join(tmpdir(), 'outlook-sim-scenario-pack-roundtrip-'))
+    const db2 = new MailDb(baseDir2)
+    const config2 = new ConfigStore(baseDir2)
+    const clock2 = new SimClock(baseDir2)
+    vi.spyOn(clock2, 'now').mockReturnValue(1_000_000)
+    try {
+      applyScenarioPack(db2, config2, clock2, validated.pack)
+
+      expect(db2.listMessages('inbox')).toMatchObject([
+        {
+          subject: 'Hello',
+          body: 'body text',
+          fromEmail: 'morgan@example.com',
+          toEmail: 'trainee@example.com',
+          timestamp: 1_000_000 - 60_000
+        }
+      ])
+      expect(db2.listCalendarItems()).toMatchObject([
+        {
+          title: 'Discovery deadline',
+          startTime: 1_000_000 + 120_000,
+          endTime: 1_000_000 + 180_000,
+          reminderMinutesBefore: 15,
+          itemType: 'deadline'
+        }
+      ])
+      expect(config2.getPersonas()).toMatchObject([{ ...VALID_PERSONA }])
+      expect(config2.getScheduledScenarioMessages()).toMatchObject([
+        {
+          subject: 'Later',
+          body: 'later body',
+          fromEmail: 'morgan@example.com',
+          toEmail: 'trainee@example.com',
+          dueSimTime: 1_000_000 + 300_000
+        }
+      ])
+    } finally {
+      db2.close()
+      rmSync(baseDir2, { recursive: true, force: true })
+    }
   })
 })

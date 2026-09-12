@@ -1,7 +1,7 @@
 ---
 id: 022
 title: Scenario pack save
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -42,7 +42,24 @@ timed message all survived byte-for-byte through save→reload) before wiring in
 build pass, existing suite still 347/347; phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 14 tests (347 → 361, all passing; re-ran full suite 3x, stable). New `describe('buildScenarioPack', ...)`
+block in `scenarioPack.test.ts` covers: name/description passthrough (and description defaulting to `''`);
+personas included with the internal `id` dropped (AC2); only `inbox`-folder messages are included (a `sent`
+message is excluded), with `offsetMinutes` computed correctly relative to `clock.now()` (AC2); calendar
+items' `offsetMinutes`/`durationMinutes` computed from `startTime`/`endTime`, including the `endTime: null`
+→ `durationMinutes: null` case (AC2); pending `getScheduledScenarioMessages()` entries are included as
+`timedMessages` (AC3 — otherwise a re-save mid-session would silently drop them); an empty mailbox/
+calendar/personas/schedule produces an empty pack; and, directly targeting AC4, a test that configures a
+real-shaped API key and asserts it appears nowhere in the built pack's JSON. A dedicated round-trip test
+builds a pack from populated `db`/`config`, serializes it through `JSON.parse(JSON.stringify(...))` (as a
+real save-to-disk-then-load-from-disk would), runs it through `validateScenarioPack` then `applyScenarioPack`
+into a *second* fresh store, and asserts the message/calendar item/persona/pending timed message all come
+back with identical content and identical absolute timestamps (AC3). `SettingsView.test.tsx` gained a
+"Save Scenario Pack" block (4 tests) covering the success/canceled/error/error-then-success-clears-alert
+paths, mirroring the existing "Scenario Pack" (load) tests (AC1). The `scenario:savePack` IPC handler
+itself (in `main/index.ts`, needs a real `dialog`/`BrowserWindow`) has no unit test — same untestable-
+Electron-wiring category as `scenario:pickPack` and `window:openCompose`, already flagged in prior features.
+lint/typecheck/build all still pass; phase set to `validate`.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

@@ -469,4 +469,70 @@ describe('SettingsView', () => {
       expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
     })
   })
+
+  describe('Save Scenario Pack', () => {
+    it('saves and shows the destination path on success', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.savePack).mockResolvedValue({
+        ok: true,
+        filePath: '/home/trainee/my-pack.json'
+      })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.savePack).toHaveBeenCalledTimes(1))
+      expect(await scenarioPackSection().findByText(/my-pack\.json/)).toBeInTheDocument()
+      expect(scenarioPackSection().queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('does nothing (no error, no status) when the save dialog is canceled', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.savePack).mockResolvedValue({ ok: false, canceled: true })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.savePack).toHaveBeenCalledTimes(1))
+      expect(scenarioPackSection().queryByRole('alert')).not.toBeInTheDocument()
+      expect(scenarioPackSection().queryByText(/saved/)).not.toBeInTheDocument()
+    })
+
+    it('shows a clear inline error when the write fails', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.savePack).mockResolvedValue({
+        ok: false,
+        error: 'Could not write file: EACCES'
+      })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' }))
+
+      expect(await scenarioPackSection().findByRole('alert')).toHaveTextContent(
+        'Could not write file: EACCES'
+      )
+      expect(scenarioPackSection().queryByText(/saved/)).not.toBeInTheDocument()
+    })
+
+    it('clears a previous error once a later save succeeds', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.savePack)
+        .mockResolvedValueOnce({ ok: false, error: 'Could not write file: EACCES' })
+        .mockResolvedValueOnce({ ok: true, filePath: '/home/trainee/my-pack.json' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      const button = scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' })
+      await user.click(button)
+      await scenarioPackSection().findByRole('alert')
+
+      await user.click(button)
+
+      await waitFor(() => expect(scenarioPackSection().queryByRole('alert')).not.toBeInTheDocument())
+      expect(await scenarioPackSection().findByText(/my-pack\.json/)).toBeInTheDocument()
+    })
+  })
 })
