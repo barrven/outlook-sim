@@ -1,7 +1,7 @@
 ---
 id: 022
 title: Scenario pack save
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -62,7 +62,48 @@ Electron-wiring category as `scenario:pickPack` and `window:openCompose`, alread
 lint/typecheck/build all still pass; phase set to `validate`.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (361/361) re-run 3x, stable. Confirmed via `git diff`
+(`8b8cc74~1..8b8cc74`) that `/test` touched only test files/docs (`scenarioPack.test.ts`,
+`SettingsView.test.tsx`, `STATE.md`, the feature file, `BACKLOG.md`) — no implementation drift.
+
+Acceptance criteria:
+- **User can trigger "save scenario pack" and choose a destination filename** — PASS. Verified by
+  reading `main/index.ts:68-85`: `scenario:savePack` opens a real `dialog.showSaveDialog` (defaulting to
+  `scenario-pack.json`, filtered to `.json`) and writes to whatever path the user picks; canceling the
+  dialog returns `{ok:false,canceled:true}` with no write. `SettingsView.tsx`'s "Save Scenario Pack…"
+  button wires this end-to-end, confirmed by the 4 `SettingsView.test.tsx` cases (success path shows the
+  chosen path, cancel is silent, write error surfaces inline, a later success clears a prior error).
+- **Saved pack includes current inbox contents, personas/contacts, and calendar deadlines in the same
+  schema 021 can load** — PASS. Verified both by code inspection (`buildScenarioPack` in
+  `scenarioPack.ts:190-239` maps `db.listMessages('inbox')`, `db.listCalendarItems()`, and
+  `config.getPersonas()` into exactly the `ScenarioPackMessage`/`ScenarioPackCalendarItem`/
+  `ScenarioPackPersona` shapes 021's `validateScenarioPack`/`applyScenarioPack` already consume) and by a
+  live check: bundled `scenarioPack.ts`/`db.ts`/`config.ts`/`clock.ts` standalone with `tsx` and ran
+  `buildScenarioPack` against a scratch copy of the real, in-use `~/.config/outlook-sim` data (8 inbox
+  messages, 4 calendar items — a mix of events/deadlines, 15 personas) — the built pack's counts matched
+  the real store exactly for all three categories, and the whole thing passed `validateScenarioPack`
+  unmodified.
+- **A saved-then-reloaded pack round-trips without data loss** — PASS. The same live check wrote the
+  built pack to an actual JSON file, read it back, validated it, and applied it into a second fresh
+  store: all 8 inbox messages, 4 calendar items, and 15 personas came back with matching
+  subject/body/fromEmail, title/itemType, and displayName/email respectively. A pending
+  `timedMessages`/scheduled-scenario-message case (none present in the real data right now, so 0/0) is
+  separately covered by the automated round-trip test in `scenarioPack.test.ts` using a populated
+  fixture — confirms 022 doesn't silently drop pending timed messages on a mid-session re-save, which
+  the plain "current mailbox/calendar" reading of the AC could otherwise miss.
+- **Save action does not include any API keys or other Settings secrets in the pack file** — PASS. This
+  holds structurally: `buildScenarioPack`'s only parameters are `db`/`config`/`clock`, and it never calls
+  `config.getSettings()` — there's no code path by which a key could reach the pack, not just a filter
+  that could be forgotten elsewhere. Confirmed live: ran the check against the real settings.json (which
+  has genuine live Anthropic and Gemini API keys configured) and grepped the built pack's JSON for both
+  real key strings — neither appeared. Also confirmed via `md5sum` that the real on-disk
+  `outlook-sim.db` was byte-for-byte unchanged after the whole check (all work happened against a
+  scratch copy).
+
+No live multi-window Electron GUI click-through attempted (no Xvfb in this sandbox) — same non-blocking
+gap noted for every prior feature; the IPC handler's own dialog-driven wiring is covered by code
+inspection plus the live standalone check above rather than a unit test, consistent with
+`scenario:pickPack`/`window:openCompose`. No issues found; phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

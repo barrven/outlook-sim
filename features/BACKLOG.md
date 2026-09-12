@@ -26,7 +26,7 @@
 | 018 | Calendar views & persistence | done | medium | 018-calendar-views-persistence.md |
 | 019 | Calendar deadlines, all-day items & reminders | done | medium | 019-calendar-deadlines-allday-reminders.md |
 | 021 | Scenario pack load | done | medium | 021-scenario-pack-load.md |
-| 022 | Scenario pack save | validating | medium | 022-scenario-pack-save.md |
+| 022 | Scenario pack save | accept | medium | 022-scenario-pack-save.md |
 | 009 | Mail mock attachments | backlog | low | 009-mail-mock-attachments.md |
 | 020 | Calendar recurring events | backlog | low | 020-calendar-recurring-events.md |
 
