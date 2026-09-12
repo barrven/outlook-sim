@@ -1,7 +1,7 @@
 ---
 id: 018
 title: Calendar views & persistence
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -101,7 +101,42 @@ unreliable for scripted typing, so tests rely on the form's own sane default (an
 which already exercises the underlying create path fully.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (276/276) re-run 3x, stable. Confirmed via
+`git diff 4953571 491a7f1 --stat` that the `/test` stage touched only test files plus docs
+(`STATE.md`/`BACKLOG.md`/feature file) — no implementation drift between `/implement` and `/test`.
+
+Acceptance criteria:
+- **AC1** (calendar module reachable from left navigation) — PASS. Unchanged since feature 001;
+  `App.tsx` renders `CalendarView` when `activeModule === 'calendar'`, reached via the existing
+  `NavSwitcher` Mail/Calendar tabs — confirmed by pre-existing `App.test.tsx` module-switch tests
+  plus direct code inspection (`App.tsx:10,181`).
+- **AC2** (switch between day/work-week/week/month) — PASS. `calendarDates.ts:getVisibleDays`
+  verified correct for all four views via 19 direct unit tests (Mon–Fri, Sun–Sat, a 42-day
+  Sunday-start month grid, DST and leap-year edge cases) and `CalendarView.test.tsx` confirms the
+  tab clicks actually flip `aria-selected`/render the right body.
+- **AC3** (events created in one view are visible in the others) — PASS. Verified by direct code
+  read (`CalendarView.tsx` fetches the full item list once and buckets by `isSameDay` per rendered
+  day/cell — no per-view filtering logic to get out of sync) plus `CalendarView.test.tsx`'s core
+  test: create via the form → visible in Day view → still visible after switching to Week and Month
+  with no re-fetch, and a negative case proving an out-of-range event does *not* leak into Day view.
+- **AC4** (calendar data persists across restarts) — PASS. Re-verified at the DB layer with a live
+  check beyond the mocked Vitest environment: bundled `db.ts` standalone with `esbuild` and ran it
+  against a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db` (3 real calendar
+  items already present) — created a new item using the exact shape `CalendarEventForm` sends
+  (`itemType:'event'`, `allDay:false`, `reminderMinutesBefore:null`, `recurrenceRule:null`), closed
+  and reopened the DB, and got back an identical item (`JSON.stringify` equality) with the total
+  count correctly at 4; cleaned it up afterward (count back to 3) and confirmed the real on-disk
+  file was left byte-for-byte unmodified (mtime unchanged). Combined with `CalendarView.test.tsx`'s
+  proof that the UI genuinely calls `calendarItems.list()` (not local/hardcoded state), this shows
+  persistence actually reaches the screen, not just the DB layer in isolation.
+
+Non-blocking gaps, consistent with every prior feature: no live multi-window Electron GUI
+click-through (no Xvfb in this sandbox) — the real `datetime-local` input widget and a genuine
+app-restart round trip through the running UI are unverified, deferred to the user's own check at
+`/accept`. `New Meeting` and the ribbon's `Today`/`Day`/`Work Week`/`Week`/`Month` buttons remain
+disabled placeholders by design (view switching lives in `CalendarView`'s own tabs; meeting
+invite workflow is an explicit spec non-goal) — confirmed these are deliberate via direct code
+inspection of `RibbonBar.tsx`'s `actionHandlers` map, not an oversight.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
