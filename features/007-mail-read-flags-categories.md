@@ -1,7 +1,7 @@
 ---
 id: 007
 title: Mail read/unread, flags & categories
-status: accept
+status: done
 priority: medium
 ---
 
@@ -250,3 +250,5 @@ it pass) — genuine red→green, not a test written to match the fix.
   every subsequent refetch of the same open message; added 2 regression
   tests (one of which caught a bug in the first fix attempt). Re-validated
   in the same pass — see the addenda above.
+- 2026-09-11 — user accepted the feature as delivered (including the
+  read/unread bug fix). Decision: accepted.

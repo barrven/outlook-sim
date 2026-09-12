@@ -7,6 +7,20 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Mail read/unread, flags & categories (features/007-mail-read-flags-categories.md)
+Messages now track more than just their contents. Opening a message marks
+it read automatically, and a Mark as read/unread button in the Reading
+Pane lets you flip that manually at any time — unread messages still show
+bold in the message list. A Flag/Unflag toggle is available both in the
+Reading Pane and as a small flag button right on each row in the message
+list, so you can flag something for follow-up without opening it. You can
+also tag a message with one or more free-form categories from the Reading
+Pane (type a name and press Enter, remove one with its × ), see them
+summarized on each row in the list, and filter the list down to a single
+category via a dropdown that appears once any message in the folder has
+one. All three — read state, flags, categories — persist across restarts
+like everything else in the mailbox.
+
 ## 2026-09-11 — Mail delete & Deleted Items (features/006-mail-delete-deleted-items.md)
 You can now delete a message from any folder — Inbox, Sent, Drafts, or a
 custom folder — and it moves to Deleted Items instead of vanishing. From
