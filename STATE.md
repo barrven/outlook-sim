@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 009 — Mail mock attachments
 - **Last updated:** 2026-09-12
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-12 — feature 009 (mail mock attachments) validated: lint/typecheck/build pass; full test suite (371/371) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs, no implementation drift; all 4 ACs verified by tests + code inspection plus a live check — attachments confirmed structurally file-I/O-free (grepped all of `src/main`/`src/preload`, found only an opaque JSON column) and confirmed to survive a real restart via a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db` (added attachments to a real message, closed/reopened `MailDb`, got identical content back); real on-disk DB confirmed byte-for-byte unchanged (md5) afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-12 — feature 009 (mail mock attachments) tested: added 10 tests (361 → 371, all passing; re-ran full suite 3x, stable) — `ComposeWindow.test.tsx` (+5) covers adding/removing attachment chips, sending them along, draft prefill, and reply deliberately not carrying attachments over; `ReadingPane.test.tsx` (+4) covers attachment rendering, the click-to-toggle placeholder note (with no `messages.update` call as a proxy for "no real file I/O"), and the note resetting on message change; `db.test.ts` (+1) covers attachments surviving a close/reopen cycle. lint/typecheck/build all still pass; phase set to `validate`
 - 2026-09-12 — feature 009 (mail mock attachments) implemented: entirely UI — the `MessageAttachment`/`attachments` data model and SQLite persistence already existed from feature 002. `ComposeWindow.tsx` gained an attachments chip-list (add-by-filename form, remove button per chip), following the existing Cc pattern exactly; loaded from an existing draft, but fresh/reply/reply-all/forward all start empty (composeIntent.ts never carried attachments, so continuing that is not a scope expansion). `ReadingPane.tsx` renders attachments as 📎-prefixed buttons; clicking one toggles a "no file content" note via pure React state, with no filesystem/IPC call in the path, so AC4 holds structurally. Verified live that attachments survive a simulated `MailDb` close/reopen. lint/typecheck/build pass, existing suite still 361/361 unchanged; phase set to `test`
 - 2026-09-12 — feature 022 (scenario pack save) accepted by user; logged to CHANGELOG; only low-priority features remain in the backlog (009, 020); active feature set to 009 (Mail mock attachments), phase set to `implement`

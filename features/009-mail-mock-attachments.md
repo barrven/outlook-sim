@@ -1,7 +1,7 @@
 ---
 id: 009
 title: Mail mock attachments
-status: validating
+status: accept
 priority: low
 ---
 
@@ -60,7 +60,41 @@ cycle, mirroring the existing read/flags/categories persistence test. No new tes
 lint/typecheck/build all still pass; phase set to `validate`.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (371/371) re-run 3x, stable. Confirmed via `git diff`
+(`b4e17cf~1..b4e17cf`) that `/test` touched only test files/docs (`db.test.ts`, `ComposeWindow.test.tsx`,
+`ReadingPane.test.tsx`, `STATE.md`, the feature file, `BACKLOG.md`) — no implementation drift.
+
+Acceptance criteria:
+- **Compose window allows adding one or more mock attachments by entering/picking a filename** — PASS.
+  Verified by reading `ComposeWindow.tsx:82-92,210-240`: a text-entry form appends `{filename}` to
+  `attachments` state on submit (blank input is a no-op), rendered as removable chips, and included
+  verbatim in `persist()`'s `fields` object sent to `messages.create`/`update`. Confirmed by the 5
+  automated `ComposeWindow.test.tsx` "attachments" tests (add two, reject blank, remove one, draft
+  prefill, reply doesn't carry attachments over — an intentional scope boundary, not a gap, since
+  `composeIntent.ts` never handled attachments).
+- **Attachments render in the reading pane as filename + placeholder icon, with no real file content
+  behind them** — PASS. `ReadingPane.tsx:214-231` maps `displayedMessage.attachments` to a 📎-prefixed
+  button per attachment; there is no attachment payload/content field anywhere in `MessageAttachment`
+  (`{filename: string}` only, unchanged from feature 002), so there is no real file content to
+  accidentally render. Confirmed by the 2 relevant `ReadingPane.test.tsx` tests (attachments render as
+  named buttons; a message with none shows no attachments row).
+- **Attachments persist with the message across restarts** — PASS. No changes were needed to `db.ts`
+  (attachments already round-tripped through the generic message CRUD path from feature 002); confirmed
+  by the new `db.test.ts` close/reopen test, and by a live check against a scratch copy of the real,
+  in-use `~/.config/outlook-sim/outlook-sim.db` (11 real messages): added two attachments to a real
+  message via `updateMessage`, closed and reopened `MailDb` against the same file (simulating an app
+  restart), and got back identical attachment content. Confirmed via `md5sum` that the real on-disk file
+  was untouched afterward (all work happened against the scratch copy).
+- **"Opening" a mock attachment does not attempt any real file I/O beyond the placeholder** — PASS. This
+  holds structurally, not just by test: `handleToggleAttachment` in `ReadingPane.tsx:110-112` only calls
+  `setOpenAttachmentIndex` — no `window.api.*`, `fs`, or IPC call anywhere in that function. Grepped all
+  of `src/main` and `src/preload` for "attachment" and found attachments used only as an opaque
+  JSON-serialized field (`db.ts`), never opened, read, or written as a real file anywhere in the main
+  process. The automated test additionally asserts `messages.update` is never called as a result of
+  toggling the note open/closed, as the strongest available test-level proxy.
+
+No live multi-window Electron GUI click-through attempted (no Xvfb in this sandbox) — same non-blocking
+gap noted for every prior feature. No issues found; phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
