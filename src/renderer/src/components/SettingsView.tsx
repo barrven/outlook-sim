@@ -43,6 +43,9 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   const [scenarioStatus, setScenarioStatus] = useState<string | null>(null)
   const [scenarioError, setScenarioError] = useState<string | null>(null)
 
+  const [savePackStatus, setSavePackStatus] = useState<string | null>(null)
+  const [savePackError, setSavePackError] = useState<string | null>(null)
+
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -124,6 +127,17 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
     }
     onScenarioPackLoaded?.()
     setScenarioStatus(`Scenario pack "${picked.pack.name}" loaded.`)
+  }
+
+  async function handleSaveScenarioPack(): Promise<void> {
+    setSavePackStatus(null)
+    setSavePackError(null)
+    const result = await window.api.scenario.savePack()
+    if (!result.ok) {
+      if ('error' in result) setSavePackError(result.error)
+      return
+    }
+    setSavePackStatus(`Scenario pack saved to ${result.filePath}.`)
   }
 
   const header = (
@@ -327,6 +341,21 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
             {scenarioError && (
               <p className="settings-test-result-error" role="alert">
                 {scenarioError}
+              </p>
+            )}
+            <p className="settings-view-note">
+              Save the current mailbox, calendar, and personas out to a JSON scenario pack file for
+              reuse or sharing. API keys and other Settings are never included.
+            </p>
+            <div className="settings-view-actions">
+              <button type="button" onClick={handleSaveScenarioPack}>
+                Save Scenario Pack…
+              </button>
+              {savePackStatus && <span className="settings-view-saved">{savePackStatus}</span>}
+            </div>
+            {savePackError && (
+              <p className="settings-test-result-error" role="alert">
+                {savePackError}
               </p>
             )}
           </div>

@@ -1,6 +1,7 @@
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
+import { basename, extname } from 'path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import type { ComposeOpenOptions, PickScenarioPackResult } from '../shared/data-types'
+import type { ComposeOpenOptions, PickScenarioPackResult, SaveScenarioPackResult } from '../shared/data-types'
 import { SimClock } from './data/clock'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
@@ -12,7 +13,7 @@ import {
 } from './data/ipc'
 import { ReminderScheduler } from './data/reminderScheduler'
 import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
-import { validateScenarioPack } from './data/scenarioPack'
+import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
 import { createComposeWindow, createMainWindow } from './windows'
 
@@ -62,6 +63,25 @@ app.whenReady().then(() => {
       return { ok: false, error: `Could not read or parse file: ${(error as Error).message}` }
     }
     return validateScenarioPack(data)
+  })
+
+  ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save Scenario Pack',
+      defaultPath: 'scenario-pack.json',
+      filters: [{ name: 'Scenario Pack', extensions: ['json'] }]
+    })
+    if (canceled || !filePath) {
+      return { ok: false, canceled: true }
+    }
+    const name = basename(filePath, extname(filePath))
+    const pack = buildScenarioPack(mailDb, configStore, simClock, name)
+    try {
+      writeFileSync(filePath, JSON.stringify(pack, null, 2), 'utf-8')
+    } catch (error) {
+      return { ok: false, error: `Could not write file: ${(error as Error).message}` }
+    }
+    return { ok: true, filePath }
   })
 
   // Freeze simulated time on quit so it doesn't silently advance while the

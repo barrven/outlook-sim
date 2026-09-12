@@ -179,3 +179,61 @@ export function applyScenarioPack(db: MailDb, config: ConfigStore, clock: SimClo
   }))
   config.setScheduledScenarioMessages(scheduled)
 }
+
+/**
+ * Snapshots the current mailbox/calendar/personas into a ScenarioPack —
+ * the inverse of `applyScenarioPack`. Deliberately never reads Settings, so
+ * API keys/other secrets can't end up in the file. `offsetMinutes` for each
+ * item is relative to the current simulated time, matching the convention
+ * `applyScenarioPack` expects.
+ */
+export function buildScenarioPack(
+  db: MailDb,
+  config: ConfigStore,
+  clock: SimClock,
+  name: string,
+  description = ''
+): ScenarioPack {
+  const now = clock.now()
+
+  const personas: ScenarioPackPersona[] = config.getPersonas().map((persona) => ({
+    displayName: persona.displayName,
+    email: persona.email,
+    role: persona.role,
+    bio: persona.bio,
+    writingStyleNotes: persona.writingStyleNotes,
+    extraPrompt: persona.extraPrompt
+  }))
+
+  const inbox: ScenarioPackMessage[] = db.listMessages('inbox').map((message) => ({
+    subject: message.subject,
+    body: message.body,
+    fromName: message.fromName,
+    fromEmail: message.fromEmail,
+    toName: message.toName,
+    toEmail: message.toEmail,
+    offsetMinutes: (message.timestamp - now) / 60_000
+  }))
+
+  const calendarItems: ScenarioPackCalendarItem[] = db.listCalendarItems().map((item) => ({
+    title: item.title,
+    description: item.description,
+    offsetMinutes: (item.startTime - now) / 60_000,
+    durationMinutes: item.endTime !== null ? (item.endTime - item.startTime) / 60_000 : null,
+    allDay: item.allDay,
+    reminderMinutesBefore: item.reminderMinutesBefore,
+    itemType: item.itemType
+  }))
+
+  const timedMessages: ScenarioPackMessage[] = config.getScheduledScenarioMessages().map((message) => ({
+    subject: message.subject,
+    body: message.body,
+    fromName: message.fromName,
+    fromEmail: message.fromEmail,
+    toName: message.toName,
+    toEmail: message.toEmail,
+    offsetMinutes: (message.dueSimTime - now) / 60_000
+  }))
+
+  return { name, description, personas, inbox, calendarItems, timedMessages }
+}

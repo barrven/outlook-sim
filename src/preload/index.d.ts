@@ -14,6 +14,7 @@ import type {
   NewMailMessage,
   Persona,
   PickScenarioPackResult,
+  SaveScenarioPackResult,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
@@ -78,6 +79,7 @@ export interface SessionApi {
 export interface ScenarioApi {
   pickPack: () => Promise<PickScenarioPackResult>
   applyPack: (pack: ScenarioPack, confirmed?: boolean) => Promise<ApplyScenarioPackResult>
+  savePack: () => Promise<SaveScenarioPackResult>
 }
 
 export interface LlmApi {

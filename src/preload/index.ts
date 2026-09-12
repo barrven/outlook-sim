@@ -11,6 +11,7 @@ import type {
   NewMailMessage,
   Persona,
   PickScenarioPackResult,
+  SaveScenarioPackResult,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
@@ -74,7 +75,8 @@ const api = {
   scenario: {
     pickPack: (): Promise<PickScenarioPackResult> => ipcRenderer.invoke('scenario:pickPack'),
     applyPack: (pack: ScenarioPack, confirmed?: boolean): Promise<ApplyScenarioPackResult> =>
-      ipcRenderer.invoke('scenario:applyPack', pack, confirmed)
+      ipcRenderer.invoke('scenario:applyPack', pack, confirmed),
+    savePack: (): Promise<SaveScenarioPackResult> => ipcRenderer.invoke('scenario:savePack')
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),

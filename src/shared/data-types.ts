@@ -226,3 +226,10 @@ export interface ScheduledScenarioMessage {
 // caller to prompt the user; retrying with confirmed:true proceeds
 // regardless. Mirrors `StartFreePlayResult`.
 export type ApplyScenarioPackResult = { ok: true } | { ok: false; needsConfirmation: true }
+
+// Saving a pack adds the same "user closed the dialog without choosing a
+// destination" outcome as `PickScenarioPackResult`, plus a write error.
+export type SaveScenarioPackResult =
+  | { ok: true; filePath: string }
+  | { ok: false; error: string }
+  | { ok: false; canceled: true }
