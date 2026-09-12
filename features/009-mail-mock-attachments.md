@@ -94,7 +94,20 @@ Acceptance criteria:
   toggling the note open/closed, as the strongest available test-level proxy.
 
 No live multi-window Electron GUI click-through attempted (no Xvfb in this sandbox) — same non-blocking
-gap noted for every prior feature. No issues found; phase set to `accept`.
+gap noted for every prior feature. No issues found against 009's own ACs; phase set to `accept`.
+
+**Accept-stage fix (found by the user live in the running app, after this validation passed):** sent an
+email with a mock attachment to a persona; the persona's LLM-generated reply said it couldn't see any
+attachment. Root cause: `personaReply.ts`'s `buildThreadTranscript` (from feature 015, written before
+attachments existed) only sent the LLM each message's From/To/Date/Subject/body — `message.attachments`
+was never referenced anywhere in the prompt, so the persona had no way to know a file was ever attached.
+Not a failure of any of 009's own ACs (they don't mention LLM integration), but a real cross-feature
+inconsistency between what the trainee sees in their mailbox and what the simulated persona is told.
+Fixed by adding an `Attachments: <filenames>` line to each transcript entry that has any (omitted
+entirely for messages with none) — the persona now knows a file was attached, by name only, consistent
+with 009's no-real-content design. Added 2 regression tests in `personaReply.test.ts` (both fail against
+the pre-fix code, pass after). Re-ran lint/typecheck/build/full suite (373/373, up from 371) — all pass.
+Phase stays `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

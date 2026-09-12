@@ -59,10 +59,16 @@ function buildSystemPrompt(systemPrompt: string, persona: Persona, identity: Tra
 
 function buildThreadTranscript(thread: MailMessage[]): string {
   return thread
-    .map(
-      (message) =>
-        `From: ${message.fromName} <${message.fromEmail}>\nTo: ${message.toName} <${message.toEmail}>\nDate: ${new Date(message.timestamp).toISOString()}\nSubject: ${message.subject}\n\n${message.body}`
-    )
+    .map((message) => {
+      // Mock attachments have no real content (feature 009) — just tell the
+      // model a file was attached, by name, so it doesn't contradict what
+      // the trainee can see in their own mailbox by claiming there's none.
+      const attachmentsLine =
+        message.attachments.length > 0
+          ? `\nAttachments: ${message.attachments.map((attachment) => attachment.filename).join(', ')}`
+          : ''
+      return `From: ${message.fromName} <${message.fromEmail}>\nTo: ${message.toName} <${message.toEmail}>\nDate: ${new Date(message.timestamp).toISOString()}\nSubject: ${message.subject}${attachmentsLine}\n\n${message.body}`
+    })
     .join('\n\n---\n\n')
 }
 

@@ -147,6 +147,30 @@ describe('generatePersonaReply', () => {
     expect(userMessage.indexOf('Are you free this week?')).toBeLessThan(userMessage.indexOf('Want to grab lunch?'))
   })
 
+  it('tells the LLM about a mock attachment by filename, so the persona does not deny seeing one', async () => {
+    const message = sendMessage({ attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }] })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
+
+    await generatePersonaReply(db, config, clock, message.id)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
+    expect(userMessage).toContain('Attachments: report.pdf, photo.jpg')
+  })
+
+  it('omits the Attachments line entirely for a message with none', async () => {
+    const message = sendMessage() // attachments: [] by default
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    await generatePersonaReply(db, config, clock, message.id)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
+    expect(userMessage).not.toContain('Attachments:')
+  })
+
   it('excludes unrelated threads (different subject) from the prompt sent to the LLM', async () => {
     db.createMessage({
       folderId: 'sent',
