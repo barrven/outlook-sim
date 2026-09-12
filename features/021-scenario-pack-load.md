@@ -1,7 +1,7 @@
 ---
 id: 021
 title: Scenario pack load
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -130,7 +130,51 @@ click-through (no Xvfb in this sandbox), same non-blocking gap as every prior fe
 same reason as the reminder scheduler's — fully synchronous, no genuine gap for an overlapping call.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (347/347) re-run 3x, stable. Confirmed via
+`git diff 41a1418 2805411 --stat` that the `/test` stage touched only test files plus docs
+(`STATE.md`/`BACKLOG.md`/feature file) — no implementation drift between `/implement` and `/test`.
+
+Acceptance criteria:
+- **AC1** (pick a pack file from the UI and load it) — PASS. Verified by code inspection
+  (`SettingsView.tsx`'s "Load Scenario Pack…" button → `window.api.scenario.pickPack()` →
+  `dialog.showOpenDialog` in `index.ts`) plus `SettingsView.test.tsx`'s pick→apply→status test. The
+  native file-dialog call itself (`scenario:pickPack`) has no automated test — same
+  untestable-without-a-live-Electron-process category as `window:openCompose` — but everything
+  downstream of it (`validateScenarioPack`) is directly and thoroughly tested.
+- **AC2** (loading populates Inbox, personas, and calendar deadlines from the pack) — PASS. Live
+  end-to-end check against a scratch copy of the real, in-use `~/.config/outlook-sim` data (11 real
+  messages, 4 real calendar items, 15 real personas): after applying a pack, the mailbox held
+  exactly the pack's one inbox message, the calendar held exactly the pack's one deadline, and
+  personas held exactly the pack's one persona — real data fully replaced, not merged. Also covered
+  by `scenarioPack.test.ts` (offset-to-timestamp math against a controlled clock) and `ipc.test.ts`
+  (the full IPC round trip).
+- **AC3** (optional timed incoming messages arrive at their specified simulated times) — PASS. Same
+  live check: the pack's `timedMessages` entry did not appear in Inbox immediately after apply (it
+  went to the pending scheduled-messages store instead), did not deliver on a scheduler tick while
+  the clock was paused, and delivered correctly the moment the clock started running.
+  `scenarioMailScheduler.test.ts`'s real-`SimClock` integration test independently confirms the same
+  paused/running behavior.
+- **AC4** (loading replaces the current active state, with confirmation if it would discard unsaved
+  data) — PASS. The live check's "applying replaces real existing data" phase is direct evidence for
+  the replace half; `ipc.test.ts`'s `scenario:applyPack` tests cover the confirm/re-confirm handshake
+  itself (refuses + leaves data intact when non-empty and unconfirmed; applies when `confirmed:true`)
+  and `SettingsView.test.tsx` covers both the confirm-and-proceed and decline-and-abort UI paths.
+- **AC5** (malformed/invalid pack JSON rejected with a clear error, not a crash) — PASS. Live check
+  confirmed a bad persona object still returns a specific, actionable error
+  (`personas[0].displayName must be a string`) rather than throwing; `scenarioPack.test.ts` exercises
+  this at every level of the schema (root/persona/message/calendar-item, wrong types, missing
+  required fields, invalid enum values), and `SettingsView.test.tsx` confirms the exact error string
+  reaches the screen.
+
+Confirmed the real on-disk `outlook-sim.db` and `config/personas.json` were left unmodified by this
+validation run (mtimes checked; the live check ran only against a scratch copy of both, then
+deleted).
+
+Non-blocking gaps, consistent with every prior feature: no live multi-window Electron GUI
+click-through (no Xvfb in this sandbox) — the real native file-picker dialog is unverified through
+the actual UI, deferred to the user's own check at `/accept`. The `ticking` reentrancy guard in
+`ScenarioMailScheduler.tick()` remains untested, as documented in Test Notes (fully synchronous, no
+genuine gap to exercise it against).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
