@@ -1,7 +1,7 @@
 ---
 id: 007
 title: Mail read/unread, flags & categories
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -11,12 +11,12 @@ toggle), can be flagged for follow-up, and can be tagged with one or more
 categories.
 
 ## Acceptance Criteria
-- [ ] Unread messages are visually distinguished in the message list
-- [ ] Opening a message marks it read; user can manually mark read/unread
-- [ ] User can flag/unflag a message from the message list or reading pane
-- [ ] User can assign one or more categories to a message and see/filter by
+- [x] Unread messages are visually distinguished in the message list
+- [x] Opening a message marks it read; user can manually mark read/unread
+- [x] User can flag/unflag a message from the message list or reading pane
+- [x] User can assign one or more categories to a message and see/filter by
       them in the list
-- [ ] All three states persist across restarts
+- [x] All three states persist across restarts
 
 ## Implementation Notes
 The data model and persistence already existed in full from feature 002
@@ -134,7 +134,69 @@ codebase and also means neither test file needed a real `App`-level
 integration test — App.tsx wasn't touched by this feature.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint: pass. typecheck: pass (both `tsconfig.node.json` and
+`tsconfig.web.json`). build (`electron-vite build`): pass. Full test suite:
+221/221, re-run 3x back-to-back, stable. Confirmed via `git diff
+6063fe7 6f9d205 --stat` that the `/test` stage touched only test files
+(plus docs) — no implementation drift to re-review.
+
+Per-AC check:
+
+- **AC1 (unread visually distinguished):** PASS. Pre-existing from feature
+  003 (`.message-list-item.unread .message-list-item-subject { font-weight:
+  600 }`), unchanged by this feature; covered by
+  `MessageListPane.test.tsx`'s `'renders messages for the folder, bolding
+  unread ones'`.
+- **AC2 (auto-mark-read on open + manual toggle):** PASS. Code inspection:
+  `ReadingPane.tsx`'s fetch effect calls `messages.update(id, { isRead:
+  true })` when a loaded message has `isRead: false`; a Mark as
+  read/unread button (label reflects current state) appears in all three
+  action-row branches and calls `update` with the flipped boolean.
+  Confirmed by `ReadingPane.test.tsx` (auto-mark fires for unread, does
+  *not* fire for already-read; manual toggle works both directions) and
+  additionally by a live check: bundled `db.ts` standalone with `esbuild`
+  and drove a real `MailDb` through create (unread by default) → mark
+  read → mark unread, all correct.
+- **AC3 (flag/unflag from list or reading pane):** PASS. Reading Pane has
+  a Flag/Unflag toggle (all three branches); Message List has a per-row
+  flag-glyph button as a sibling of the select button (not nested — HTML
+  doesn't allow buttons inside buttons) with `stopPropagation` so it can't
+  accidentally trigger row-select. Confirmed by tests in both files
+  (`MessageListPane.test.tsx`'s new test explicitly asserts
+  `onSelectMessage` is never called by the flag click) plus the same live
+  `MailDb` check (flag update round-trips correctly).
+- **AC4 (assign categories, see/filter in list):** PASS. Reading Pane
+  gained a category-tag row (add via Enter with dedup, remove via a ×
+  button per tag); Message List shows each row's categories inline and a
+  filter `<select>` that appears only once at least one message in the
+  folder has a category, correctly narrows the visible rows (a
+  multi-category message stays visible under any of its categories), and
+  resets to "All categories" on folder change. All confirmed by the new
+  tests in both component test files, and by the live `MailDb` check
+  (categories array round-trips through `updateMessage`/`getMessage`
+  correctly).
+- **AC5 (persists across restarts):** PASS. No new persistence code was
+  needed — `isRead`/`isFlagged`/`categories` were already ordinary SQLite
+  columns from feature 002. `db.test.ts`'s new close/reopen test proves a
+  message with all three populated survives a `MailDb` restart intact;
+  additionally re-verified live via the same `esbuild`-bundled `MailDb`
+  script: created a message, set isRead/isFlagged/categories, closed and
+  reopened the database, and re-read the exact same values back.
+
+Non-blocking gap, consistent with every prior feature in this project: no
+live multi-window Electron GUI click-through was performed (no
+Xvfb/Playwright driver in this sandbox). The full click-to-read-to-list-
+unbolds loop across components is only proven by per-component unit tests
+plus the already-validated `data:messages-changed` broadcast wiring from
+feature 006 — not re-exercised end-to-end here, since that would be
+re-testing shared plumbing rather than this feature's own logic. Cross-
+checked the user's real `~/.config/outlook-sim/outlook-sim.db`: all 8
+existing real messages still have valid `is_read`/`is_flagged`/`categories`
+columns (unread/unflagged/empty, since the app hasn't been relaunched with
+this feature's UI yet) — confirms no schema regression, though it doesn't
+exercise the new UI paths since those require the running app.
+
+All five acceptance criteria verified. No regressions found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
