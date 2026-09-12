@@ -1,7 +1,7 @@
 ---
 id: 019
 title: Calendar deadlines, all-day items & reminders
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -122,7 +122,44 @@ deliberate, in Implementation Notes). No live Electron GUI click-through — no 
 same non-blocking gap as every prior feature, deferred to `/validate`.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (305/305) re-run 3x, stable. Confirmed via
+`git diff 9ac6cf4 256f879 --stat` that the `/test` stage touched only test files plus docs
+(`STATE.md`/`BACKLOG.md`/feature file) — no implementation drift between `/implement` and `/test`.
+
+Acceptance criteria:
+- **AC1** (create/edit/delete a deadline with a specific date/time) — PASS. Verified by code
+  inspection (`CalendarItemForm`'s Type select, `CalendarView.tsx`'s `handleCreate`/`handleUpdate`/
+  `handleDelete`) plus a live check against a scratch copy of the real, in-use
+  `~/.config/outlook-sim/outlook-sim.db`: created a `deadline` item, edited its title, both
+  persisted correctly.
+- **AC2** (create/edit/delete an all-day item) — PASS. Same live check: created an `allDay:true`
+  item with `endTime: null`, then deleted it, both round-tripping through the real DB correctly.
+  The All-day → date-only-input conversion and its exact-local-midnight math are additionally
+  covered by `CalendarView.test.tsx` (computed independently of the implementation's own helper, so
+  it isn't just re-testing itself).
+- **AC3** (attach a reminder; it fires as a visible in-app notification when simulated time reaches
+  it) — PASS. Live check: an item due in 5 simulated minutes did not fire while the clock was
+  paused, fired exactly once immediately after `clock.start()`, persisted `reminderFired: true`, and
+  did not refire on a later tick — all against the real DB/clock code paths (not mocks). The
+  in-app-visible half (dismissible banner, multiple independent banners) is covered by
+  `App.test.tsx`; end-to-end IPC wiring (`calendar:reminder-fired` → `onReminderFired`) is covered by
+  `ipc.test.ts`.
+- **AC4** (no reminder fires on wall-clock time while paused) — PASS. The live check's second phase
+  is direct evidence: a fresh item due right at `clock.now()` was added while paused and did not
+  fire; this holds structurally for two independent reasons documented in Implementation Notes
+  (`SimClock.now()` itself doesn't advance while paused, and the scheduler separately checks
+  `running`), both exercised by `reminderScheduler.test.ts`'s real-`SimClock` pause/resume
+  integration test.
+
+Confirmed the real on-disk `outlook-sim.db` was left byte-for-byte unmodified by this validation run
+(mtime checked before and after; the live check ran only against a scratch copy, then deleted).
+
+Non-blocking gaps, consistent with every prior feature: no live multi-window Electron GUI
+click-through (no Xvfb in this sandbox) — the real native `date`/`datetime-local` input widgets and
+a genuine wall-clock-time-passing-while-paused scenario (leaving the real app open, paused, for
+real elapsed time) are unverified through the actual UI, deferred to the user's own check at
+`/accept`. The `ticking` reentrancy guard remains untested, as documented in Test Notes (no genuine
+async gap exists in the current synchronous `tick()` to exercise it against).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
