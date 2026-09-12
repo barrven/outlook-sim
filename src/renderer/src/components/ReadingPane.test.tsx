@@ -285,6 +285,40 @@ describe('ReadingPane', () => {
     expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: true })
   })
 
+  it('does not immediately re-mark a message read after manually marking it unread while still open (regression)', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
+
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Mark as unread' }))
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: false })
+    vi.mocked(window.api.data.messages.update).mockClear()
+
+    // Simulate what actually happens in the real app: that update broadcasts
+    // data:messages-changed, which bumps messagesVersion and re-triggers the
+    // fetch effect for this same still-open message — now reflecting the
+    // isRead: false we just applied. It must not immediately flip it back.
+    vi.mocked(window.api.data.messages.get).mockResolvedValue({ ...MESSAGE, isRead: false })
+    rerender(<ReadingPane selectedMessageId="msg-1" messagesVersion={1} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByRole('button', { name: 'Mark as read' })
+    expect(window.api.data.messages.update).not.toHaveBeenCalled()
+  })
+
+  it('does re-auto-mark-read when a different, unread message is opened next', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true, msg-1
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    await screen.findByText('Quarterly numbers')
+
+    const otherUnread: MailMessage = { ...MESSAGE, id: 'msg-2', subject: 'Different message', isRead: false }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(otherUnread)
+    rerender(<ReadingPane selectedMessageId="msg-2" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Different message')
+    await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-2', { isRead: true }))
+  })
+
   it('shows a Flag button for an unflagged message, and calls update to flag it', async () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isFlagged: false

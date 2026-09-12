@@ -89,6 +89,28 @@ Reverted to a bare text child with the `<select>` as a sibling.
 lint/typecheck/build pass; existing test suite still 208/208 (no new
 tests yet — that's `/test`).
 
+**Addendum (post-accept-review bug fix):** user reported that clicking
+"Mark as unread" in the Reading Pane while the message stayed open
+immediately flipped it back to read. Root cause: the fetch effect ran on
+`[selectedMessageId, messagesVersion]`, and the manual toggle's own
+`messages.update` call broadcasts `data:messages-changed` → bumps
+`messagesVersion` → re-triggers that same effect for the still-open
+message → refetches it now `isRead: false` → the unconditional
+`!result.isRead` auto-mark check fired again and immediately re-marked it
+read. Fixed with a `lastCheckedIdRef` ref: the auto-mark check now only
+*acts* the first time a given `selectedMessageId` is seen (a genuinely new
+open); a same-id refetch triggered by any other update (manual toggle,
+flag, category change) updates local state but skips the auto-mark check
+entirely. Key subtlety that a first fix attempt missed: the ref must be
+stamped with the current id on *every* fetch for that id — including when
+the message was already read on first open — not only when a mark
+actually happens; otherwise a message that started read (so the ref never
+got set) would still get incorrectly re-marked the first time it was
+manually turned unread. Caught by a new regression test before fixing it
+"for real" (see Test Notes) — the initial ref-only-on-mark version passed
+every pre-existing test but failed the new regression test, which is
+exactly why that test was worth writing.
+
 ## Test Notes
 Added 13 tests on top of the coverage written during `/implement` (208 →
 221, all passing; re-ran full suite 3x, stable):
@@ -122,6 +144,17 @@ Added 13 tests on top of the coverage written during `/implement` (208 →
 AC1 (unread bolding) already had dedicated coverage from feature 003
 (`'renders messages for the folder, bolding unread ones'`) — not
 duplicated here.
+
+**Addendum (regression tests for the re-mark-read bug):** added 2 more
+tests (221 → 223, all passing; re-ran full suite 3x, stable) —
+`'does not immediately re-mark a message read after manually marking it
+unread while still open (regression)'` reproduces the exact reported
+sequence (open a read message, click Mark as unread, simulate the
+resulting `messagesVersion` bump re-fetching it as unread) and asserts no
+further `update` call happens; `'does re-auto-mark-read when a different,
+unread message is opened next'` guards the fix's other half — navigating
+to a genuinely different unread message must still auto-mark it, so the
+fix doesn't overcorrect into never auto-marking anything.
 
 Deliberately not covered: a live end-to-end round trip through the actual
 `data:messages-changed` broadcast (i.e., verifying `MessageListPane`
@@ -198,5 +231,22 @@ exercise the new UI paths since those require the running app.
 
 All five acceptance criteria verified. No regressions found.
 
+**Re-validation after the re-mark-read bug fix:** lint/typecheck/build
+still pass; full suite now 223/223, re-run 3x, stable. AC2 specifically
+re-confirmed: verified the new regression test actually catches the bug
+(it failed against the first fix attempt, which stamped the tracking ref
+only when a mark occurred, before the corrected always-stamp version made
+it pass) — genuine red→green, not a test written to match the fix.
+
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+- 2026-09-11 — user reported, while reviewing before accepting: "I notice
+  when testing that to mark an email as unread, you click the button in
+  the reading pane, but then since the email is open, it immediately
+  marks as read again." Decision: changes requested. Root cause: the
+  message-fetch effect re-ran on every `messagesVersion` bump (including
+  the one caused by the user's own manual-unread update) and unconditionally
+  re-applied the "mark read if unread" check. Fixed with a ref that limits
+  the auto-mark check to the first time a given message id is opened, not
+  every subsequent refetch of the same open message; added 2 regression
+  tests (one of which caught a bug in the first fix attempt). Re-validated
+  in the same pass — see the addenda above.

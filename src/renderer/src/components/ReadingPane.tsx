@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
 import type { MailMessage } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
@@ -35,13 +35,25 @@ function ReadingPane({
     setCategoryDraft('')
   }
 
+  // Tracks which message id we've already run the open/auto-mark-read check
+  // for, so that a messagesVersion-triggered refetch of the *same* open
+  // message (e.g. from the user's own "Mark as unread" click below) doesn't
+  // immediately flip it back to read. Only a genuinely new selection
+  // re-runs the check.
+  const lastCheckedIdRef = useRef<string | null>(null)
+
   useEffect(() => {
-    if (!selectedMessageId) return
+    if (!selectedMessageId) {
+      lastCheckedIdRef.current = null
+      return
+    }
     let cancelled = false
     window.api.data.messages.get(selectedMessageId).then((result) => {
       if (cancelled) return
       setMessage(result)
-      if (result && !result.isRead) {
+      const alreadyChecked = lastCheckedIdRef.current === selectedMessageId
+      lastCheckedIdRef.current = selectedMessageId
+      if (result && !result.isRead && !alreadyChecked) {
         window.api.data.messages.update(result.id, { isRead: true })
       }
     })
