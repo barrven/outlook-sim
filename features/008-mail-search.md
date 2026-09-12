@@ -1,7 +1,7 @@
 ---
 id: 008
 title: Mail search
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -10,12 +10,12 @@ Trainee can search mail by keyword across subject/body/sender within a
 folder or across all folders.
 
 ## Acceptance Criteria
-- [ ] Search box filters the message list by keyword match against subject,
+- [x] Search box filters the message list by keyword match against subject,
       body, and sender
-- [ ] User can scope search to the current folder or all folders
-- [ ] Search results update the message list without needing to change
+- [x] User can scope search to the current folder or all folders
+- [x] Search results update the message list without needing to change
       folder selection
-- [ ] Clearing the search restores the normal folder view
+- [x] Clearing the search restores the normal folder view
 
 ## Implementation Notes
 Entirely UI, in `MessageListPane.tsx` (same file that already owns
@@ -122,7 +122,67 @@ separately, and stacking every combination would test the pipeline
 mechanism repeatedly rather than new behavior.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint: pass. typecheck: pass (both `tsconfig.node.json` and
+`tsconfig.web.json`). build (`electron-vite build`): pass. Full test suite:
+230/230, re-run 3x back-to-back, stable. Confirmed via `git diff 8419d59
+3b82ace --stat` that the `/test` stage touched only
+`MessageListPane.test.tsx`, the feature file, and the loop bookkeeping
+files — no implementation drift to re-review.
+
+Per-AC check (code inspection of `MessageListPane.tsx` plus the new
+tests, since this feature is pure renderer UI with no main-process/DB
+layer to exercise standalone the way prior features' `esbuild`-bundled
+`MailDb` checks did — the Vitest suite already runs the real component
+against real React/DOM, mocking only `window.api`, which is the strongest
+non-Electron-GUI check available here):
+
+- **AC1 (keyword match against subject/body/sender):** PASS.
+  `matchesQuery` checks `subject`, `body`, `fromName`, and `fromEmail`,
+  all lowercased on both sides for case-insensitivity. The new test
+  constructs five messages, each matching the query through exactly one
+  of those four fields (plus a fifth matching none), and confirms exactly
+  the four expected rows show.
+- **AC2 (scope to current folder or all folders):** PASS. A `<select>`
+  toggles `searchScope` between `'folder'` and `'all'`; `searchedMessages`
+  reads from the folder-scoped `messages` state or the separately-fetched
+  `allMessages` state accordingly. Confirmed by a test using a
+  `mockImplementation` that returns different lists depending on whether
+  `messages.list` was called with a folder id or none, proving the scope
+  switch actually changes which dataset is searched — plus a second test
+  proving the unscoped fetch is genuinely lazy (never called until "All
+  folders" is selected), matching the documented design intent.
+- **AC3 (results update without changing folder selection):** PASS. By
+  construction: nothing in the search/filter code path touches
+  `selectedFolderId`, calls `onSelectMessage`, or reaches outside this
+  component's own state. The new test types two different, mutually
+  exclusive queries in sequence against a fixed `selectedFolderId` prop
+  and confirms the visible rows change each time, with an explicit
+  assertion that `messages.list` was never called with a different
+  folder id during the whole interaction.
+- **AC4 (clearing search restores normal view):** PASS. `query` is
+  computed via `.trim().toLowerCase()`, which is falsy for an
+  empty/whitespace string, so `searchedMessages` falls through to the
+  plain `messages` array — no special-case "restore" code path exists
+  because none is needed. Confirmed by a test that searches, clears, and
+  checks the full original list is back.
+
+Two extra tests beyond the literal ACs were also re-checked: the
+distinct "No results found." vs "No items to show." empty states render
+correctly, and an active search plus the pre-existing (feature 007)
+category filter narrow the list together rather than one overriding the
+other — both consistent with the documented filter pipeline order
+(messages/allMessages → search → category → render).
+
+Non-blocking gap, consistent with every prior feature in this project: no
+live multi-window Electron GUI click-through was performed (no
+Xvfb/Playwright driver in this sandbox). Unlike features 006/007 there was
+no separate main-process/DB logic to additionally exercise via a
+standalone `esbuild`-bundled script — this feature's entire surface is
+renderer-side React state and the pre-existing, already-validated
+`db:messages:list` IPC call, so the real-component Vitest suite already
+represents the strongest available check.
+
+All four acceptance criteria verified. No regressions found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
