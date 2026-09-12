@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Free-play mode bootstrap (features/017-free-play-mode-bootstrap.md)
+Settings gets a new "Session" section with a "Start Free-Play" button. Click
+it and the mailbox and calendar reset to a fresh, empty state — ready for
+the LLM scheduler and persona-reply features to drive activity from there,
+using whatever system prompt/personas/trainee identity you've already
+configured. No scenario pack is required. If you already have mail or
+calendar data, you'll get a confirmation prompt before anything is wiped;
+starting from an already-empty state just resets silently. Folder structure
+(including any custom folders) and your Settings themselves are untouched.
+
 ## 2026-09-11 — Mail search (features/008-mail-search.md)
 The message list now has a search box. Type a keyword and it filters
 live against subject, body, and sender (name or email) — case-

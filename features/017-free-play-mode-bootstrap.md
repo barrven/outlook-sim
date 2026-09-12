@@ -1,7 +1,7 @@
 ---
 id: 017
 title: Free-play mode bootstrap
-status: accept
+status: done
 priority: medium
 ---
 
@@ -113,4 +113,5 @@ consume calendar items yet (018/019 still backlog) — same forward-looking patt
 feature's own validation.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-11 — User accepted via the `/accept` gate (AskUserQuestion: "Accept"), no changes
+requested. Decision: **accepted**.
