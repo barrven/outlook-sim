@@ -1,7 +1,7 @@
 ---
 id: 022
 title: Scenario pack save
-status: accept
+status: done
 priority: medium
 ---
 
@@ -106,4 +106,6 @@ inspection plus the live standalone check above rather than a unit test, consist
 `scenario:pickPack`/`window:openCompose`. No issues found; phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-12 — user reviewed the summary (feature description, all 4 ACs mapped to PASS, validation
+results including the live check against real on-disk data) and selected "Accept" via the accept-stage
+question. Decision: **accepted**. Logged to `docs/CHANGELOG.md`; status set to `done`.

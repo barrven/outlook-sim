@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-12 — Scenario pack save (features/022-scenario-pack-save.md)
+Settings' "Scenario Pack" section gains a "Save Scenario Pack…" button
+alongside Load. Pick a destination filename and it writes the current
+Inbox, personas/contacts, and calendar items out to a JSON scenario pack —
+the same format Load reads back in, so a saved-then-reloaded pack round-trips
+without losing anything, including any still-pending "timed" messages from a
+previously loaded pack. The file never contains API keys or other Settings
+values, no matter what's configured.
+
 ## 2026-09-12 — Scenario pack load (features/021-scenario-pack-load.md)
 Settings gets a new "Scenario Pack" section with a "Load Scenario Pack…"
 button. Pick a JSON scenario pack file and it seeds the starting Inbox,

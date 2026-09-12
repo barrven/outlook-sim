@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 022 — Scenario pack save
+- **Phase:** implement
+- **Active feature:** 009 — Mail mock attachments
 - **Last updated:** 2026-09-12
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-12 — feature 022 (scenario pack save) accepted by user; logged to CHANGELOG; only low-priority features remain in the backlog (009, 020); active feature set to 009 (Mail mock attachments), phase set to `implement`
 - 2026-09-12 — feature 022 (scenario pack save) validated: lint/typecheck/build pass; full test suite (361/361) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs, no implementation drift; all 4 ACs verified by tests + code inspection plus a live end-to-end check — bundled `scenarioPack.ts`/`db.ts`/`config.ts`/`clock.ts` standalone with `tsx` and ran `buildScenarioPack` against a scratch copy of the real, in-use `~/.config/outlook-sim` data (8 inbox messages, 4 calendar items, 15 personas, real live Anthropic/Gemini API keys configured): built-pack counts matched the real store exactly across all three categories, passed `validateScenarioPack` unmodified, round-tripped through an actual save-to-file/reload/apply cycle into a second fresh store with all content preserved, and neither real API key appeared anywhere in the built pack's JSON; real on-disk `outlook-sim.db` confirmed byte-for-byte unchanged (md5) afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-12 — feature 022 (scenario pack save) tested: added 14 tests (347 → 361, all passing; re-ran full suite 3x, stable) — new `buildScenarioPack` tests cover name/description, persona id-dropping, inbox-only message scoping with correct `offsetMinutes`, calendar item offset/duration math (incl. `endTime: null`), pending scheduled messages surfacing as `timedMessages`, an empty-pack case, and a direct AC4 check that a configured API key never appears in the built pack's JSON; a dedicated round-trip test (build → JSON round trip → validate → apply into a second fresh store) confirms message/calendar item/persona/pending-timed-message all survive exactly (AC3); `SettingsView.test.tsx` gained 4 tests for the Save button's success/canceled/error/error-then-success paths. `scenario:savePack`'s IPC wiring itself (needs real Electron `dialog`) has no unit test, same category as `scenario:pickPack`/`window:openCompose`. lint/typecheck/build all still pass; phase set to `validate`
 - 2026-09-12 — feature 022 (scenario pack save) implemented: new `buildScenarioPack` in `main/data/scenarioPack.ts` (inverse of 021's `applyScenarioPack`) snapshots current inbox/calendar/personas/pending-timed-messages into the same `ScenarioPack` schema; new `scenario:savePack` IPC (native save dialog, name derived from chosen filename) + `SaveScenarioPackResult` type + `window.api.scenario.savePack()`; new "Save Scenario Pack…" button in Settings' existing Scenario Pack section. Never reads Settings/API keys (AC4 holds structurally). Verified the full build→validate→apply round trip standalone (message/calendar item/persona/pending timed message all survived exactly) before wiring in the UI. lint/typecheck/build pass, existing suite still 347/347; phase set to `test`
