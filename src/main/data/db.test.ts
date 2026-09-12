@@ -391,4 +391,91 @@ describe('MailDb', () => {
     // reassign so the outer afterEach's db.close() doesn't double-close
     db = new MailDb(baseDir)
   })
+
+  it('reports no mailbox/calendar data on a fresh database', () => {
+    expect(db.hasMailboxOrCalendarData()).toBe(false)
+  })
+
+  it('reports mailbox/calendar data present after a message is created', () => {
+    db.createMessage({
+      folderId: 'inbox',
+      subject: 'Hi',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    expect(db.hasMailboxOrCalendarData()).toBe(true)
+  })
+
+  it('reports mailbox/calendar data present after a calendar item is created, even with no messages', () => {
+    db.createCalendarItem({
+      title: 'Standup',
+      description: '',
+      startTime: 1000,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: null,
+      recurrenceRule: null,
+      itemType: 'event'
+    })
+    expect(db.hasMailboxOrCalendarData()).toBe(true)
+  })
+
+  it('resetMailboxAndCalendar clears all messages and calendar items but preserves folders', () => {
+    db.createMessage({
+      folderId: 'inbox',
+      subject: 'To be wiped',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    db.createCalendarItem({
+      title: 'To be wiped',
+      description: '',
+      startTime: 1000,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: null,
+      recurrenceRule: null,
+      itemType: 'event'
+    })
+    db.createFolder({ id: 'projects', name: 'Projects', type: 'custom' })
+
+    db.resetMailboxAndCalendar()
+
+    expect(db.listMessages()).toEqual([])
+    expect(db.listCalendarItems()).toEqual([])
+    expect(db.hasMailboxOrCalendarData()).toBe(false)
+    expect(new Set(db.listFolders().map((f) => f.id))).toEqual(
+      new Set(['inbox', 'drafts', 'sent', 'deleted', 'projects'])
+    )
+  })
+
+  it('reset mailbox/calendar state survives a close/reopen cycle', () => {
+    db.createMessage({
+      folderId: 'inbox',
+      subject: 'To be wiped',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    db.resetMailboxAndCalendar()
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.listMessages()).toEqual([])
+    expect(reopened.hasMailboxOrCalendarData()).toBe(false)
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
 })

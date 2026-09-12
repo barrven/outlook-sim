@@ -360,4 +360,87 @@ describe('registerDataIpcHandlers', () => {
       })
     })
   })
+
+  describe('session:startFreePlay', () => {
+    it('resets an already-empty mailbox/calendar with no confirmation needed', () => {
+      const result = handlers.get('session:startFreePlay')!(fakeEvent)
+      expect(result).toEqual({ ok: true })
+    })
+
+    it('refuses to wipe a non-empty mailbox without confirmation, and leaves the data intact', () => {
+      const message = db.createMessage({
+        folderId: 'inbox',
+        subject: 'Keep me',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+
+      const result = handlers.get('session:startFreePlay')!(fakeEvent)
+
+      expect(result).toEqual({ ok: false, needsConfirmation: true })
+      expect(db.getMessage(message.id)).not.toBeNull()
+    })
+
+    it('refuses to wipe non-empty calendar data without confirmation, even with no messages', () => {
+      db.createCalendarItem({
+        title: 'Deadline',
+        description: '',
+        startTime: 100,
+        endTime: null,
+        allDay: false,
+        reminderMinutesBefore: null,
+        recurrenceRule: null,
+        itemType: 'deadline'
+      })
+
+      const result = handlers.get('session:startFreePlay')!(fakeEvent)
+
+      expect(result).toEqual({ ok: false, needsConfirmation: true })
+      expect(db.listCalendarItems()).toHaveLength(1)
+    })
+
+    it('wipes mailbox and calendar data when called with confirmed:true, and broadcasts the change', () => {
+      const message = db.createMessage({
+        folderId: 'inbox',
+        subject: 'Gone',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+      const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+      getAllWindowsMock.mockReturnValue([fakeWindow])
+
+      const result = handlers.get('session:startFreePlay')!(fakeEvent, true)
+
+      expect(result).toEqual({ ok: true })
+      expect(db.getMessage(message.id)).toBeNull()
+      expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+    })
+
+    it('does not broadcast when confirmation is still needed', () => {
+      db.createMessage({
+        folderId: 'inbox',
+        subject: 'Keep me',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+      const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+      getAllWindowsMock.mockReturnValue([fakeWindow])
+
+      handlers.get('session:startFreePlay')!(fakeEvent)
+
+      expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+    })
+  })
 })

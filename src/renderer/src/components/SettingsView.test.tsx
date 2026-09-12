@@ -33,6 +33,10 @@ function systemPromptSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'System Prompt' }))
 }
 
+function sessionSection(): ReturnType<typeof within> {
+  return within(screen.getByRole('region', { name: 'Session' }))
+}
+
 describe('SettingsView', () => {
   it('lists OpenAI, Anthropic, Gemini, and Grok (xAI) as selectable providers', async () => {
     render(<SettingsView />)
@@ -311,6 +315,54 @@ describe('SettingsView', () => {
       expect(await section.findByText('Saved')).toBeInTheDocument()
       expect(providerSection().queryByText('Saved')).not.toBeInTheDocument()
       expect(identitySection().queryByText('Saved')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Session', () => {
+    it('starts free-play with no confirmation prompt when the mailbox/calendar is already empty', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.session.startFreePlay).mockResolvedValue({ ok: true })
+      const confirmSpy = vi.spyOn(window, 'confirm')
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(sessionSection().getByRole('button', { name: 'Start Free-Play' }))
+
+      await waitFor(() => expect(window.api.session.startFreePlay).toHaveBeenCalled())
+      expect(confirmSpy).not.toHaveBeenCalled()
+      expect(window.api.session.startFreePlay).toHaveBeenCalledTimes(1)
+      expect(await sessionSection().findByText(/fresh and empty/)).toBeInTheDocument()
+    })
+
+    it('asks for confirmation when starting free-play would discard existing data, and proceeds on confirm', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.session.startFreePlay)
+        .mockResolvedValueOnce({ ok: false, needsConfirmation: true })
+        .mockResolvedValueOnce({ ok: true })
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(sessionSection().getByRole('button', { name: 'Start Free-Play' }))
+
+      await waitFor(() => expect(window.api.session.startFreePlay).toHaveBeenCalledTimes(2))
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
+      expect(window.api.session.startFreePlay).toHaveBeenNthCalledWith(2, true)
+      expect(await sessionSection().findByText(/fresh and empty/)).toBeInTheDocument()
+    })
+
+    it('does not reset when the user declines the confirmation', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.session.startFreePlay).mockResolvedValue({ ok: false, needsConfirmation: true })
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(sessionSection().getByRole('button', { name: 'Start Free-Play' }))
+
+      await waitFor(() => expect(window.api.session.startFreePlay).toHaveBeenCalledTimes(1))
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
+      expect(sessionSection().queryByText(/fresh and empty/)).not.toBeInTheDocument()
     })
   })
 })

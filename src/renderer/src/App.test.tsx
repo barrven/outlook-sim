@@ -340,6 +340,43 @@ describe('App shell', () => {
     expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
   })
 
+  it('starting free-play from Settings clears a previously-selected message', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      id: 'msg-1',
+      folderId: 'inbox',
+      previousFolderId: null,
+      subject: 'Hello there',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: false,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+    vi.mocked(window.api.session.startFreePlay).mockResolvedValue({ ok: true })
+
+    render(<App />)
+
+    await user.click(await screen.findByText('Hello there'))
+    await screen.findByText('Body text')
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Start Free-Play' }))
+    await screen.findByText(/fresh and empty/)
+
+    await user.click(screen.getByRole('tab', { name: 'Mail' }))
+
+    expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+  })
+
   it('shows a dismissible banner when a persona reply generation fails, and does not show one otherwise', async () => {
     const user = userEvent.setup()
     render(<App />)

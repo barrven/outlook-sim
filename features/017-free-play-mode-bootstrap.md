@@ -1,7 +1,7 @@
 ---
 id: 017
 title: Free-play mode bootstrap
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -46,7 +46,35 @@ or lightly seeded" either/or, and fabricating placeholder content would bake in 
 domain" the spec explicitly says shouldn't be hardcoded.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 15 tests on top of the coverage already written during `/implement` (230 → 244 passing plus
+1 pre-existing test's expectation updated for the new channel and one assertion loosened to a
+set-comparison to avoid coupling to folder sort order; re-ran the full suite 3x, stable).
+
+- `db.test.ts`: `hasMailboxOrCalendarData()` false on a fresh DB, true after a message exists, true
+  after a calendar item exists with zero messages (AC1's "or calendar" half); `resetMailboxAndCalendar()`
+  clears both tables while leaving custom folders untouched (locks in the "folders aren't session
+  content" scope decision from Implementation Notes); the reset survives a close/reopen cycle.
+- `ipc.test.ts` (`session:startFreePlay`): an already-empty mailbox/calendar resets with no
+  confirmation needed (AC3's "fresh state" exercised end-to-end via IPC, and the no-prompt case);
+  a non-empty mailbox is refused (`needsConfirmation: true`) and left completely intact — same for
+  calendar-only data with zero messages; a `confirmed:true` call wipes and broadcasts
+  `data:messages-changed`; an unconfirmed refusal does not broadcast (proves the confirm gate, not
+  just the delete, is honored before touching any window).
+- `SettingsView.test.tsx` (Session section): starting free-play from empty calls the IPC exactly
+  once with no `window.confirm`; a non-empty result triggers `window.confirm` and, on accept, a
+  second call with `confirmed:true`, ending in the status message; declining the confirm makes no
+  second call and shows no success status.
+- `App.test.tsx`: starting free-play while a message is selected clears that selection so returning
+  to Mail shows the empty-selection state, not a reference to a message that may no longer exist.
+
+Deliberately not covered: AC2 ("works with zero scenario pack loaded") has no dedicated test because
+no scenario-pack concept exists anywhere in the code yet (021/022 are still backlog) — the feature
+simply never reads or requires one, so there is nothing to assert beyond the existing tests already
+exercising free-play with no scenario-pack machinery present at all. Live Electron GUI verification
+(the actual `window.confirm` native dialog, multi-window IPC round-trip) not attempted — same
+sandbox limitation (no Xvfb) as every prior feature, deferred to `/validate`/`/accept`. Calendar-side
+behavior is verified at the data/IPC layer only, since the Calendar UI itself doesn't consume
+calendar items yet (018/019 still backlog), consistent with the scheduler's existing test coverage.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
