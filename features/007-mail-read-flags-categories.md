@@ -1,7 +1,7 @@
 ---
 id: 007
 title: Mail read/unread, flags & categories
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -90,7 +90,48 @@ lint/typecheck/build pass; existing test suite still 208/208 (no new
 tests yet — that's `/test`).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 13 tests on top of the coverage written during `/implement` (208 →
+221, all passing; re-ran full suite 3x, stable):
+
+- `ReadingPane.test.tsx` (9 new): opening an unread message fires
+  `messages.update(id, { isRead: true })` automatically; an already-read
+  message does *not* trigger a spurious update on open (guards the
+  no-infinite-loop assumption from Implementation Notes); the Mark as
+  unread/Mark as read toggle button shows the correct label for each state
+  and calls `update` with the flipped boolean; the Flag/Unflag toggle
+  likewise for `isFlagged`; existing categories render as tags whose
+  remove (×) button calls `update` with that category filtered out; typing
+  a new category and pressing Enter calls `update` with it appended and
+  clears the input, while re-typing an already-present category calls
+  `update` zero additional times (dedup).
+- `MessageListPane.test.tsx` (4 new): each row's flag button toggles that
+  message's `isFlagged` via `update` without ever calling
+  `onSelectMessage` (proving AC3's "from the message list" independently
+  of AC2/AC3's Reading Pane path); no category filter `<select>` renders
+  when no message in the folder has a category; the filter appears once
+  any message has one, correctly narrows the visible rows to a chosen
+  category (a message with multiple categories stays visible for any of
+  them) and "All categories" restores the full list; the filter resets to
+  "All categories" when the folder changes (so a filter picked in Inbox
+  doesn't silently hide messages after switching to Drafts).
+- `db.test.ts` (1 new): a message with `isRead`/`isFlagged`/`categories`
+  all set survives a `MailDb` close/reopen cycle intact — the AC5 check
+  specific to this feature's three fields (the pre-existing close/reopen
+  test only exercised default/empty values for them).
+
+AC1 (unread bolding) already had dedicated coverage from feature 003
+(`'renders messages for the folder, bolding unread ones'`) — not
+duplicated here.
+
+Deliberately not covered: a live end-to-end round trip through the actual
+`data:messages-changed` broadcast (i.e., verifying `MessageListPane`
+visually updates the moment `ReadingPane`'s auto-mark-read IPC call
+resolves) — that broadcast plumbing itself is already covered by feature
+006's delete/restore tests, and re-proving it here would be testing the
+same wiring rather than this feature's own logic. Each component's tests
+mock `window.api` directly, which is the established pattern in this
+codebase and also means neither test file needed a real `App`-level
+integration test — App.tsx wasn't touched by this feature.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

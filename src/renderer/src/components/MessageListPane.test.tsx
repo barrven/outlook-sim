@@ -101,6 +101,126 @@ describe('MessageListPane', () => {
     expect(item).toHaveClass('selected')
   })
 
+  it('shows a flag button per row that toggles isFlagged without selecting the message', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Unflagged one', isFlagged: false }),
+      makeMessage({ id: 'b', subject: 'Flagged one', isFlagged: true })
+    ])
+    const onSelectMessage = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={onSelectMessage}
+        messagesVersion={0}
+      />
+    )
+
+    await screen.findByText('Unflagged one')
+    const flagButton = screen.getByRole('button', { name: 'Flag message' })
+    const unflagButton = screen.getByRole('button', { name: 'Unflag message' })
+
+    await user.click(flagButton)
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('a', { isFlagged: true })
+
+    await user.click(unflagButton)
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('b', { isFlagged: false })
+
+    expect(onSelectMessage).not.toHaveBeenCalled()
+  })
+
+  it('shows each message\'s categories, and no filter select when none have any', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'No categories', categories: [] })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+
+    await screen.findByText('No categories')
+    expect(screen.queryByLabelText('Filter by category')).not.toBeInTheDocument()
+  })
+
+  it('shows a category filter once messages have categories, and filters the list by the chosen one', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Urgent one', categories: ['Urgent'] }),
+      makeMessage({ id: 'b', subject: 'Client one', categories: ['Client'] }),
+      makeMessage({ id: 'c', subject: 'Both one', categories: ['Urgent', 'Client'] })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+
+    await screen.findByText('Urgent one')
+    expect(screen.getByText('Client one')).toBeInTheDocument()
+    expect(screen.getByText('Both one')).toBeInTheDocument()
+
+    const filter = screen.getByLabelText('Filter by category')
+    await user.selectOptions(filter, 'Urgent')
+
+    expect(screen.getByText('Urgent one')).toBeInTheDocument()
+    expect(screen.getByText('Both one')).toBeInTheDocument()
+    expect(screen.queryByText('Client one')).not.toBeInTheDocument()
+
+    await user.selectOptions(filter, 'All categories')
+    expect(screen.getByText('Client one')).toBeInTheDocument()
+  })
+
+  it('resets the category filter when the folder changes', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Urgent one', categories: ['Urgent'] }),
+      makeMessage({ id: 'b', subject: 'Client one', categories: ['Client'] })
+    ])
+    const user = userEvent.setup()
+
+    const { rerender } = render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Urgent one')
+    await user.selectOptions(screen.getByLabelText('Filter by category'), 'Urgent')
+    expect(screen.queryByText('Client one')).not.toBeInTheDocument()
+
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Urgent one', categories: ['Urgent'] }),
+      makeMessage({ id: 'b', subject: 'Client one', categories: ['Client'] })
+    ])
+    rerender(
+      <MessageListPane
+        selectedFolderId="drafts"
+        selectedFolderName="Drafts"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+
+    expect(await screen.findByText('Client one')).toBeInTheDocument()
+  })
+
   it('refetches messages when the folder changes', async () => {
     const { rerender } = render(
       <MessageListPane

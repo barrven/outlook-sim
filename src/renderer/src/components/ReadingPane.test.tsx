@@ -241,6 +241,108 @@ describe('ReadingPane', () => {
     expect(await screen.findByText(/Cc: Sam Lee/)).toBeInTheDocument()
   })
 
+  it('automatically marks an unread message as read when it is opened', async () => {
+    const unreadMessage: MailMessage = { ...MESSAGE, isRead: false }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(unreadMessage)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Quarterly numbers')
+    await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: true }))
+  })
+
+  it('does not re-mark an already-read message as read', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Quarterly numbers')
+    expect(window.api.data.messages.update).not.toHaveBeenCalled()
+  })
+
+  it('shows a Mark as unread button for a read message, and calls update to flip it unread', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const toggle = await screen.findByRole('button', { name: 'Mark as unread' })
+    await user.click(toggle)
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: false })
+  })
+
+  it('shows a Mark as read button for an unread message, and calls update to flip it read', async () => {
+    const user = userEvent.setup()
+    const unreadMessage: MailMessage = { ...MESSAGE, isRead: false }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(unreadMessage)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const toggle = await screen.findByRole('button', { name: 'Mark as read' })
+    await user.click(toggle)
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: true })
+  })
+
+  it('shows a Flag button for an unflagged message, and calls update to flag it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isFlagged: false
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Flag' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isFlagged: true })
+  })
+
+  it('shows an Unflag button for a flagged message, and calls update to unflag it', async () => {
+    const user = userEvent.setup()
+    const flaggedMessage: MailMessage = { ...MESSAGE, isFlagged: true }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(flaggedMessage)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Unflag' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isFlagged: false })
+  })
+
+  it('shows existing categories as removable tags, and calls update with the category removed', async () => {
+    const user = userEvent.setup()
+    const categorizedMessage: MailMessage = { ...MESSAGE, categories: ['Urgent', 'Client'] }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(categorizedMessage)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Urgent')
+    await screen.findByText('Client')
+
+    await user.click(screen.getByRole('button', { name: 'Remove category Urgent' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { categories: ['Client'] })
+  })
+
+  it('adds a typed category on Enter, and does not add a duplicate of an existing one', async () => {
+    const user = userEvent.setup()
+    const categorizedMessage: MailMessage = { ...MESSAGE, categories: ['Urgent'] }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(categorizedMessage)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const input = await screen.findByLabelText('Add category')
+
+    await user.type(input, 'Client')
+    await user.keyboard('{Enter}')
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { categories: ['Urgent', 'Client'] })
+    expect(input).toHaveValue('')
+
+    vi.mocked(window.api.data.messages.update).mockClear()
+    await user.type(input, 'Urgent')
+    await user.keyboard('{Enter}')
+    expect(window.api.data.messages.update).not.toHaveBeenCalled()
+  })
+
   it('refetches the message when messagesVersion changes', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
     const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)

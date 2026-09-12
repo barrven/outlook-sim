@@ -88,6 +88,31 @@ describe('MailDb', () => {
     expect(db.getMessage(message.id)).toEqual(updated)
   })
 
+  it('persists read state, flags, and categories across a close/reopen cycle', () => {
+    const message = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Survives a restart',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000
+    })
+    const updated = db.updateMessage(message.id, {
+      isRead: true,
+      isFlagged: true,
+      categories: ['Urgent', 'Client']
+    })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getMessage(message.id)).toEqual(updated)
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
   it('returns null when getting or updating a message that does not exist', () => {
     expect(db.getMessage('missing')).toBeNull()
     expect(db.updateMessage('missing', { isRead: true })).toBeNull()
