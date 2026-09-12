@@ -1,7 +1,7 @@
 ---
 id: 009
 title: Mail mock attachments
-status: testing
+status: validating
 priority: low
 ---
 
@@ -42,7 +42,22 @@ simulated app restart (`MailDb` closed and reopened against the same directory) 
 done. lint/typecheck/build pass, existing suite still 361/361 unchanged; phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 10 tests (361 → 371, all passing; re-ran full suite 3x, stable). `ComposeWindow.test.tsx` gained
+an "attachments" block (5 tests, AC1): adding two attachments by typed filename renders them as chips
+and includes both in the `messages.create` payload; submitting an empty filename adds nothing; a chip's
+remove button removes it; an existing draft's attachments prefill into chips; reply deliberately does
+*not* carry the source message's attachments over (a scope boundary, not a bug — `composeIntent.ts` never
+handled attachments and this feature doesn't ask for that). `ReadingPane.test.tsx` gained 4 tests (AC2/AC4):
+attachments render as named, clickable buttons with no note shown by default; a message with none shows
+no attachments row at all; clicking an attachment toggles the "Mock attachment — no file content." note
+(and clicking again hides it) while asserting `messages.update` is never called as a result — the
+strongest test-level proxy available for "no real file I/O", since there's no filesystem/IPC call in the
+component to begin with; the open note resets when a different message is selected. `db.test.ts` gained
+one test (AC3) proving a message's attachments (filename-only objects) survive a `MailDb` close/reopen
+cycle, mirroring the existing read/flags/categories persistence test. No new tests were needed for
+`db.ts`/IPC/preload beyond that, since attachments already flowed through the pre-existing generic
+`messages.create`/`update`/`get` surface from feature 002 — this feature only added UI on top of it.
+lint/typecheck/build all still pass; phase set to `validate`.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

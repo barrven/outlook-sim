@@ -377,6 +377,67 @@ describe('ReadingPane', () => {
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
   })
 
+  it('renders each attachment as a filename with a placeholder icon, with no note shown until clicked', async () => {
+    const messageWithAttachments: MailMessage = {
+      ...MESSAGE,
+      attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }]
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachments)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: /report\.pdf/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /photo\.jpg/ })).toBeInTheDocument()
+    expect(screen.queryByText(/no file content/)).not.toBeInTheDocument()
+  })
+
+  it('shows no attachments row for a message with none', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // attachments: []
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Quarterly numbers')
+    expect(screen.queryByText(/no file content/)).not.toBeInTheDocument()
+  })
+
+  it('"opening" a mock attachment only toggles a placeholder note, with no file/network API called', async () => {
+    const user = userEvent.setup()
+    const messageWithAttachment: MailMessage = { ...MESSAGE, attachments: [{ filename: 'report.pdf' }] }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachment)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const attachmentButton = await screen.findByRole('button', { name: /report\.pdf/ })
+    await user.click(attachmentButton)
+
+    expect(screen.getByText('Mock attachment — no file content.')).toBeInTheDocument()
+
+    await user.click(attachmentButton)
+    expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
+
+    // No IPC/file-system surface exists for attachments at all — only the
+    // existing messages/categories calls should ever have been made.
+    expect(window.api.data.messages.update).not.toHaveBeenCalled()
+  })
+
+  it('resets the open attachment note when a different message is selected', async () => {
+    const user = userEvent.setup()
+    const messageWithAttachment: MailMessage = { ...MESSAGE, attachments: [{ filename: 'report.pdf' }] }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachment)
+
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: /report\.pdf/ }))
+    expect(screen.getByText('Mock attachment — no file content.')).toBeInTheDocument()
+
+    const otherMessage: MailMessage = { ...MESSAGE, id: 'msg-2', subject: 'Different message' }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(otherMessage)
+    rerender(<ReadingPane selectedMessageId="msg-2" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await screen.findByText('Different message')
+    expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
+  })
+
   it('refetches the message when messagesVersion changes', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
     const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)

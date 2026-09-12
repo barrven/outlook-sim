@@ -414,4 +414,113 @@ describe('ComposeWindow', () => {
       )
     })
   })
+
+  describe('attachments', () => {
+    it('adds one or more mock attachments by typed filename, shown as chips, and sends them along', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow />)
+
+      const input = screen.getByLabelText('Attachments')
+      await user.type(input, 'report.pdf')
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+      expect(screen.getByText(/report\.pdf/)).toBeInTheDocument()
+      expect(input).toHaveValue('')
+
+      await user.type(input, 'photo.jpg')
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+      expect(screen.getByText(/photo\.jpg/)).toBeInTheDocument()
+
+      await user.selectOptions(await screen.findByLabelText('To'), 'morgan@example.com')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }]
+        })
+      )
+    })
+
+    it('does not add a blank attachment when submitting an empty filename', async () => {
+      const user = userEvent.setup()
+
+      render(<ComposeWindow />)
+
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+
+      expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+    })
+
+    it('removes an attachment chip via its remove button', async () => {
+      const user = userEvent.setup()
+
+      render(<ComposeWindow />)
+
+      const input = screen.getByLabelText('Attachments')
+      await user.type(input, 'report.pdf')
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+      expect(screen.getByText(/report\.pdf/)).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Remove attachment report.pdf' }))
+
+      expect(screen.queryByText(/report\.pdf/)).not.toBeInTheDocument()
+    })
+
+    it('loads existing attachments from a draft', async () => {
+      const draftWithAttachment: MailMessage = {
+        id: 'draft-3',
+        folderId: 'drafts',
+        previousFolderId: null,
+        subject: 'Has attachment',
+        body: '',
+        fromName: '',
+        fromEmail: '',
+        toName: 'Morgan Rivera',
+        toEmail: 'morgan@example.com',
+        cc: [],
+        timestamp: Date.now(),
+        isRead: true,
+        isFlagged: false,
+        categories: [],
+        attachments: [{ filename: 'contract.docx' }]
+      }
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(draftWithAttachment)
+
+      render(<ComposeWindow draftId="draft-3" />)
+
+      expect(await screen.findByText(/contract\.docx/)).toBeInTheDocument()
+    })
+
+    it('does not carry attachments over on reply/forward', async () => {
+      const sourceWithAttachment: MailMessage = {
+        id: 'src-2',
+        folderId: 'inbox',
+        previousFolderId: null,
+        subject: 'Quarterly numbers',
+        body: 'See attached.',
+        fromName: 'Priya Shah',
+        fromEmail: 'priya@example.com',
+        toName: 'Jordan Trainee',
+        toEmail: 'jordan.trainee@example.com',
+        cc: [],
+        timestamp: new Date('2026-01-15T10:00:00').getTime(),
+        isRead: true,
+        isFlagged: false,
+        categories: [],
+        attachments: [{ filename: 'original.pdf' }]
+      }
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(sourceWithAttachment)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-2" intent="reply" />)
+
+      await screen.findByDisplayValue('Re: Quarterly numbers')
+      expect(screen.queryByText(/original\.pdf/)).not.toBeInTheDocument()
+    })
+  })
 })

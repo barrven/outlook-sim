@@ -113,6 +113,31 @@ describe('MailDb', () => {
     db = new MailDb(baseDir)
   })
 
+  it('persists mock attachments (filename only) across a close/reopen cycle', () => {
+    const message = db.createMessage({
+      folderId: 'inbox',
+      subject: 'Has attachments',
+      body: 'body',
+      fromName: 'Carol',
+      fromEmail: 'carol@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      timestamp: 1000,
+      attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }]
+    })
+    expect(message.attachments).toEqual([{ filename: 'report.pdf' }, { filename: 'photo.jpg' }])
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getMessage(message.id)?.attachments).toEqual([
+      { filename: 'report.pdf' },
+      { filename: 'photo.jpg' }
+    ])
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
   it('returns null when getting or updating a message that does not exist', () => {
     expect(db.getMessage('missing')).toBeNull()
     expect(db.updateMessage('missing', { isRead: true })).toBeNull()
