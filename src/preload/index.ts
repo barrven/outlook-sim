@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  ApplyScenarioPackResult,
   CalendarItem,
   CalendarItemPatch,
   ComposeOpenOptions,
@@ -9,6 +10,8 @@ import type {
   NewFolder,
   NewMailMessage,
   Persona,
+  PickScenarioPackResult,
+  ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
@@ -67,6 +70,11 @@ const api = {
   session: {
     startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
       ipcRenderer.invoke('session:startFreePlay', confirmed)
+  },
+  scenario: {
+    pickPack: (): Promise<PickScenarioPackResult> => ipcRenderer.invoke('scenario:pickPack'),
+    applyPack: (pack: ScenarioPack, confirmed?: boolean): Promise<ApplyScenarioPackResult> =>
+      ipcRenderer.invoke('scenario:applyPack', pack, confirmed)
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),

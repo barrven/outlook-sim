@@ -19,9 +19,10 @@ const EMPTY_API_KEYS: Record<LlmProvider, string> = {
 interface SettingsViewProps {
   onClose?: () => void
   onFreePlayStarted?: () => void
+  onScenarioPackLoaded?: () => void
 }
 
-function SettingsView({ onClose, onFreePlayStarted }: SettingsViewProps): ReactElement {
+function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: SettingsViewProps): ReactElement {
   const [provider, setProvider] = useState<LlmProvider>('openai')
   const [model, setModel] = useState('')
   const [apiKeys, setApiKeys] = useState<Record<LlmProvider, string>>(EMPTY_API_KEYS)
@@ -38,6 +39,9 @@ function SettingsView({ onClose, onFreePlayStarted }: SettingsViewProps): ReactE
   const [systemPromptJustSaved, setSystemPromptJustSaved] = useState(false)
 
   const [freePlayStatus, setFreePlayStatus] = useState<string | null>(null)
+
+  const [scenarioStatus, setScenarioStatus] = useState<string | null>(null)
+  const [scenarioError, setScenarioError] = useState<string | null>(null)
 
   const [loaded, setLoaded] = useState(false)
 
@@ -100,6 +104,26 @@ function SettingsView({ onClose, onFreePlayStarted }: SettingsViewProps): ReactE
     }
     onFreePlayStarted?.()
     setFreePlayStatus('Free-play started — mailbox and calendar are now fresh and empty.')
+  }
+
+  async function handleLoadScenarioPack(): Promise<void> {
+    setScenarioStatus(null)
+    setScenarioError(null)
+    const picked = await window.api.scenario.pickPack()
+    if (!picked.ok) {
+      if ('error' in picked) setScenarioError(picked.error)
+      return
+    }
+    const result = await window.api.scenario.applyPack(picked.pack)
+    if (!result.ok && result.needsConfirmation) {
+      const confirmed = window.confirm(
+        `Loading "${picked.pack.name}" will replace the current mailbox, calendar, and personas. Continue?`
+      )
+      if (!confirmed) return
+      await window.api.scenario.applyPack(picked.pack, true)
+    }
+    onScenarioPackLoaded?.()
+    setScenarioStatus(`Scenario pack "${picked.pack.name}" loaded.`)
   }
 
   const header = (
@@ -283,6 +307,28 @@ function SettingsView({ onClose, onFreePlayStarted }: SettingsViewProps): ReactE
               </button>
               {freePlayStatus && <span className="settings-view-saved">{freePlayStatus}</span>}
             </div>
+          </div>
+        </section>
+
+        <section className="settings-section" aria-label="Scenario Pack">
+          <h2 className="settings-section-header">Scenario Pack</h2>
+          <div className="settings-section-body">
+            <p className="settings-view-note">
+              Load a JSON scenario pack to seed the mailbox, calendar, and personas — replacing
+              the current active state. Optional timed messages in the pack arrive later, once
+              simulated time reaches them.
+            </p>
+            <div className="settings-view-actions">
+              <button type="button" onClick={handleLoadScenarioPack}>
+                Load Scenario Pack…
+              </button>
+              {scenarioStatus && <span className="settings-view-saved">{scenarioStatus}</span>}
+            </div>
+            {scenarioError && (
+              <p className="settings-test-result-error" role="alert">
+                {scenarioError}
+              </p>
+            )}
           </div>
         </section>
       </div>

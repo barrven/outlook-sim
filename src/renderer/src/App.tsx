@@ -176,6 +176,7 @@ function App(): ReactElement {
           <SettingsView
             onClose={() => setShowSettings(false)}
             onFreePlayStarted={() => setSelectedMessageId(null)}
+            onScenarioPackLoaded={() => setSelectedMessageId(null)}
           />
         ) : activeModule === 'mail' ? (
           <>

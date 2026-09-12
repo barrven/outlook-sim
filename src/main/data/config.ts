@@ -4,6 +4,7 @@ import type {
   LlmProvider,
   Persona,
   PersonasConfig,
+  ScheduledScenarioMessage,
   SchedulerState,
   Settings,
   SystemPromptConfig,
@@ -41,6 +42,8 @@ const DEFAULT_SCHEDULER_STATE: SchedulerState = {
   nextDueSimTime: 0
 }
 
+const DEFAULT_SCHEDULED_SCENARIO_MESSAGES: ScheduledScenarioMessage[] = []
+
 function readJsonFile<T>(path: string, fallback: T): T {
   if (!existsSync(path)) {
     writeFileSync(path, JSON.stringify(fallback, null, 2))
@@ -59,6 +62,7 @@ export class ConfigStore {
   private identityPath: string
   private personasPath: string
   private schedulerPath: string
+  private scheduledScenarioMessagesPath: string
 
   constructor(baseDir: string) {
     const configDir = join(baseDir, CONFIG_DIR_NAME)
@@ -68,6 +72,7 @@ export class ConfigStore {
     this.identityPath = join(configDir, 'identity.json')
     this.personasPath = join(configDir, 'personas.json')
     this.schedulerPath = join(configDir, 'scheduler.json')
+    this.scheduledScenarioMessagesPath = join(configDir, 'scenario-scheduled-messages.json')
 
     // Ensure every config file exists on first run.
     readJsonFile(this.settingsPath, DEFAULT_SETTINGS)
@@ -75,6 +80,7 @@ export class ConfigStore {
     readJsonFile(this.identityPath, DEFAULT_IDENTITY)
     readJsonFile(this.personasPath, DEFAULT_PERSONAS)
     readJsonFile(this.schedulerPath, DEFAULT_SCHEDULER_STATE)
+    readJsonFile(this.scheduledScenarioMessagesPath, DEFAULT_SCHEDULED_SCENARIO_MESSAGES)
   }
 
   getSettings(): Settings {
@@ -115,5 +121,13 @@ export class ConfigStore {
 
   setSchedulerState(state: SchedulerState): void {
     writeJsonFile(this.schedulerPath, state)
+  }
+
+  getScheduledScenarioMessages(): ScheduledScenarioMessage[] {
+    return readJsonFile(this.scheduledScenarioMessagesPath, DEFAULT_SCHEDULED_SCENARIO_MESSAGES)
+  }
+
+  setScheduledScenarioMessages(messages: ScheduledScenarioMessage[]): void {
+    writeJsonFile(this.scheduledScenarioMessagesPath, messages)
   }
 }

@@ -80,7 +80,8 @@ describe('registerDataIpcHandlers', () => {
         'llm:generate',
         'llm:test',
         'llm:personaReply',
-        'session:startFreePlay'
+        'session:startFreePlay',
+        'scenario:applyPack'
       ].sort()
     )
   })

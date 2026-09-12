@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
+  ApplyScenarioPackResult,
   CalendarItem,
   CalendarItemPatch,
   LlmGenerateInput,
@@ -8,6 +9,7 @@ import type {
   NewFolder,
   NewMailMessage,
   Persona,
+  ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
@@ -15,6 +17,7 @@ import type {
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
 import { generatePersonaReply } from '../llm/personaReply'
+import { applyScenarioPack } from './scenarioPack'
 import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
 import type { MailDb } from './db'
@@ -114,4 +117,16 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     broadcastMessagesChanged()
     return { ok: true }
   })
+
+  ipcMain.handle(
+    'scenario:applyPack',
+    (_event, pack: ScenarioPack, confirmed?: boolean): ApplyScenarioPackResult => {
+      if (!confirmed && db.hasMailboxOrCalendarData()) {
+        return { ok: false, needsConfirmation: true }
+      }
+      applyScenarioPack(db, config, clock, pack)
+      broadcastMessagesChanged()
+      return { ok: true }
+    }
+  )
 }

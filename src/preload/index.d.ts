@@ -1,4 +1,5 @@
 import type {
+  ApplyScenarioPackResult,
   CalendarItem,
   CalendarItemPatch,
   ClockState,
@@ -12,6 +13,8 @@ import type {
   NewFolder,
   NewMailMessage,
   Persona,
+  PickScenarioPackResult,
+  ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
@@ -72,6 +75,11 @@ export interface SessionApi {
   startFreePlay: (confirmed?: boolean) => Promise<StartFreePlayResult>
 }
 
+export interface ScenarioApi {
+  pickPack: () => Promise<PickScenarioPackResult>
+  applyPack: (pack: ScenarioPack, confirmed?: boolean) => Promise<ApplyScenarioPackResult>
+}
+
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
@@ -86,6 +94,7 @@ declare global {
       data: DataApi
       compose: ComposeApi
       session: SessionApi
+      scenario: ScenarioApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (error: string) => void) => () => void

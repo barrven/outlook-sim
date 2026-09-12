@@ -144,3 +144,85 @@ export interface SchedulerState {
   // always far larger).
   nextDueSimTime: number
 }
+
+// --- Scenario packs (021/022) ---
+//
+// All timing in a pack is relative to the moment it's loaded (or, for a
+// saved pack, relative to the moment it was saved) rather than absolute —
+// packs are meant to be reusable across different sessions/dates, so an
+// absolute timestamp baked into the file wouldn't make sense. `offsetMinutes`
+// is added to the simulated clock's time at load to get the actual timestamp;
+// negative values are in the past (already-arrived starting inbox mail),
+// positive values are in the future (timed incoming messages, most
+// deadlines/events).
+
+export interface ScenarioPackPersona {
+  displayName: string
+  email: string
+  role: string
+  bio: string
+  writingStyleNotes: string
+  extraPrompt: string
+}
+
+export interface ScenarioPackMessage {
+  subject: string
+  body: string
+  fromName: string
+  fromEmail: string
+  toName: string
+  toEmail: string
+  offsetMinutes: number
+}
+
+export interface ScenarioPackCalendarItem {
+  title: string
+  description: string
+  offsetMinutes: number
+  // Minutes after the start time that the item ends; null means no end time.
+  durationMinutes: number | null
+  allDay: boolean
+  reminderMinutesBefore: number | null
+  itemType: CalendarItemType
+}
+
+export interface ScenarioPack {
+  name: string
+  description: string
+  personas: ScenarioPackPersona[]
+  // Starting Inbox contents — present (usually negative offsetMinutes).
+  inbox: ScenarioPackMessage[]
+  calendarItems: ScenarioPackCalendarItem[]
+  // Incoming messages delivered later, once simulated time reaches each
+  // one's offset from load time (usually positive offsetMinutes).
+  timedMessages: ScenarioPackMessage[]
+}
+
+export type ScenarioPackValidationResult =
+  | { ok: true; pack: ScenarioPack }
+  | { ok: false; error: string }
+
+// Picking a pack adds a third outcome on top of validation — the user
+// closing the file-picker dialog without choosing anything, which isn't an
+// error worth showing.
+export type PickScenarioPackResult = ScenarioPackValidationResult | { ok: false; canceled: true }
+
+// A `timedMessages` entry, persisted with its due time resolved to an
+// absolute simulated timestamp at load time, so a scheduler can deliver it
+// later regardless of app restarts in between.
+export interface ScheduledScenarioMessage {
+  id: string
+  dueSimTime: number
+  subject: string
+  body: string
+  fromName: string
+  fromEmail: string
+  toName: string
+  toEmail: string
+}
+
+// Loading a pack replaces the current mailbox/calendar/personas, so a first
+// attempt that would discard existing data comes back unconfirmed for the
+// caller to prompt the user; retrying with confirmed:true proceeds
+// regardless. Mirrors `StartFreePlayResult`.
+export type ApplyScenarioPackResult = { ok: true } | { ok: false; needsConfirmation: true }
