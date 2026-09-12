@@ -21,7 +21,7 @@
 | 016 | LLM unsolicited incoming mail scheduler | done | high | 016-llm-unsolicited-mail-scheduler.md |
 | 006 | Mail delete & Deleted Items | done | medium | 006-mail-delete-deleted-items.md |
 | 007 | Mail read/unread, flags & categories | done | medium | 007-mail-read-flags-categories.md |
-| 008 | Mail search | backlog | medium | 008-mail-search.md |
+| 008 | Mail search | testing | medium | 008-mail-search.md |
 | 017 | Free-play mode bootstrap | backlog | medium | 017-free-play-mode-bootstrap.md |
 | 018 | Calendar views & persistence | backlog | medium | 018-calendar-views-persistence.md |
 | 019 | Calendar deadlines, all-day items & reminders | backlog | medium | 019-calendar-deadlines-allday-reminders.md |

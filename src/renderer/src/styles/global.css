@@ -546,6 +546,28 @@ body {
   padding: 2px 4px;
 }
 
+.message-list-search {
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.message-list-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.message-list-search select {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
 .message-list-empty {
   padding: 16px 10px;
   color: var(--text-muted);

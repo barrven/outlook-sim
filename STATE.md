@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 008 — Mail search
 - **Last updated:** 2026-09-11
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 008 (mail search) implemented: entirely UI in `MessageListPane.tsx` — a search input filters by case-insensitive substring match against subject/body/sender (name+email), plus a scope select ("This folder"/"All folders"); "all folders" reuses the existing unscoped `messages.list()` call from feature 002 (no new IPC), fetched lazily only while that scope is active. Filter pipeline is messages → search → category filter (existing, unchanged) → rendered rows; clearing the query falls through to the plain folder view for free, and nothing here touches folder selection so results update live without navigating. Search/scope deliberately not reset on folder change (unlike the category filter), matching real Outlook. lint/typecheck/build pass, existing suite still 223/223; phase set to `test`
 - 2026-09-11 — feature 007 (mail read/unread, flags & categories) accepted by user (including the read/unread bug fix); logged to CHANGELOG; active feature set to 008 (Mail search), phase set to `implement`
 - 2026-09-11 — feature 007 (mail read/unread, flags & categories) accept-stage bug fixed: user reported that clicking "Mark as unread" in the Reading Pane immediately flipped the message back to read while it stayed open. Root cause: the fetch effect re-ran on every `messagesVersion` bump (including the one from the user's own toggle) and unconditionally re-applied the auto-mark-read check. Fixed with a `lastCheckedIdRef` that limits the auto-mark check to the first time a given message id is opened; a first fix attempt (stamping the ref only when a mark occurred) was caught as still-broken by a new regression test before landing the corrected version (stamp on every check, mark-or-not). Added 2 regression tests (221 → 223, stable across 3 runs); lint/typecheck/build all still pass; phase stays `accept`
 - 2026-09-11 — feature 007 (mail read/unread, flags & categories) validated: lint/typecheck/build pass; full test suite (221/221) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files, no implementation drift; all 5 ACs verified by tests + code inspection plus a live check — bundled `db.ts` standalone with `esbuild` and drove a real (non-mocked) `MailDb` through create→mark read/unread→flag→categorize→close/reopen, all correct; cross-checked the user's real `~/.config/outlook-sim/outlook-sim.db` for schema sanity (no regression, though the new UI hasn't been exercised there yet since the app hasn't been relaunched); no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
