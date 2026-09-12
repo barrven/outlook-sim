@@ -316,7 +316,7 @@ describe('MailDb', () => {
       endTime: 3600,
       allDay: false,
       reminderMinutesBefore: null,
-      recurrenceRule: 'FREQ=DAILY',
+      recurrenceRule: 'daily',
       itemType: 'event'
     })
     db.createFolder({ id: 'projects', name: 'Projects', type: 'custom' })

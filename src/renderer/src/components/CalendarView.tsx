@@ -1,6 +1,13 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type { CalendarItem, CalendarItemType, NewCalendarItem } from '../../../shared/data-types'
+import type {
+  CalendarItem,
+  CalendarItemType,
+  CalendarRecurrenceException,
+  NewCalendarItem,
+  RecurrenceFrequency
+} from '../../../shared/data-types'
 import {
+  addDaysMs,
   formatRangeLabel,
   getVisibleDays,
   isSameDay,
@@ -8,6 +15,7 @@ import {
   startOfDayMs,
   type CalendarViewId
 } from '../calendarDates'
+import { expandOccurrences, upsertException, type CalendarOccurrence } from '../recurrence'
 
 const VIEW_OPTIONS: { id: CalendarViewId; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -19,6 +27,15 @@ const VIEW_OPTIONS: { id: CalendarViewId; label: string }[] = [
 const ITEM_TYPE_OPTIONS: { value: CalendarItemType; label: string }[] = [
   { value: 'event', label: 'Event' },
   { value: 'deadline', label: 'Deadline' }
+]
+
+// Value is a string so it can back a <select>; '' means "does not repeat"
+// (recurrenceRule: null).
+const RECURRENCE_OPTIONS: { value: RecurrenceFrequency | ''; label: string }[] = [
+  { value: '', label: 'Does not repeat' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' }
 ]
 
 // Value is a string so it can back a <select>; '' means "no reminder"
@@ -78,6 +95,9 @@ function formatEventTime(ms: number): string {
 interface CalendarItemFormProps {
   initialItem?: CalendarItem
   initialStartMs: number
+  // Hidden when editing a single occurrence of a recurring series — the
+  // repeat pattern belongs to the series as a whole, not one instance of it.
+  hideRecurrenceField?: boolean
   onSave: (fields: NewCalendarItem) => void | Promise<void>
   onDelete?: () => void | Promise<void>
   onCancel: () => void
@@ -86,7 +106,14 @@ interface CalendarItemFormProps {
 // A separate component (rather than an effect in the parent) so that
 // re-mounting it fresh each time it's shown is what resets/reseeds its
 // fields — no imperative "reseed on open" effect needed.
-function CalendarItemForm({ initialItem, initialStartMs, onSave, onDelete, onCancel }: CalendarItemFormProps): ReactElement {
+function CalendarItemForm({
+  initialItem,
+  initialStartMs,
+  hideRecurrenceField,
+  onSave,
+  onDelete,
+  onCancel
+}: CalendarItemFormProps): ReactElement {
   const isEditing = Boolean(initialItem)
   const [title, setTitle] = useState(initialItem?.title ?? '')
   const [description, setDescription] = useState(initialItem?.description ?? '')
@@ -100,6 +127,9 @@ function CalendarItemForm({ initialItem, initialStartMs, onSave, onDelete, onCan
   )
   const [reminderSelection, setReminderSelection] = useState(
     initialItem?.reminderMinutesBefore != null ? String(initialItem.reminderMinutesBefore) : ''
+  )
+  const [recurrenceSelection, setRecurrenceSelection] = useState<RecurrenceFrequency | ''>(
+    initialItem?.recurrenceRule ?? ''
   )
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -121,7 +151,7 @@ function CalendarItemForm({ initialItem, initialStartMs, onSave, onDelete, onCan
       endTime: allDay ? null : datetimeLocalToMs(endInput),
       allDay,
       reminderMinutesBefore: reminderSelection === '' ? null : Number(reminderSelection),
-      recurrenceRule: initialItem?.recurrenceRule ?? null,
+      recurrenceRule: hideRecurrenceField ? null : recurrenceSelection || null,
       itemType
     })
   }
@@ -204,6 +234,22 @@ function CalendarItemForm({ initialItem, initialStartMs, onSave, onDelete, onCan
           ))}
         </select>
       </div>
+      {!hideRecurrenceField && (
+        <div className="calendar-event-form-row">
+          <label htmlFor="calendar-event-recurrence">Repeat</label>
+          <select
+            id="calendar-event-recurrence"
+            value={recurrenceSelection}
+            onChange={(event) => setRecurrenceSelection(event.target.value as RecurrenceFrequency | '')}
+          >
+            {RECURRENCE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {formError && <p className="calendar-event-form-error">{formError}</p>}
       <div className="calendar-event-form-actions">
         <button type="button" onClick={handleSubmit}>
@@ -227,7 +273,13 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
   const [anchorMs, setAnchorMs] = useState(() => Date.now())
   const [today, setToday] = useState(() => startOfDayMs(Date.now()))
   const [items, setItems] = useState<CalendarItem[]>([])
-  const [editingItem, setEditingItem] = useState<CalendarItem | null>(null)
+  // The occurrence the user clicked to edit, and — only once it's been
+  // determined whether that requires asking "this event or the series?" —
+  // which scope they picked. A non-recurring occurrence skips straight to
+  // 'series' scope (openEdit sets it directly), since there's no ambiguity
+  // to resolve for a one-off item.
+  const [openOccurrence, setOpenOccurrence] = useState<CalendarOccurrence | null>(null)
+  const [editScope, setEditScope] = useState<'instance' | 'series' | null>(null)
 
   function refreshItems(): void {
     window.api.data.calendarItems.list().then(setItems)
@@ -264,25 +316,74 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
     onCloseCreateForm()
   }
 
-  async function handleUpdate(id: string, fields: NewCalendarItem): Promise<void> {
+  function closeEdit(): void {
+    setOpenOccurrence(null)
+    setEditScope(null)
+  }
+
+  // Edits/deletes the series' own template row directly — used both for a
+  // plain non-recurring item and for "edit/delete the whole series".
+  async function handleUpdateSeries(id: string, fields: NewCalendarItem): Promise<void> {
     await window.api.data.calendarItems.update(id, fields)
     refreshItems()
-    setEditingItem(null)
+    closeEdit()
   }
 
-  async function handleDelete(id: string): Promise<void> {
+  async function handleDeleteSeries(id: string): Promise<void> {
     await window.api.data.calendarItems.delete(id)
     refreshItems()
-    setEditingItem(null)
+    closeEdit()
   }
 
-  function openEdit(item: CalendarItem): void {
+  // "Edit this event only": records (or replaces) an exception on the
+  // series, keyed by the occurrence's stable originalStartTime, without
+  // touching the series' own template fields or any other occurrence.
+  async function handleSaveInstance(occurrence: CalendarOccurrence, fields: NewCalendarItem): Promise<void> {
+    const series = items.find((item) => item.id === occurrence.seriesId)
+    if (!series) return
+    const exception: CalendarRecurrenceException = {
+      originalStartTime: occurrence.originalStartTime,
+      deleted: false,
+      title: fields.title,
+      description: fields.description,
+      startTime: fields.startTime,
+      endTime: fields.endTime,
+      allDay: fields.allDay,
+      reminderMinutesBefore: fields.reminderMinutesBefore,
+      itemType: fields.itemType
+    }
+    await window.api.data.calendarItems.update(series.id, {
+      recurrenceExceptions: upsertException(series.recurrenceExceptions, exception)
+    })
+    refreshItems()
+    closeEdit()
+  }
+
+  async function handleDeleteInstance(occurrence: CalendarOccurrence): Promise<void> {
+    const series = items.find((item) => item.id === occurrence.seriesId)
+    if (!series) return
+    await window.api.data.calendarItems.update(series.id, {
+      recurrenceExceptions: upsertException(series.recurrenceExceptions, {
+        originalStartTime: occurrence.originalStartTime,
+        deleted: true
+      })
+    })
+    refreshItems()
+    closeEdit()
+  }
+
+  function openEdit(occurrence: CalendarOccurrence): void {
     if (showCreateForm) onCloseCreateForm()
-    setEditingItem(item)
+    setOpenOccurrence(occurrence)
+    setEditScope(occurrence.isRecurring ? null : 'series')
   }
 
   const days = getVisibleDays(view, anchorMs)
   const rangeLabel = formatRangeLabel(view, anchorMs)
+  const rangeStartMs = days[0]
+  const rangeEndExclusiveMs = addDaysMs(days[days.length - 1], 1)
+  const occurrences = expandOccurrences(items, rangeStartMs, rangeEndExclusiveMs)
+  const seriesForEdit = openOccurrence ? (items.find((item) => item.id === openOccurrence.seriesId) ?? null) : null
 
   return (
     <div className="calendar-view">
@@ -313,12 +414,12 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
         <span className="calendar-view-range-label">{rangeLabel}</span>
       </div>
 
-      {items.length === 0 ? (
+      {occurrences.length === 0 ? (
         <div className="calendar-view-empty">No calendar items to show.</div>
       ) : view === 'month' ? (
         <div className="calendar-month-grid">
           {days.map((day) => {
-            const dayItems = items.filter((item) => isSameDay(item.startTime, day))
+            const dayOccurrences = occurrences.filter((occurrence) => isSameDay(occurrence.startTime, day))
             const inCurrentMonth = new Date(day).getMonth() === new Date(anchorMs).getMonth()
             return (
               <div
@@ -328,14 +429,15 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
                 }`}
               >
                 <div className="calendar-month-cell-date">{new Date(day).getDate()}</div>
-                {dayItems.map((item) => (
+                {dayOccurrences.map((occurrence) => (
                   <button
-                    key={item.id}
+                    key={`${occurrence.seriesId}-${occurrence.originalStartTime}`}
                     type="button"
-                    className={`calendar-month-event${item.itemType === 'deadline' ? ' deadline' : ''}`}
-                    onClick={() => openEdit(item)}
+                    className={`calendar-month-event${occurrence.itemType === 'deadline' ? ' deadline' : ''}`}
+                    onClick={() => openEdit(occurrence)}
                   >
-                    {item.title}
+                    {occurrence.isRecurring && <span aria-hidden="true">🔁 </span>}
+                    {occurrence.title}
                   </button>
                 ))}
               </div>
@@ -345,25 +447,26 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
       ) : (
         <div className="calendar-day-columns">
           {days.map((day) => {
-            const dayItems = items
-              .filter((item) => isSameDay(item.startTime, day))
+            const dayOccurrences = occurrences
+              .filter((occurrence) => isSameDay(occurrence.startTime, day))
               .sort((a, b) => a.startTime - b.startTime)
             return (
               <div key={day} className={`calendar-day-column${isSameDay(day, today) ? ' today' : ''}`}>
                 <div className="calendar-day-column-header">
                   {new Date(day).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}
                 </div>
-                {dayItems.map((item) => (
+                {dayOccurrences.map((occurrence) => (
                   <button
-                    key={item.id}
+                    key={`${occurrence.seriesId}-${occurrence.originalStartTime}`}
                     type="button"
-                    className={`calendar-day-event${item.itemType === 'deadline' ? ' deadline' : ''}`}
-                    onClick={() => openEdit(item)}
+                    className={`calendar-day-event${occurrence.itemType === 'deadline' ? ' deadline' : ''}`}
+                    onClick={() => openEdit(occurrence)}
                   >
                     <span className="calendar-day-event-time">
-                      {item.allDay ? 'All day' : formatEventTime(item.startTime)}
+                      {occurrence.isRecurring && <span aria-hidden="true">🔁 </span>}
+                      {occurrence.allDay ? 'All day' : formatEventTime(occurrence.startTime)}
                     </span>
-                    <span className="calendar-day-event-title">{item.title}</span>
+                    <span className="calendar-day-event-title">{occurrence.title}</span>
                   </button>
                 ))}
               </div>
@@ -374,14 +477,51 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
 
       {showCreateForm ? (
         <CalendarItemForm initialStartMs={anchorMs} onSave={handleCreate} onCancel={onCloseCreateForm} />
+      ) : openOccurrence && editScope === null ? (
+        <div className="calendar-recurrence-scope-chooser" role="dialog" aria-label="Edit Recurring Item">
+          <p>“{openOccurrence.title}” is part of a recurring series. Apply your change to:</p>
+          <div className="calendar-event-form-actions">
+            <button type="button" onClick={() => setEditScope('instance')}>
+              This event
+            </button>
+            <button type="button" onClick={() => setEditScope('series')}>
+              The whole series
+            </button>
+            <button type="button" onClick={closeEdit}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : openOccurrence && editScope === 'series' && seriesForEdit ? (
+        <CalendarItemForm
+          initialItem={seriesForEdit}
+          initialStartMs={seriesForEdit.startTime}
+          onSave={(fields) => handleUpdateSeries(seriesForEdit.id, fields)}
+          onDelete={() => handleDeleteSeries(seriesForEdit.id)}
+          onCancel={closeEdit}
+        />
       ) : (
-        editingItem && (
+        openOccurrence &&
+        editScope === 'instance' && (
           <CalendarItemForm
-            initialItem={editingItem}
-            initialStartMs={editingItem.startTime}
-            onSave={(fields) => handleUpdate(editingItem.id, fields)}
-            onDelete={() => handleDelete(editingItem.id)}
-            onCancel={() => setEditingItem(null)}
+            initialItem={{
+              id: openOccurrence.seriesId,
+              title: openOccurrence.title,
+              description: openOccurrence.description,
+              startTime: openOccurrence.startTime,
+              endTime: openOccurrence.endTime,
+              allDay: openOccurrence.allDay,
+              reminderMinutesBefore: openOccurrence.reminderMinutesBefore,
+              recurrenceRule: null,
+              recurrenceExceptions: [],
+              itemType: openOccurrence.itemType,
+              reminderFired: false
+            }}
+            initialStartMs={openOccurrence.startTime}
+            hideRecurrenceField
+            onSave={(fields) => handleSaveInstance(openOccurrence, fields)}
+            onDelete={() => handleDeleteInstance(openOccurrence)}
+            onCancel={closeEdit}
           />
         )
       )}

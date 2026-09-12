@@ -575,6 +575,7 @@ describe('broadcastReminderFired', () => {
       allDay: false,
       reminderMinutesBefore: 15,
       recurrenceRule: null,
+      recurrenceExceptions: [],
       itemType: 'deadline',
       reminderFired: true
     }
@@ -596,6 +597,7 @@ describe('broadcastReminderFired', () => {
       allDay: false,
       reminderMinutesBefore: 15,
       recurrenceRule: null,
+      recurrenceExceptions: [],
       itemType: 'deadline',
       reminderFired: true
     }

@@ -1035,6 +1035,18 @@ body {
   gap: 8px;
 }
 
+.calendar-recurrence-scope-chooser {
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--nav-rail-bg);
+}
+
+.calendar-recurrence-scope-chooser p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
 /* Compose window */
 
 .compose-window {

@@ -15,6 +15,7 @@ function makeCalendarItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
     allDay: false,
     reminderMinutesBefore: 15,
     recurrenceRule: null,
+    recurrenceExceptions: [],
     itemType: 'deadline',
     reminderFired: true,
     ...overrides

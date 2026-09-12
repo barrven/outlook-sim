@@ -64,6 +64,28 @@ export type MailMessagePatch = Partial<Omit<MailMessage, 'id'>>
 
 export type CalendarItemType = 'event' | 'deadline'
 
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly'
+
+// An edit or delete applied to a single occurrence of a recurring series,
+// keyed by that occurrence's *natural* (un-excepted) start time so it keeps
+// matching the same occurrence across repeated edits, even after the
+// occurrence's own displayed startTime has been overridden. `deleted: true`
+// skips the occurrence entirely; otherwise every field is a full snapshot
+// of that occurrence's overridden values (not a partial diff).
+export type CalendarRecurrenceException =
+  | { originalStartTime: number; deleted: true }
+  | {
+      originalStartTime: number
+      deleted: false
+      title: string
+      description: string
+      startTime: number
+      endTime: number | null
+      allDay: boolean
+      reminderMinutesBefore: number | null
+      itemType: CalendarItemType
+    }
+
 export interface CalendarItem {
   id: string
   title: string
@@ -72,15 +94,20 @@ export interface CalendarItem {
   endTime: number | null
   allDay: boolean
   reminderMinutesBefore: number | null
-  recurrenceRule: string | null
+  // Only the series' anchor/template item carries this; individual
+  // occurrences are computed, not stored (see `src/renderer/src/recurrence.ts`).
+  recurrenceRule: RecurrenceFrequency | null
+  // Per-occurrence overrides/deletions for a recurring series; empty for a
+  // non-recurring item.
+  recurrenceExceptions: CalendarRecurrenceException[]
   itemType: CalendarItemType
   // Set once the reminder scheduler has fired this item's reminder, so it
   // never fires twice (including across app restarts).
   reminderFired: boolean
 }
 
-export type NewCalendarItem = Omit<CalendarItem, 'id' | 'reminderFired'> &
-  Partial<Pick<CalendarItem, 'reminderFired'>>
+export type NewCalendarItem = Omit<CalendarItem, 'id' | 'reminderFired' | 'recurrenceExceptions'> &
+  Partial<Pick<CalendarItem, 'reminderFired' | 'recurrenceExceptions'>>
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
 
