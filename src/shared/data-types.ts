@@ -129,6 +129,11 @@ export interface ClockState {
   speed: number
 }
 
+// Starting free-play wipes the current mailbox/calendar, so a first attempt
+// that would discard existing data comes back unconfirmed for the caller to
+// prompt the user; retrying with confirmed:true proceeds regardless.
+export type StartFreePlayResult = { ok: true } | { ok: false; needsConfirmation: true }
+
 export interface SchedulerState {
   // Simulated time (ms epoch) at which the next unsolicited message is due.
   // 0 means "never scheduled yet" (sentinel — real simulated timestamps are

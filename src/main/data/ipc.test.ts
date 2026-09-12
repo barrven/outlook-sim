@@ -79,7 +79,8 @@ describe('registerDataIpcHandlers', () => {
         'clock:setSpeed',
         'llm:generate',
         'llm:test',
-        'llm:personaReply'
+        'llm:personaReply',
+        'session:startFreePlay'
       ].sort()
     )
   })

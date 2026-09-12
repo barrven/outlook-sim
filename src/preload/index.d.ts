@@ -13,6 +13,7 @@ import type {
   NewMailMessage,
   Persona,
   Settings,
+  StartFreePlayResult,
   SystemPromptConfig,
   TraineeIdentity
 } from '../shared/data-types'
@@ -67,6 +68,10 @@ export interface ComposeApi {
   open: (options?: ComposeOpenOptions) => Promise<void>
 }
 
+export interface SessionApi {
+  startFreePlay: (confirmed?: boolean) => Promise<StartFreePlayResult>
+}
+
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
@@ -80,6 +85,7 @@ declare global {
     api: {
       data: DataApi
       compose: ComposeApi
+      session: SessionApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (error: string) => void) => () => void

@@ -149,7 +149,10 @@ function App(): ReactElement {
           </button>
         </div>
         {showSettings ? (
-          <SettingsView onClose={() => setShowSettings(false)} />
+          <SettingsView
+            onClose={() => setShowSettings(false)}
+            onFreePlayStarted={() => setSelectedMessageId(null)}
+          />
         ) : activeModule === 'mail' ? (
           <>
             <MessageListPane

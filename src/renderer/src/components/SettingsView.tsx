@@ -18,9 +18,10 @@ const EMPTY_API_KEYS: Record<LlmProvider, string> = {
 
 interface SettingsViewProps {
   onClose?: () => void
+  onFreePlayStarted?: () => void
 }
 
-function SettingsView({ onClose }: SettingsViewProps): ReactElement {
+function SettingsView({ onClose, onFreePlayStarted }: SettingsViewProps): ReactElement {
   const [provider, setProvider] = useState<LlmProvider>('openai')
   const [model, setModel] = useState('')
   const [apiKeys, setApiKeys] = useState<Record<LlmProvider, string>>(EMPTY_API_KEYS)
@@ -35,6 +36,8 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
 
   const [systemPrompt, setSystemPrompt] = useState('')
   const [systemPromptJustSaved, setSystemPromptJustSaved] = useState(false)
+
+  const [freePlayStatus, setFreePlayStatus] = useState<string | null>(null)
 
   const [loaded, setLoaded] = useState(false)
 
@@ -83,6 +86,20 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
   async function handleSaveSystemPrompt(): Promise<void> {
     await window.api.data.systemPrompt.set({ systemPrompt })
     setSystemPromptJustSaved(true)
+  }
+
+  async function handleStartFreePlay(): Promise<void> {
+    setFreePlayStatus(null)
+    const result = await window.api.session.startFreePlay()
+    if (!result.ok && result.needsConfirmation) {
+      const confirmed = window.confirm(
+        'Starting free-play will permanently delete the current mailbox and calendar. Continue?'
+      )
+      if (!confirmed) return
+      await window.api.session.startFreePlay(true)
+    }
+    onFreePlayStarted?.()
+    setFreePlayStatus('Free-play started — mailbox and calendar are now fresh and empty.')
   }
 
   const header = (
@@ -251,6 +268,23 @@ function SettingsView({ onClose }: SettingsViewProps): ReactElement {
         </section>
 
         <PersonasSettings />
+
+        <section className="settings-section" aria-label="Session">
+          <h2 className="settings-section-header">Session</h2>
+          <div className="settings-section-body">
+            <p className="settings-view-note">
+              Starts a free-play session: the mailbox and calendar reset to a fresh empty state, and the LLM
+              features drive activity from there using the system prompt, personas, and identity above. No
+              scenario pack is required.
+            </p>
+            <div className="settings-view-actions">
+              <button type="button" onClick={handleStartFreePlay}>
+                Start Free-Play
+              </button>
+              {freePlayStatus && <span className="settings-view-saved">{freePlayStatus}</span>}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

@@ -9,6 +9,7 @@ import type {
   NewMailMessage,
   Persona,
   Settings,
+  StartFreePlayResult,
   SystemPromptConfig,
   TraineeIdentity
 } from '../shared/data-types'
@@ -61,6 +62,10 @@ const api = {
   },
   compose: {
     open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
+  },
+  session: {
+    startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
+      ipcRenderer.invoke('session:startFreePlay', confirmed)
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),

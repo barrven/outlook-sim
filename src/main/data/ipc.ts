@@ -8,6 +8,7 @@ import type {
   NewMailMessage,
   Persona,
   Settings,
+  StartFreePlayResult,
   SystemPromptConfig,
   TraineeIdentity
 } from '../../shared/data-types'
@@ -96,5 +97,14 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
       broadcastMessagesChanged()
     }
     return result
+  })
+
+  ipcMain.handle('session:startFreePlay', (_event, confirmed?: boolean): StartFreePlayResult => {
+    if (!confirmed && db.hasMailboxOrCalendarData()) {
+      return { ok: false, needsConfirmation: true }
+    }
+    db.resetMailboxAndCalendar()
+    broadcastMessagesChanged()
+    return { ok: true }
   })
 }

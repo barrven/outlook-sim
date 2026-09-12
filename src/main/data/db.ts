@@ -360,4 +360,20 @@ export class MailDb {
   deleteCalendarItem(id: string): void {
     this.db.prepare('DELETE FROM calendar_items WHERE id = ?').run(id)
   }
+
+  // Free-play session
+
+  hasMailboxOrCalendarData(): boolean {
+    const messageCount = this.db.prepare('SELECT COUNT(*) as count FROM messages').get() as { count: number }
+    if (messageCount.count > 0) return true
+    const calendarCount = this.db.prepare('SELECT COUNT(*) as count FROM calendar_items').get() as {
+      count: number
+    }
+    return calendarCount.count > 0
+  }
+
+  resetMailboxAndCalendar(): void {
+    this.db.exec('DELETE FROM messages')
+    this.db.exec('DELETE FROM calendar_items')
+  }
 }
