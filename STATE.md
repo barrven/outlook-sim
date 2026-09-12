@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 008 — Mail search
 - **Last updated:** 2026-09-11
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 008 (mail search) tested: added 7 tests on top of the coverage already written during `/implement` (223 → 230, all passing; re-ran full suite 3x, stable) — one test proves all four searched fields (subject/body/sender name/sender email) match case-insensitively; two cover the folder-vs-all-folders scope (including that the unscoped fetch stays lazy until "All folders" is actually picked); one proves live updates without a folder change; one proves clearing restores the folder view; two extra ones cover a distinct no-results empty state and search combining with the existing category filter. lint/typecheck/build all still pass; phase set to `validate`
 - 2026-09-11 — feature 008 (mail search) implemented: entirely UI in `MessageListPane.tsx` — a search input filters by case-insensitive substring match against subject/body/sender (name+email), plus a scope select ("This folder"/"All folders"); "all folders" reuses the existing unscoped `messages.list()` call from feature 002 (no new IPC), fetched lazily only while that scope is active. Filter pipeline is messages → search → category filter (existing, unchanged) → rendered rows; clearing the query falls through to the plain folder view for free, and nothing here touches folder selection so results update live without navigating. Search/scope deliberately not reset on folder change (unlike the category filter), matching real Outlook. lint/typecheck/build pass, existing suite still 223/223; phase set to `test`
 - 2026-09-11 — feature 007 (mail read/unread, flags & categories) accepted by user (including the read/unread bug fix); logged to CHANGELOG; active feature set to 008 (Mail search), phase set to `implement`
 - 2026-09-11 — feature 007 (mail read/unread, flags & categories) accept-stage bug fixed: user reported that clicking "Mark as unread" in the Reading Pane immediately flipped the message back to read while it stayed open. Root cause: the fetch effect re-ran on every `messagesVersion` bump (including the one from the user's own toggle) and unconditionally re-applied the auto-mark-read check. Fixed with a `lastCheckedIdRef` that limits the auto-mark check to the first time a given message id is opened; a first fix attempt (stamping the ref only when a mark occurred) was caught as still-broken by a new regression test before landing the corrected version (stamp on every check, mark-or-not). Added 2 regression tests (221 → 223, stable across 3 runs); lint/typecheck/build all still pass; phase stays `accept`

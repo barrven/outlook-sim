@@ -221,6 +221,199 @@ describe('MessageListPane', () => {
     expect(await screen.findByText('Client one')).toBeInTheDocument()
   })
 
+  it('filters by subject, body, sender name, or sender email — case-insensitively', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'subj', subject: 'Budget Review Notes', body: 'irrelevant', fromName: 'Alex', fromEmail: 'alex@example.com' }),
+      makeMessage({ id: 'body', subject: 'Quarterly Numbers', body: 'please review the budget figures', fromName: 'Sam', fromEmail: 'sam@example.com' }),
+      makeMessage({ id: 'name', subject: 'Team Sync', body: 'irrelevant', fromName: 'Budget Team', fromEmail: 'lead@example.com' }),
+      makeMessage({ id: 'email', subject: 'Random Update', body: 'irrelevant', fromName: 'Morgan', fromEmail: 'budget-lead@example.com' }),
+      makeMessage({ id: 'none', subject: 'Nothing Related', body: 'irrelevant', fromName: 'Nobody', fromEmail: 'nobody@example.com' })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Nothing Related')
+
+    await user.type(screen.getByLabelText('Search mail'), 'budget')
+
+    expect(screen.getByText('Budget Review Notes')).toBeInTheDocument() // subject match
+    expect(screen.getByText('Quarterly Numbers')).toBeInTheDocument() // body match
+    expect(screen.getByText('Team Sync')).toBeInTheDocument() // sender name match
+    expect(screen.getByText('Random Update')).toBeInTheDocument() // sender email match
+    expect(screen.queryByText('Nothing Related')).not.toBeInTheDocument()
+  })
+
+  it('scopes search to the current folder by default, and to all folders once that scope is chosen', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockImplementation((folderId?: string) => {
+      if (folderId === undefined) {
+        return Promise.resolve([
+          makeMessage({ id: 'inbox-match', subject: 'Budget in inbox', folderId: 'inbox' }),
+          makeMessage({ id: 'sent-match', subject: 'Budget in sent', folderId: 'sent' })
+        ])
+      }
+      return Promise.resolve([makeMessage({ id: 'inbox-match', subject: 'Budget in inbox', folderId: 'inbox' })])
+    })
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Budget in inbox')
+
+    await user.type(screen.getByLabelText('Search mail'), 'budget')
+    expect(screen.getByText('Budget in inbox')).toBeInTheDocument()
+    expect(screen.queryByText('Budget in sent')).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText('Search scope'), 'All folders')
+
+    expect(await screen.findByText('Budget in sent')).toBeInTheDocument()
+    expect(screen.getByText('Budget in inbox')).toBeInTheDocument()
+  })
+
+  it('only fetches the unscoped all-folders list once "All folders" search scope is selected', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('No items to show.')
+
+    expect(window.api.data.messages.list).toHaveBeenCalledWith('inbox')
+    expect(window.api.data.messages.list).not.toHaveBeenCalledWith()
+
+    await user.selectOptions(screen.getByLabelText('Search scope'), 'All folders')
+
+    await waitFor(() => expect(window.api.data.messages.list).toHaveBeenCalledWith())
+  })
+
+  it('updates results live as the query changes, without needing a folder change', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Budget review' }),
+      makeMessage({ id: 'b', subject: 'Travel plans' })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Budget review')
+
+    const input = screen.getByLabelText('Search mail')
+    await user.type(input, 'budget')
+    expect(screen.getByText('Budget review')).toBeInTheDocument()
+    expect(screen.queryByText('Travel plans')).not.toBeInTheDocument()
+
+    await user.clear(input)
+    await user.type(input, 'travel')
+    expect(screen.getByText('Travel plans')).toBeInTheDocument()
+    expect(screen.queryByText('Budget review')).not.toBeInTheDocument()
+
+    expect(window.api.data.messages.list).not.toHaveBeenCalledWith('drafts')
+  })
+
+  it('restores the normal folder view when the search is cleared', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Budget review' }),
+      makeMessage({ id: 'b', subject: 'Travel plans' })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Budget review')
+
+    const input = screen.getByLabelText('Search mail')
+    await user.type(input, 'budget')
+    expect(screen.queryByText('Travel plans')).not.toBeInTheDocument()
+
+    await user.clear(input)
+
+    expect(await screen.findByText('Travel plans')).toBeInTheDocument()
+    expect(screen.getByText('Budget review')).toBeInTheDocument()
+  })
+
+  it('shows a distinct empty state for a no-results search vs a genuinely empty folder', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([makeMessage({ id: 'a', subject: 'Budget review' })])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Budget review')
+
+    await user.type(screen.getByLabelText('Search mail'), 'nonexistent keyword')
+
+    expect(await screen.findByText('No results found.')).toBeInTheDocument()
+    expect(screen.queryByText('No items to show.')).not.toBeInTheDocument()
+  })
+
+  it('combines an active search with the category filter', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Budget review', categories: ['Urgent'] }),
+      makeMessage({ id: 'b', subject: 'Budget forecast', categories: ['Client'] })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageId={null}
+        onSelectMessage={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Budget review')
+
+    await user.type(screen.getByLabelText('Search mail'), 'budget')
+    expect(screen.getByText('Budget forecast')).toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText('Filter by category'), 'Urgent')
+
+    expect(screen.getByText('Budget review')).toBeInTheDocument()
+    expect(screen.queryByText('Budget forecast')).not.toBeInTheDocument()
+  })
+
   it('refetches messages when the folder changes', async () => {
     const { rerender } = render(
       <MessageListPane

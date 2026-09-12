@@ -1,7 +1,7 @@
 ---
 id: 008
 title: Mail search
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -75,7 +75,51 @@ lint/typecheck/build pass; existing test suite still 223/223 (no new
 tests yet — that's `/test`).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 7 tests to `MessageListPane.test.tsx` on top of the coverage
+written during `/implement` (223 → 230, all passing; re-ran full suite 3x,
+stable):
+
+- **AC1** — one test with five messages, each matching the query
+  `'budget'` (typed lowercase) through a different field: subject, body,
+  sender display name, and sender email, plus a fifth message matching
+  none of them; asserts the four matches show and the non-match doesn't,
+  proving all four fields are searched and matching is case-insensitive
+  (query lowercase, fixture data mixed-case).
+- **AC2** — one test proving the default "This folder" scope only
+  searches the folder-scoped `messages` fetch (a same-keyword match in a
+  different folder stays hidden) and that switching the scope `<select>`
+  to "All folders" then reveals it too, backed by a `mockImplementation`
+  that returns different lists depending on whether `messages.list` was
+  called with a folder id or with none; a second test confirms the
+  unscoped fetch is genuinely lazy — `messages.list` is never called with
+  zero arguments until "All folders" is actually selected (guards the
+  "no extra IPC round trip" design decision from Implementation Notes).
+- **AC3** — one test typing two different, non-overlapping queries in
+  sequence and checking the visible rows flip each time, with the
+  `selectedFolderId` prop held constant throughout and an explicit
+  assertion that `messages.list` was never called with a different
+  folder id — proving results update live without a folder change.
+- **AC4** — one test that searches, confirms the list narrowed, clears the
+  input, and confirms the full pre-search list is back.
+- Two extra tests beyond the literal ACs, for confidence in the pipeline
+  described in Implementation Notes: a distinct "No results found." empty
+  state for a query that matches nothing (vs "No items to show." for a
+  genuinely empty folder), and search + the existing category filter
+  (feature 007) narrowing together rather than one silently overriding
+  the other.
+
+Deliberately not covered: a live Electron round trip proving the "all
+folders" scope reflects messages from folders the trainee isn't currently
+viewing in a real running app — the unscoped IPC call itself
+(`db:messages:list` with no folder id) already has dedicated coverage in
+`db.test.ts` from feature 002, so this only needed to prove
+`MessageListPane` calls it correctly and renders whatever it returns,
+which the scope test's `mockImplementation` does directly. Also not
+covered: multi-word / phrase queries beyond a single keyword, and search
+combined with the "All folders" scope in the same test as the category
+filter — each of those is the same code path already exercised
+separately, and stacking every combination would test the pipeline
+mechanism repeatedly rather than new behavior.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
