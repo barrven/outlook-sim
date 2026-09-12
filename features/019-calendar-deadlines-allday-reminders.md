@@ -161,5 +161,25 @@ real elapsed time) are unverified through the actual UI, deferred to the user's 
 `/accept`. The `ticking` reentrancy guard remains untested, as documented in Test Notes (no genuine
 async gap exists in the current synchronous `tick()` to exercise it against).
 
+**Accept-stage UI fixes (found by the user live in the running app, after this validation passed):**
+1. The All-day checkbox looked small and not flush-left against its label. Root cause: it was
+   matched by the shared `.calendar-event-form-row input, select, textarea` rule meant for text
+   inputs, which gave it `padding: 5px 6px; border: 1px solid var(--border); border-radius: 2px` —
+   a native checkbox rendered inside that padded/bordered box looks tiny and is pushed inward by the
+   left padding rather than sitting flush against the label. Fixed with a higher-specificity
+   `.calendar-event-form-row-checkbox input[type='checkbox']` rule that strips the inherited
+   padding/border and sets an explicit `18px × 18px` size with `margin: 0`.
+2. Checking "All day" (which hides the End field) visually shifted the All-day checkbox itself, even
+   though the End row sits *below* it in the DOM. Root cause: `.calendar-view` is a column flex
+   container with the day/month grid as its only `flex: 1 1 auto` item and the event form sized to
+   its own content below that — so when the form got shorter (End row unmounted), the grid above it
+   grew to fill the freed space, pushing the *entire form's top edge* (and everything near the top of
+   it, including the All-day row) down the screen. Fixed by keeping the End row mounted at all times
+   and hiding it with a new `.calendar-event-form-row-hidden { visibility: hidden }` class instead of
+   conditionally unmounting it — the row still reserves its layout space, so the form's height (and
+   therefore every other row's position) stays constant regardless of the All-day toggle. Updated the
+   one test that asserted the End field was removed from the DOM to instead assert the hidden class.
+Re-ran lint/typecheck/build/full suite (305/305) — all pass. Phase stays `accept`.
+
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

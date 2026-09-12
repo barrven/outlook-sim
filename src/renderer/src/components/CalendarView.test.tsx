@@ -273,10 +273,19 @@ describe('CalendarView', () => {
     const dialog = await screen.findByRole('dialog', { name: 'New Event' })
 
     expect(within(dialog).getByLabelText('Start')).toHaveAttribute('type', 'datetime-local')
+    // Kept mounted throughout (just hidden when checked) so the panel's
+    // height — and everything above it — doesn't shift on screen.
+    expect(within(dialog).getByLabelText('End').closest('.calendar-event-form-row')).not.toHaveClass(
+      'calendar-event-form-row-hidden'
+    )
+
     await user.click(within(dialog).getByLabelText('All day'))
+
     expect(within(dialog).getByLabelText('Start')).toHaveAttribute('type', 'date')
-    // The End field only makes sense for timed events.
-    expect(within(dialog).queryByLabelText('End')).not.toBeInTheDocument()
+    // The End field only makes sense for timed events — hidden, not removed.
+    expect(within(dialog).getByLabelText('End').closest('.calendar-event-form-row')).toHaveClass(
+      'calendar-event-form-row-hidden'
+    )
   })
 
   it('creating an all-day item sends allDay: true, endTime: null, and a start time at local midnight of the anchor date', async () => {

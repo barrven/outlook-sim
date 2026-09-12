@@ -961,8 +961,22 @@ body {
   color: var(--text-muted);
 }
 
-.calendar-event-form-row-checkbox input {
+.calendar-event-form-row-checkbox {
+  justify-content: flex-start;
+}
+
+.calendar-event-form-row-checkbox input[type='checkbox'] {
   flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-event-form-row-hidden {
+  visibility: hidden;
 }
 
 .calendar-event-form-row input,

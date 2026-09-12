@@ -178,17 +178,18 @@ function CalendarItemForm({ initialItem, initialStartMs, onSave, onDelete, onCan
           onChange={(event) => setStartInput(event.target.value)}
         />
       </div>
-      {!allDay && (
-        <div className="calendar-event-form-row">
-          <label htmlFor="calendar-event-end">End</label>
-          <input
-            id="calendar-event-end"
-            type="datetime-local"
-            value={endInput}
-            onChange={(event) => setEndInput(event.target.value)}
-          />
-        </div>
-      )}
+      {/* Kept mounted (just visually hidden) rather than unmounted when All
+          day is checked, so the form's height — and everything above this
+          row, like the All-day checkbox itself — doesn't shift on screen. */}
+      <div className={`calendar-event-form-row${allDay ? ' calendar-event-form-row-hidden' : ''}`}>
+        <label htmlFor="calendar-event-end">End</label>
+        <input
+          id="calendar-event-end"
+          type="datetime-local"
+          value={endInput}
+          onChange={(event) => setEndInput(event.target.value)}
+        />
+      </div>
       <div className="calendar-event-form-row">
         <label htmlFor="calendar-event-reminder">Reminder</label>
         <select
