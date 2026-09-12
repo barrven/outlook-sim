@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 019 — Calendar deadlines, all-day items & reminders
+- **Phase:** implement
+- **Active feature:** 021 — Scenario pack load
 - **Last updated:** 2026-09-12
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-12 — feature 019 (calendar deadlines, all-day items & reminders) accepted by user; logged to CHANGELOG; active feature set to 021 (Scenario pack load), phase set to `implement`
 - 2026-09-12 — feature 019 (calendar deadlines, all-day items & reminders) accept-stage UI fixes: (1) the All-day checkbox was small and not flush-left because it inherited the shared text-input rule's padding/border — fixed with a higher-specificity `input[type='checkbox']` rule giving it an explicit 18px size and no padding/border. (2) toggling All-day (which hides the End field) was visually shifting the All-day checkbox itself, since the form sits below a `flex:1` grid in a column flex layout — shrinking the form's height let the grid grow and pushed the form's top edge (and everything near it) down. Fixed by keeping the End row always mounted and hiding it via a new `visibility:hidden` class instead of unmounting it, so the form's height stays constant regardless of the toggle; updated the one test that checked for DOM removal to check the hidden class instead. lint/typecheck/build pass; full suite 305/305, re-run 3x, stable; phase stays `accept`
 - 2026-09-12 — feature 019 (calendar deadlines, all-day items & reminders) validated: lint/typecheck/build pass; full test suite (305/305) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs, no implementation drift; all 4 ACs verified by tests + code inspection plus a live end-to-end check — bundled `db.ts`/`clock.ts`/`reminderScheduler.ts` standalone with `esbuild` and, against a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db`: created/edited a deadline, created/deleted an all-day item, and drove a real reminder through paused→no-fire, started→fires-once, ticked-again→no-refire, paused-again-with-a-new-due-item→no-fire; real on-disk DB confirmed byte-for-byte unchanged afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-12 — feature 019 (calendar deadlines, all-day items & reminders) tested: added 26 tests (279 → 305, all passing; re-ran full suite 3x, stable) — new `reminderScheduler.test.ts` (9 tests) covers fire-once/no-refire/paused-blocks-firing/multi-item-in-one-tick plus a real-`SimClock` pause/resume integration test; `db.test.ts` (+4) covers `reminderFired` defaulting/round-trip/persistence/migration; `ipc.test.ts` (+2) covers `broadcastReminderFired`; `CalendarView.test.tsx` (+13) covers Deadline creation, All-day toggle + exact local-midnight start time, reminder selection, and a full edit/delete/precedence-rule block; `App.test.tsx` (+2) covers the dismissible reminder banner(s). Caught and fixed a test-authoring race (not a product bug) where an early draft opened the create form on the very first render before the simulated-clock effect resolved. lint/typecheck/build all still pass; phase set to `validate`

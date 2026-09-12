@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-12 — Calendar deadlines, all-day items & reminders (features/019-calendar-deadlines-allday-reminders.md)
+Every calendar item — event or deadline — can now be edited or deleted: click
+it in any view to reopen the same form you created it with, with a Delete
+button added. That form also gained a Type selector (Event/Deadline), an
+All-day toggle (switches Start to a date-only picker, no time-of-day), and a
+Reminder dropdown (None through 1 day before). When simulated time reaches a
+reminder, a dismissible banner appears — visible no matter which module
+you're in — and it only ever fires off the simulated office clock, never
+while that clock is paused. Recurring events aren't part of this yet.
+
 ## 2026-09-11 — Calendar views & persistence (features/018-calendar-views-persistence.md)
 The Calendar module is real now: Day, Work Week, Week, and Month views, each
 switchable from tabs at the top of the calendar pane, with Previous/Next

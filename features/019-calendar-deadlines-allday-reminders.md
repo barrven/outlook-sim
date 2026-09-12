@@ -1,7 +1,7 @@
 ---
 id: 019
 title: Calendar deadlines, all-day items & reminders
-status: accept
+status: done
 priority: medium
 ---
 
@@ -182,4 +182,9 @@ async gap exists in the current synchronous `tick()` to exercise it against).
 Re-ran lint/typecheck/build/full suite (305/305) — all pass. Phase stays `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-12 — User found and reported 2 live UI issues during this accept round before formally
+accepting: (1) the All-day checkbox was too small and not aligned flush-left; (2) toggling All-day
+visually shifted the checkbox's own position because hiding the End field changed the form's height.
+Both were fixed and verified (lint/typecheck/build/full suite all pass) before this gate. User then
+accepted via `/accept` (AskUserQuestion: "Accept"), no further changes requested. Decision:
+**accepted**.
