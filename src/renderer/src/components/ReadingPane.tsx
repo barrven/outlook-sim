@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
 import type { MailMessage } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
@@ -25,12 +25,25 @@ function ReadingPane({
   onPermanentDelete
 }: ReadingPaneProps): ReactElement {
   const [message, setMessage] = useState<MailMessage | null>(null)
+  const [categoryDraft, setCategoryDraft] = useState('')
+  // Reset the draft when the selected message changes — done during render
+  // (React's recommended pattern for "adjusting state when a prop changes")
+  // rather than in an effect, since setState-in-effect triggers a lint error.
+  const [categoryDraftMessageId, setCategoryDraftMessageId] = useState(selectedMessageId)
+  if (selectedMessageId !== categoryDraftMessageId) {
+    setCategoryDraftMessageId(selectedMessageId)
+    setCategoryDraft('')
+  }
 
   useEffect(() => {
     if (!selectedMessageId) return
     let cancelled = false
     window.api.data.messages.get(selectedMessageId).then((result) => {
-      if (!cancelled) setMessage(result)
+      if (cancelled) return
+      setMessage(result)
+      if (result && !result.isRead) {
+        window.api.data.messages.update(result.id, { isRead: true })
+      }
     })
     return () => {
       cancelled = true
@@ -47,6 +60,38 @@ function ReadingPane({
     )
   }
 
+  // A separate, non-nullable binding so the handlers below (nested function
+  // declarations) type-check without TS losing the null-narrowing on
+  // `displayedMessage` across the closure boundary.
+  const currentMessage: MailMessage = displayedMessage
+
+  function handleToggleRead(): void {
+    window.api.data.messages.update(currentMessage.id, { isRead: !currentMessage.isRead })
+  }
+
+  function handleToggleFlag(): void {
+    window.api.data.messages.update(currentMessage.id, { isFlagged: !currentMessage.isFlagged })
+  }
+
+  function handleAddCategory(event: FormEvent): void {
+    event.preventDefault()
+    const category = categoryDraft.trim()
+    setCategoryDraft('')
+    if (!category || currentMessage.categories.includes(category)) return
+    window.api.data.messages.update(currentMessage.id, {
+      categories: [...currentMessage.categories, category]
+    })
+  }
+
+  function handleRemoveCategory(category: string): void {
+    window.api.data.messages.update(currentMessage.id, {
+      categories: currentMessage.categories.filter((existing) => existing !== category)
+    })
+  }
+
+  const readToggleLabel = displayedMessage.isRead ? 'Mark as unread' : 'Mark as read'
+  const flagToggleLabel = displayedMessage.isFlagged ? 'Unflag' : 'Flag'
+
   return (
     <div className="reading-pane">
       <div className="reading-pane-header">
@@ -60,6 +105,12 @@ function ReadingPane({
               <button type="button" onClick={() => onDelete(displayedMessage)}>
                 Delete
               </button>
+              <button type="button" onClick={handleToggleRead}>
+                {readToggleLabel}
+              </button>
+              <button type="button" onClick={handleToggleFlag}>
+                {flagToggleLabel}
+              </button>
             </div>
           ) : displayedMessage.folderId === 'deleted' ? (
             <div className="reading-pane-actions">
@@ -68,6 +119,12 @@ function ReadingPane({
               </button>
               <button type="button" onClick={() => onPermanentDelete(displayedMessage)}>
                 Delete permanently
+              </button>
+              <button type="button" onClick={handleToggleRead}>
+                {readToggleLabel}
+              </button>
+              <button type="button" onClick={handleToggleFlag}>
+                {flagToggleLabel}
               </button>
             </div>
           ) : (
@@ -83,6 +140,12 @@ function ReadingPane({
               </button>
               <button type="button" onClick={() => onDelete(displayedMessage)}>
                 Delete
+              </button>
+              <button type="button" onClick={handleToggleRead}>
+                {readToggleLabel}
+              </button>
+              <button type="button" onClick={handleToggleFlag}>
+                {flagToggleLabel}
               </button>
             </div>
           )}
@@ -103,6 +166,28 @@ function ReadingPane({
               &middot; Cc: {displayedMessage.cc.map((recipient) => recipient.name || recipient.email).join(', ')}
             </>
           )}
+        </div>
+        <div className="reading-pane-categories">
+          {displayedMessage.categories.map((category) => (
+            <span key={category} className="category-tag">
+              {category}
+              <button
+                type="button"
+                aria-label={`Remove category ${category}`}
+                onClick={() => handleRemoveCategory(category)}
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+          <form className="category-add-form" onSubmit={handleAddCategory}>
+            <input
+              aria-label="Add category"
+              placeholder="Add category"
+              value={categoryDraft}
+              onChange={(event) => setCategoryDraft(event.target.value)}
+            />
+          </form>
         </div>
       </div>
       <div className="reading-pane-body">{displayedMessage.body}</div>

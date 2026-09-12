@@ -531,9 +531,19 @@ body {
 }
 
 .message-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px 10px;
   font-weight: 600;
   border-bottom: 1px solid var(--border);
+}
+
+.message-list-filter {
+  font-weight: normal;
+  font-size: 11px;
+  padding: 2px 4px;
 }
 
 .message-list-empty {
@@ -550,8 +560,15 @@ body {
   min-height: 0;
 }
 
+.message-list-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
+
 .message-list-item {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   width: 100%;
   text-align: left;
@@ -559,7 +576,6 @@ body {
   padding: 6px 10px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 
@@ -583,6 +599,26 @@ body {
 .message-list-item-subject {
   font-size: 13px;
   color: var(--text);
+}
+
+.message-list-item-categories {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.message-list-flag-btn {
+  flex: 0 0 auto;
+  width: 28px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.message-list-flag-btn.flagged {
+  color: var(--accent);
 }
 
 /* Reading pane */
@@ -660,6 +696,44 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+.reading-pane-categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.category-tag button {
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.category-add-form input {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+  width: 110px;
 }
 
 .reading-pane-body {
