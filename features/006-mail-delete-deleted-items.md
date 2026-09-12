@@ -1,7 +1,7 @@
 ---
 id: 006
 title: Mail delete & Deleted Items
-status: accept
+status: done
 priority: medium
 ---
 
@@ -180,3 +180,5 @@ needed — the ribbon wiring is an additional entry point onto the same
   (wire it up now / log as a separate bug / leave as-is); they chose to
   wire it up now. Implemented, tested (4 new tests), and re-validated in
   the same pass — see the addenda above.
+- 2026-09-11 — user accepted the feature as delivered (including the
+  ribbon-Delete fix). Decision: accepted.

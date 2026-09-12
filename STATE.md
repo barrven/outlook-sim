@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 006 — Mail delete & Deleted Items
+- **Phase:** implement
+- **Active feature:** 007 — Mail read/unread, flags & categories
 - **Last updated:** 2026-09-11
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 006 (mail delete & Deleted Items) accepted by user (including the ribbon-Delete fix); logged to CHANGELOG; active feature set to 007 (Mail read/unread, flags & categories), phase set to `implement`
 - 2026-09-11 — feature 006 (mail delete & Deleted Items) accept-stage feedback addressed: user reported the ribbon's "Delete" button does nothing; root cause was a pre-existing feature-001 placeholder (disabled, no distinct disabled styling, same pattern as Reply/Reply All/Forward in the ribbon) that predates this feature but became misleading now that Delete actually works elsewhere; user chose to wire it up rather than log it separately or leave it. `RibbonBar.tsx` now maps each action name to an optional handler (`onDelete` alongside the existing `onNewEmail`) instead of special-casing New Email; `App.tsx` enables it via `canDeleteSelected = selectedMessageId && selectedFolderId !== 'deleted'` (disabled in Deleted Items since Delete isn't a Reading Pane action there either) and reuses a new shared `moveMessageToDeleted` helper so both the ribbon and `handleDeleteMessage` go through the same path; added 4 tests (204 → 208, stable across 3 runs); lint/typecheck/build all still pass; phase stays `accept`
 - 2026-09-11 — feature 006 (mail delete & Deleted Items) validated: lint/typecheck/build pass; full test suite (204/204) re-run 3x, stable; all 3 ACs verified by tests + code inspection plus a live check — bundled `db.ts` standalone with `esbuild` and drove a real (non-mocked) `MailDb` through delete-from-inbox/sent/drafts, restore, and permanent-delete, all behaving correctly; additionally cross-checked the user's real `~/.config/outlook-sim/outlook-sim.db`, which had already picked up the `previous_folder_id` migration from a real app launch since `/implement`, with all 8 pre-existing real messages intact — strong non-scripted evidence the migration is production-safe; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-11 — feature 006 (mail delete & Deleted Items) tested: added 11 tests on top of the coverage already written during `/implement` (193 → 204, all passing; re-ran full suite 3x, stable) — `db.test.ts` covers `previousFolderId` defaulting, delete-then-restore round-tripping, permanent deletion from Deleted Items, close/reopen persistence of a deleted message, and the `previous_folder_id` migration path for pre-existing DBs; `ReadingPane.test.tsx` covers Delete appearing (and firing) in both normal folders and Drafts, and Deleted Items showing only Restore/Delete permanently; `App.test.tsx` covers the three handlers calling the right `window.api.data.messages.*` calls with the right arguments and clearing the selection; lint/typecheck/build all still pass; UI-layer persistence-across-a-real-restart remains untested (no Playwright/xvfb driver, same gap as prior features) — DB-layer persistence is covered instead; phase set to `validate`

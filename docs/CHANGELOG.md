@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Mail delete & Deleted Items (features/006-mail-delete-deleted-items.md)
+You can now delete a message from any folder — Inbox, Sent, Drafts, or a
+custom folder — and it moves to Deleted Items instead of vanishing. From
+Deleted Items you can Restore a message back to wherever it came from, or
+permanently delete it for good. Deleted Items survives closing and
+reopening the app, same as every other folder. The Delete button works
+both from the Reading Pane and from the ribbon (the ribbon's Delete had
+been a non-functional placeholder since the very first version of the
+app — it's wired up now too).
+
 ## 2026-09-11 — LLM unsolicited incoming mail scheduler (features/016-llm-unsolicited-mail-scheduler.md)
 Your Inbox is no longer only reactive. While the simulated clock is
 running, your configured personas will occasionally send you mail on
