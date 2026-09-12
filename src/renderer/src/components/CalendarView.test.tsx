@@ -472,4 +472,270 @@ describe('CalendarView', () => {
       expect(await screen.findByRole('dialog', { name: 'New Event' })).toBeInTheDocument()
     })
   })
+
+  describe('recurring events', () => {
+    function recurringItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+      return makeItem({
+        id: 'series-1',
+        title: 'Standup',
+        recurrenceRule: 'daily',
+        recurrenceExceptions: [],
+        ...overrides
+      })
+    }
+
+    it('the New Event form offers a Repeat select defaulting to "Does not repeat"', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+
+      render(<Harness />)
+      await screen.findByText('No calendar items to show.')
+      await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+      const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+      expect(within(dialog).getByLabelText('Repeat')).toHaveValue('')
+    })
+
+    it('creating with Repeat: Daily sends recurrenceRule: "daily"', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+      vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(recurringItem())
+
+      render(<Harness />)
+      await screen.findByText('No calendar items to show.')
+      await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+      const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+      await user.type(within(dialog).getByLabelText('Title'), 'Standup')
+      await user.selectOptions(within(dialog).getByLabelText('Repeat'), 'Daily')
+      await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+      await waitFor(() =>
+        expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Standup', recurrenceRule: 'daily' })
+        )
+      )
+    })
+
+    it('leaving Repeat as "Does not repeat" sends recurrenceRule: null', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+      vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(makeItem())
+
+      render(<Harness />)
+      await screen.findByText('No calendar items to show.')
+      await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+      const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+      await user.type(within(dialog).getByLabelText('Title'), 'One-off')
+      await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+      await waitFor(() =>
+        expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+          expect.objectContaining({ recurrenceRule: null })
+        )
+      )
+    })
+
+    it('a daily recurring event shows one occurrence per day across Week view', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([
+        recurringItem({ startTime: ANCHOR_MS, endTime: ANCHOR_MS + 30 * 60 * 1000 })
+      ])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await screen.findByText('Standup')
+
+      const tabs = screen.getByRole('tablist', { name: 'Calendar views' })
+      await user.click(within(tabs).getByRole('tab', { name: 'Week' }))
+
+      // Anchor is Wed Mar 11; the visible week (Sun Mar 8 - Sat Mar 14) only
+      // shows occurrences from the anchor forward: Wed/Thu/Fri/Sat = 4.
+      const occurrences = await screen.findAllByText('Standup')
+      expect(occurrences).toHaveLength(4)
+    })
+
+    it('a monthly recurring event shows one occurrence per month across Month view', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([
+        recurringItem({
+          title: 'Rent due',
+          recurrenceRule: 'monthly',
+          startTime: new Date(2026, 1, 11, 9, 0).getTime(),
+          endTime: null
+        })
+      ])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      const tabs = await screen.findByRole('tablist', { name: 'Calendar views' })
+      await user.click(within(tabs).getByRole('tab', { name: 'Month' }))
+
+      // The Month grid always covers a fixed 42-day span starting from the
+      // Sunday on/before the 1st of the anchor month (here Sun Mar 1) through
+      // 42 days later (Sat Apr 11) — so both the March 11 occurrence (in
+      // March) and the next monthly occurrence, April 11 (shown as a
+      // trailing "outside-month" day), are legitimately visible.
+      const occurrences = await screen.findAllByText('Rent due')
+      expect(occurrences).toHaveLength(2)
+      expect(occurrences[0].closest('.calendar-month-cell')).not.toHaveClass('outside-month')
+      expect(occurrences[1].closest('.calendar-month-cell')).toHaveClass('outside-month')
+    })
+
+    it('marks a recurring occurrence with a 🔁 indicator', async () => {
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+
+      const button = (await screen.findByText('Standup')).closest('button')!
+      expect(within(button).getByText('🔁', { exact: false })).toBeInTheDocument()
+    })
+
+    it('clicking a recurring occurrence shows a scope chooser instead of opening the edit form directly', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Standup'))
+
+      expect(await screen.findByRole('dialog', { name: 'Edit Recurring Item' })).toBeInTheDocument()
+      expect(screen.getByText(/is part of a recurring series/)).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+    })
+
+    it('Cancel in the scope chooser closes without any API calls', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Standup'))
+      await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+
+      expect(screen.queryByRole('dialog', { name: 'Edit Recurring Item' })).not.toBeInTheDocument()
+      expect(window.api.data.calendarItems.update).not.toHaveBeenCalled()
+      expect(window.api.data.calendarItems.delete).not.toHaveBeenCalled()
+    })
+
+    it('clicking a non-recurring item still opens straight into editing, with no scope chooser', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([makeItem({ title: 'Team sync' })])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+
+      expect(screen.queryByRole('dialog', { name: 'Edit Recurring Item' })).not.toBeInTheDocument()
+      expect(await screen.findByRole('dialog', { name: 'Edit Calendar Item' })).toBeInTheDocument()
+    })
+
+    describe('"This event" scope', () => {
+      it('hides the Repeat field, and saves only that occurrence as an exception without deleting or replacing the series', async () => {
+        const user = userEvent.setup()
+        setAnchorClock(ANCHOR_MS)
+        const series = recurringItem()
+        vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([series])
+        vi.mocked(window.api.data.calendarItems.update).mockResolvedValue(series)
+
+        render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+        await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'This event' }))
+
+        const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+        expect(within(dialog).queryByLabelText('Repeat')).not.toBeInTheDocument()
+
+        const titleInput = within(dialog).getByLabelText('Title')
+        await user.clear(titleInput)
+        await user.type(titleInput, 'Standup (special)')
+        await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+        await waitFor(() => expect(window.api.data.calendarItems.update).toHaveBeenCalled())
+        expect(window.api.data.calendarItems.update).toHaveBeenCalledWith(series.id, {
+          recurrenceExceptions: [
+            expect.objectContaining({
+              originalStartTime: series.startTime,
+              deleted: false,
+              title: 'Standup (special)'
+            })
+          ]
+        })
+        expect(window.api.data.calendarItems.delete).not.toHaveBeenCalled()
+      })
+
+      it('deleting "this event" records a deleted exception rather than calling the delete IPC', async () => {
+        const user = userEvent.setup()
+        setAnchorClock(ANCHOR_MS)
+        const series = recurringItem()
+        vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([series])
+        vi.mocked(window.api.data.calendarItems.update).mockResolvedValue(series)
+
+        render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+        await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'This event' }))
+        const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+        await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+        await waitFor(() => expect(window.api.data.calendarItems.update).toHaveBeenCalled())
+        expect(window.api.data.calendarItems.update).toHaveBeenCalledWith(series.id, {
+          recurrenceExceptions: [{ originalStartTime: series.startTime, deleted: true }]
+        })
+        expect(window.api.data.calendarItems.delete).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('"The whole series" scope', () => {
+      it('shows the Repeat field pre-filled, and Save updates the series template directly', async () => {
+        const user = userEvent.setup()
+        setAnchorClock(ANCHOR_MS)
+        const series = recurringItem()
+        const updated = { ...series, title: 'Standup (renamed)' }
+        vi.mocked(window.api.data.calendarItems.list)
+          .mockResolvedValueOnce([series])
+          .mockResolvedValueOnce([updated])
+        vi.mocked(window.api.data.calendarItems.update).mockResolvedValue(updated)
+
+        render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+        await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'The whole series' }))
+
+        const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+        expect(within(dialog).getByLabelText('Repeat')).toHaveValue('daily')
+
+        const titleInput = within(dialog).getByLabelText('Title')
+        await user.clear(titleInput)
+        await user.type(titleInput, 'Standup (renamed)')
+        await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+        await waitFor(() =>
+          expect(window.api.data.calendarItems.update).toHaveBeenCalledWith(
+            series.id,
+            expect.objectContaining({ title: 'Standup (renamed)', recurrenceRule: 'daily' })
+          )
+        )
+      })
+
+      it('Delete removes the whole series via the delete IPC', async () => {
+        const user = userEvent.setup()
+        setAnchorClock(ANCHOR_MS)
+        const series = recurringItem()
+        vi.mocked(window.api.data.calendarItems.list).mockResolvedValueOnce([series]).mockResolvedValueOnce([])
+        vi.mocked(window.api.data.calendarItems.delete).mockResolvedValue(undefined)
+
+        render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+        await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'The whole series' }))
+        const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+        await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+        await waitFor(() => expect(window.api.data.calendarItems.delete).toHaveBeenCalledWith(series.id))
+        expect(window.api.data.calendarItems.update).not.toHaveBeenCalled()
+      })
+    })
+  })
 })

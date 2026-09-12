@@ -8,7 +8,7 @@
 // occurrence has a CalendarRecurrenceException. Occurrences are computed on
 // the fly, never persisted individually — only the template row and its
 // exceptions live in the database.
-import type { CalendarItem, CalendarItemType } from '../../shared/data-types'
+import type { CalendarItem, CalendarItemType, CalendarRecurrenceException } from '../../shared/data-types'
 
 export interface CalendarOccurrence {
   // The template CalendarItem's id — use this to find/patch the series row.
@@ -147,6 +147,9 @@ export function expandOccurrences(
  * originalStartTime) — the correct way to both create a new exception and
  * update a previously-excepted occurrence again.
  */
-export function upsertException<T extends { originalStartTime: number }>(exceptions: T[], next: T): T[] {
+export function upsertException(
+  exceptions: CalendarRecurrenceException[],
+  next: CalendarRecurrenceException
+): CalendarRecurrenceException[] {
   return [...exceptions.filter((exception) => exception.originalStartTime !== next.originalStartTime), next]
 }

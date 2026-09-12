@@ -1,7 +1,7 @@
 ---
 id: 020
 title: Calendar recurring events
-status: testing
+status: validating
 priority: low
 ---
 
@@ -71,7 +71,45 @@ done; deleted afterward, not part of the real suite. lint/typecheck/build pass; 
 373/373 unchanged; phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 33 tests (373 → 406, all passing; re-ran full suite 3x, stable).
+
+New `recurrence.test.ts` (17 tests) covers the pure `expandOccurrences`/`upsertException` logic in
+isolation: non-recurring items pass through unchanged (in/out of range); daily/weekly expansion including
+the case where the range starts well after the series began (must still find the right in-range
+occurrences, not just the first N from the anchor); a DST-transition regression test (daily 9am event
+stays at 9am across the March 2026 spring-forward, via `Date.setDate` not fixed ms offsets); monthly
+expansion including the day-of-month clamping regression itself (Jan 31 → Feb 28 → **must return to Mar
+31**, not stay clamped at 28 — this is the exact bug caught and fixed during `/implement`) and that
+time-of-day is preserved across the month step; exceptions (deleted occurrences are skipped, overridden
+occurrences show the override fields while every other occurrence in the series stays natural, matching
+is by `originalStartTime` not occurrence index/position); multiple items' occurrences merge and sort by
+start time; and `upsertException` append/replace/leave-others-untouched semantics. (AC2, AC3 groundwork)
+
+New `describe('recurring events', ...)` block in `CalendarView.test.tsx` (13 tests) covers the UI: the
+Repeat select defaults to "Does not repeat" and is wired through to `recurrenceRule` on create (both the
+`'daily'` and `null` cases); a daily series shows the correct occurrence count in Week view and a monthly
+series shows correctly in Month view (including the fixed 42-day grid legitimately showing a *second*,
+trailing-month occurrence — confirmed as correct via the `outside-month` CSS class, not a bug); the 🔁
+recurring indicator renders; clicking a recurring occurrence shows the "this event / the whole series"
+chooser instead of opening the edit form directly, Cancel makes no API calls, and a non-recurring item
+still skips straight to editing exactly as before (AC3); "This event" hides the Repeat field and saves an
+exception via `calendarItems.update(seriesId, {recurrenceExceptions: [...]})` for both edit and delete,
+never calling the delete IPC; "The whole series" shows Repeat pre-filled and edits/deletes the template
+row directly via the same `calendarItems.update`/`delete` calls a non-recurring item already used (AC1,
+AC3).
+
+New `db.test.ts` tests (3) cover AC4 directly: a new item defaults `recurrenceExceptions: []` and
+round-trips both fields through `updateCalendarItem`; `recurrenceRule`/`recurrenceExceptions` survive a
+real close/reopen `MailDb` cycle; and the `recurrence_exceptions` column migration works against a
+simulated pre-existing (pre-020) database missing that column, mirroring the existing `reminder_fired`
+migration test.
+
+Not separately tested: work-week view specifically (day/week/month share the exact same occurrence
+rendering code path already covered; work-week only differs in which 5 days `calendarDates.ts` returns,
+which is pre-existing, unchanged logic from feature 018). The flagged reminder-scheduler gap (a
+recurring event's reminder fires only once, on the template row) has no new test, matching that it's a
+documented pre-existing limitation being surfaced, not new behavior added by this feature. lint/typecheck/
+build all still pass; phase set to `validate`.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

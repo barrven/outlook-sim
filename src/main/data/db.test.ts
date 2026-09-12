@@ -574,4 +574,97 @@ describe('MailDb', () => {
     // reassign so the outer afterEach's db.close() doesn't double-close
     db = new MailDb(baseDir)
   })
+
+  it('defaults a new calendar item to recurrenceExceptions: [], and round-trips recurrenceRule/recurrenceExceptions through update', () => {
+    const created = db.createCalendarItem({
+      title: 'Standup',
+      description: '',
+      startTime: 5000,
+      endTime: 5600,
+      allDay: false,
+      reminderMinutesBefore: null,
+      recurrenceRule: 'daily',
+      itemType: 'event'
+    })
+    expect(created.recurrenceRule).toBe('daily')
+    expect(created.recurrenceExceptions).toEqual([])
+
+    const updated = db.updateCalendarItem(created.id, {
+      recurrenceExceptions: [{ originalStartTime: 5000 + 86_400_000, deleted: true }]
+    })
+    expect(updated?.recurrenceExceptions).toEqual([{ originalStartTime: 5000 + 86_400_000, deleted: true }])
+    expect(db.getCalendarItem(created.id)?.recurrenceExceptions).toEqual([
+      { originalStartTime: 5000 + 86_400_000, deleted: true }
+    ])
+  })
+
+  it('persists recurrenceRule and recurrenceExceptions across a close/reopen cycle', () => {
+    const created = db.createCalendarItem({
+      title: 'Standup',
+      description: '',
+      startTime: 5000,
+      endTime: 5600,
+      allDay: false,
+      reminderMinutesBefore: null,
+      recurrenceRule: 'weekly',
+      itemType: 'event'
+    })
+    const exception = {
+      originalStartTime: 5000 + 7 * 86_400_000,
+      deleted: false,
+      title: 'Standup (special)',
+      description: 'Moved',
+      startTime: 5000 + 7 * 86_400_000 + 3_600_000,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: null,
+      itemType: 'event' as const
+    }
+    db.updateCalendarItem(created.id, { recurrenceExceptions: [exception] })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    const persisted = reopened.getCalendarItem(created.id)
+    expect(persisted?.recurrenceRule).toBe('weekly')
+    expect(persisted?.recurrenceExceptions).toEqual([exception])
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('adds the recurrence_exceptions column when opening a database created before recurring events existed', () => {
+    db.close()
+    const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+    raw.exec('DROP TABLE calendar_items')
+    raw.exec(`CREATE TABLE calendar_items (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      start_time INTEGER NOT NULL,
+      end_time INTEGER,
+      all_day INTEGER NOT NULL DEFAULT 0,
+      reminder_minutes_before INTEGER,
+      recurrence_rule TEXT,
+      item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline')),
+      reminder_fired INTEGER NOT NULL DEFAULT 0
+    )`)
+    raw.exec(
+      `INSERT INTO calendar_items (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, item_type, reminder_fired)
+       VALUES ('legacy-1', 'Old standup', '', 5000, NULL, 0, NULL, 'daily', 'event', 0)`
+    )
+    raw.close()
+
+    const migrated = new MailDb(baseDir)
+    expect(migrated.getCalendarItem('legacy-1')?.recurrenceExceptions).toEqual([])
+    expect(migrated.getCalendarItem('legacy-1')?.recurrenceRule).toBe('daily')
+
+    const updated = migrated.updateCalendarItem('legacy-1', {
+      recurrenceExceptions: [{ originalStartTime: 5000, deleted: true }]
+    })
+    expect(updated?.recurrenceExceptions).toEqual([{ originalStartTime: 5000, deleted: true }])
+
+    migrated.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
 })
