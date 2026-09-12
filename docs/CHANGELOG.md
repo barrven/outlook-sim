@@ -7,6 +7,18 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Calendar views & persistence (features/018-calendar-views-persistence.md)
+The Calendar module is real now: Day, Work Week, Week, and Month views, each
+switchable from tabs at the top of the calendar pane, with Previous/Next
+navigation and a "Today" button that jumps to the simulated office clock's
+current date (not your computer's real date). "New Event" in the ribbon
+opens a form (Title, Description, Start, End) — created events show up
+correctly no matter which view you're looking at, and everything persists
+in the same local SQLite store as the rest of the app, surviving a restart.
+Deadlines, all-day items, reminders, and recurring events aren't part of
+this yet (that's next); "New Meeting" is hidden until meeting invites/RSVP
+are built, since that's out of scope for now.
+
 ## 2026-09-11 — Free-play mode bootstrap (features/017-free-play-mode-bootstrap.md)
 Settings gets a new "Session" section with a "Start Free-Play" button. Click
 it and the mailbox and calendar reset to a fresh, empty state — ready for

@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 018 — Calendar views & persistence
+- **Phase:** implement
+- **Active feature:** 019 — Calendar deadlines, all-day items & reminders
 - **Last updated:** 2026-09-11
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-11 — feature 018 (calendar views & persistence) accepted by user (including the three accept-round fixes: simulated-clock "today" bug, duplicate ribbon view buttons + inactive-looking tab styling, and hiding the dead "New Meeting" button); logged to CHANGELOG; active feature set to 019 (Calendar deadlines, all-day items & reminders), phase set to `implement`
 - 2026-09-11 — feature 018 (calendar views & persistence) third accept-stage UI fix (same round): removed the ribbon's "New Meeting" button entirely (was a disabled placeholder for meeting invites/RSVP, an explicit v1 non-goal per `docs/SPEC.md`) rather than leave a button that can never be wired up until that feature is built; `CALENDAR_ACTIONS` is now just `['New Event']`; updated `RibbonBar.test.tsx` accordingly. lint/typecheck/build pass; full suite 279/279, re-run 3x, stable; phase stays `accept`
 - 2026-09-11 — feature 018 (calendar views & persistence) two more accept-stage UI fixes (same live-check round): (1) removed the ribbon's redundant Today/Day/Work Week/Week/Month buttons entirely — they duplicated CalendarView's own view-tab header; New Event/New Meeting stay; updated `RibbonBar.test.tsx` accordingly. (2) `.calendar-view-tab`'s unselected state used `--text-muted` (a leftover from its feature-001 static-mockup days), making real clickable tabs look disabled — changed to `--text` + `cursor: pointer`, matching the `.nav-switcher-item` convention; the active tab's highlight is unchanged. lint/typecheck/build pass; full suite 279/279, re-run 3x, stable; phase stays `accept`
 - 2026-09-11 — feature 018 (calendar views & persistence) accept-stage bug fixed: user reported live that the calendar's "today" seemed to use the actual real-world date rather than the simulated clock's date. Root cause: two `Date.now()` call sites (the `today` highlight state's initializer, and the "Today" nav button) used the real wall clock, unlike the initial anchor load which already correctly used `clock.now()`. Fixed by routing both through the simulated clock (`today` is now `useState`/`setToday` kept in sync with `anchorMs`; a new `goToToday()` re-fetches simulated now for the button). Added 2 regression tests using a simulated date far from the real system date; confirmed both fail against the pre-fix code and pass after. lint/typecheck/build all still pass; full suite 278/278 (was 276), re-run 3x, stable; phase stays `accept`

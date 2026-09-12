@@ -1,7 +1,7 @@
 ---
 id: 018
 title: Calendar views & persistence
-status: accept
+status: done
 priority: medium
 ---
 
@@ -174,4 +174,11 @@ corresponding `RibbonBar.test.tsx` test to assert it's absent rather than disabl
 lint/typecheck/build/full suite (279/279) — all pass. Phase stays `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-11 — User found and reported 3 live issues during this accept round before formally
+accepting: (1) the calendar's "today" used the real wall-clock date instead of the simulated clock's
+date; (2) the ribbon duplicated the Today/Day/Work Week/Week/Month view-switch buttons already in
+CalendarView's own tab header, and those tabs' inactive styling made them look disabled; (3) the
+ribbon's "New Meeting" button did nothing and should be hidden until meeting/RSVP support (an
+explicit v1 spec non-goal) is actually built. All three were fixed and verified (regression tests
+added for the clock bug) before this gate. User then accepted via `/accept` (AskUserQuestion:
+"Accept"), no further changes requested. Decision: **accepted**.
