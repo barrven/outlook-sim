@@ -2,7 +2,15 @@ import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CalendarItem, ClockState, Folder, LlmGenerateResult, MailMessage, Settings } from '../../shared/data-types'
+import type {
+  CalendarItem,
+  ClockState,
+  Folder,
+  LlmGenerateResult,
+  MailMessage,
+  ScenarioPack,
+  Settings
+} from '../../shared/data-types'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
@@ -442,6 +450,116 @@ describe('registerDataIpcHandlers', () => {
       handlers.get('session:startFreePlay')!(fakeEvent)
 
       expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('scenario:applyPack', () => {
+    const PACK: ScenarioPack = {
+      name: 'Grillo Law Intake',
+      description: '',
+      personas: [
+        {
+          displayName: 'Morgan Rivera',
+          email: 'morgan@example.com',
+          role: 'Claims Adjuster',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: ''
+        }
+      ],
+      inbox: [
+        {
+          subject: 'Welcome to the file',
+          body: 'body',
+          fromName: 'Morgan Rivera',
+          fromEmail: 'morgan@example.com',
+          toName: 'Trainee',
+          toEmail: 'trainee@example.com',
+          offsetMinutes: -60
+        }
+      ],
+      calendarItems: [
+        {
+          title: 'Discovery deadline',
+          description: '',
+          offsetMinutes: 1440,
+          durationMinutes: null,
+          allDay: false,
+          reminderMinutesBefore: null,
+          itemType: 'deadline'
+        }
+      ],
+      timedMessages: []
+    }
+
+    it('applies an already-empty mailbox/calendar with no confirmation needed', () => {
+      const result = handlers.get('scenario:applyPack')!(fakeEvent, PACK)
+
+      expect(result).toEqual({ ok: true })
+      expect(db.listMessages('inbox')).toHaveLength(1)
+      expect(db.listCalendarItems()).toHaveLength(1)
+      expect(config.getPersonas().map((p) => p.email)).toEqual(['morgan@example.com'])
+    })
+
+    it('refuses to overwrite a non-empty mailbox without confirmation, and leaves the data intact', () => {
+      const message = db.createMessage({
+        folderId: 'inbox',
+        subject: 'Keep me',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+
+      const result = handlers.get('scenario:applyPack')!(fakeEvent, PACK)
+
+      expect(result).toEqual({ ok: false, needsConfirmation: true })
+      expect(db.getMessage(message.id)).not.toBeNull()
+      expect(db.listMessages('inbox')).toHaveLength(1)
+    })
+
+    it('applies regardless when called with confirmed:true, and broadcasts the change', () => {
+      db.createMessage({
+        folderId: 'inbox',
+        subject: 'Old message',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+      const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+      getAllWindowsMock.mockReturnValue([fakeWindow])
+
+      const result = handlers.get('scenario:applyPack')!(fakeEvent, PACK, true)
+
+      expect(result).toEqual({ ok: true })
+      const messages = db.listMessages('inbox')
+      expect(messages.map((m) => m.subject)).toEqual(['Welcome to the file'])
+      expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+    })
+
+    it('does not broadcast, and does not apply, when confirmation is still needed', () => {
+      db.createMessage({
+        folderId: 'inbox',
+        subject: 'Keep me',
+        body: 'body',
+        fromName: 'A',
+        fromEmail: 'a@x.com',
+        toName: 'B',
+        toEmail: 'b@x.com',
+        timestamp: 1
+      })
+      const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+      getAllWindowsMock.mockReturnValue([fakeWindow])
+
+      handlers.get('scenario:applyPack')!(fakeEvent, PACK)
+
+      expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+      expect(config.getPersonas()).toEqual([])
     })
   })
 })

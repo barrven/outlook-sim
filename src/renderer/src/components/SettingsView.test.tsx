@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SettingsView from './SettingsView'
-import type { Settings, SystemPromptConfig, TraineeIdentity } from '../../../shared/data-types'
+import type { ScenarioPack, Settings, SystemPromptConfig, TraineeIdentity } from '../../../shared/data-types'
 
 const SETTINGS: Settings = {
   provider: 'openai',
@@ -21,6 +21,24 @@ const SYSTEM_PROMPT: SystemPromptConfig = {
   systemPrompt: 'Domain: insurance office. Be terse and professional.'
 }
 
+const SCENARIO_PACK: ScenarioPack = {
+  name: 'Grillo Law Intake',
+  description: '',
+  personas: [
+    {
+      displayName: 'Morgan Rivera',
+      email: 'morgan@example.com',
+      role: 'Claims Adjuster',
+      bio: '',
+      writingStyleNotes: '',
+      extraPrompt: ''
+    }
+  ],
+  inbox: [],
+  calendarItems: [],
+  timedMessages: []
+}
+
 function providerSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'LLM Provider' }))
 }
@@ -35,6 +53,10 @@ function systemPromptSection(): ReturnType<typeof within> {
 
 function sessionSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'Session' }))
+}
+
+function scenarioPackSection(): ReturnType<typeof within> {
+  return within(screen.getByRole('region', { name: 'Scenario Pack' }))
 }
 
 describe('SettingsView', () => {
@@ -363,6 +385,88 @@ describe('SettingsView', () => {
       await waitFor(() => expect(window.api.session.startFreePlay).toHaveBeenCalledTimes(1))
       expect(confirmSpy).toHaveBeenCalledTimes(1)
       expect(sessionSection().queryByText(/fresh and empty/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Scenario Pack', () => {
+    it('loads a pack with no confirmation prompt when the mailbox/calendar is already empty', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+      const confirmSpy = vi.spyOn(window, 'confirm')
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+      expect(window.api.scenario.applyPack).toHaveBeenCalledWith(SCENARIO_PACK)
+      expect(confirmSpy).not.toHaveBeenCalled()
+      expect(await scenarioPackSection().findByText(/Grillo Law Intake.*loaded/)).toBeInTheDocument()
+    })
+
+    it('does nothing (no error, no status) when the file dialog is canceled', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: false, canceled: true })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.pickPack).toHaveBeenCalled())
+      expect(window.api.scenario.applyPack).not.toHaveBeenCalled()
+      expect(scenarioPackSection().queryByRole('alert')).not.toBeInTheDocument()
+      expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
+    })
+
+    it('shows a clear inline error, and does not attempt to apply, when the picked file is invalid', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({
+        ok: false,
+        error: 'personas[0].displayName must be a string'
+      })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      expect(await scenarioPackSection().findByRole('alert')).toHaveTextContent(
+        'personas[0].displayName must be a string'
+      )
+      expect(window.api.scenario.applyPack).not.toHaveBeenCalled()
+    })
+
+    it('asks for confirmation when loading would discard existing data, and proceeds on confirm', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack)
+        .mockResolvedValueOnce({ ok: false, needsConfirmation: true })
+        .mockResolvedValueOnce({ ok: true })
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(2))
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
+      expect(window.api.scenario.applyPack).toHaveBeenNthCalledWith(2, SCENARIO_PACK, true)
+      expect(await scenarioPackSection().findByText(/Grillo Law Intake.*loaded/)).toBeInTheDocument()
+    })
+
+    it('does not apply, and shows no success status, when the user declines the confirmation', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: false, needsConfirmation: true })
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
+      expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
     })
   })
 })
