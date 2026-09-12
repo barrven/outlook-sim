@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-11 — Mail search (features/008-mail-search.md)
+The message list now has a search box. Type a keyword and it filters
+live against subject, body, and sender (name or email) — case-
+insensitive, no need to press Enter or change folders. A scope dropdown
+next to it lets you search just the current folder or across every
+folder at once. Clearing the box brings back the normal folder view
+exactly as it was.
+
 ## 2026-09-11 — Mail read/unread, flags & categories (features/007-mail-read-flags-categories.md)
 Messages now track more than just their contents. Opening a message marks
 it read automatically, and a Mark as read/unread button in the Reading

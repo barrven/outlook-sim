@@ -1,7 +1,7 @@
 ---
 id: 008
 title: Mail search
-status: accept
+status: done
 priority: medium
 ---
 
@@ -185,4 +185,4 @@ represents the strongest available check.
 All four acceptance criteria verified. No regressions found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+- 2026-09-11 — user accepted the feature as delivered. Decision: accepted.
