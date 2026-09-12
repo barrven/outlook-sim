@@ -1,7 +1,7 @@
 ---
 id: 017
 title: Free-play mode bootstrap
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -77,7 +77,40 @@ behavior is verified at the data/IPC layer only, since the Calendar UI itself do
 calendar items yet (018/019 still backlog), consistent with the scheduler's existing test coverage.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (244/244) re-run 3x, stable. Confirmed via
+`git diff 5aa2d20 4683302 --stat` that the `/test` stage touched only test files plus docs
+(`STATE.md`/`BACKLOG.md`/feature file) — no implementation drift between `/implement` and `/test`.
+
+Acceptance criteria:
+- **AC1** ("start free-play" initializes an empty/lightly-seeded Inbox/Calendar using current
+  Settings) — PASS. Verified by code inspection (`ipc.ts:102-109`, `db.ts:366-378`) plus a live
+  check against a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db`: it had
+  11 real messages, 3 real calendar items, and a real user-created custom folder; after
+  `resetMailboxAndCalendar()`, messages/calendar items were both empty while all folders (including
+  the custom one) survived untouched. Settings/personas/identity/system prompt are never read or
+  written by this code path, so "current Settings apply" holds by construction — nothing resets
+  them, and the pre-existing 014-016 LLM features already read them live off `ConfigStore`.
+- **AC2** (works with zero scenario pack loaded) — PASS. Grepped the full `src/` tree: no
+  scenario-pack concept exists anywhere in the codebase yet (021/022 are still backlog), and
+  `session:startFreePlay` neither reads nor requires one — so this is satisfied by the absence of
+  any such dependency, not by an explicit "no scenario pack" code path.
+- **AC3** (starting again resets to a fresh state, with confirmation if it would discard data) —
+  PASS. `ipc.test.ts` and the live scratch-DB check both confirm an empty mailbox/calendar resets
+  with no confirmation, while a non-empty one is refused (`needsConfirmation: true`) and left fully
+  intact until a `confirmed:true` follow-up call. `SettingsView.test.tsx` confirms the renderer only
+  shows `window.confirm` in the needs-confirmation case and only sends the follow-up call if the
+  user accepts; declining leaves the data alone (already covered by the main-process refusal) and
+  shows no success status.
+
+Confirmed the real on-disk `outlook-sim.db` was left byte-for-byte unmodified by this validation run
+(md5/mtime checked before and after; the live check ran only against a scratch copy, then deleted).
+
+Non-blocking gaps, consistent with every prior feature: no live multi-window Electron GUI
+click-through (no Xvfb in this sandbox) — the actual native `window.confirm` dialog and full
+IPC round-trip through a running app are unverified, deferred to the user's own check at `/accept`.
+Calendar-side behavior is verified at the data/IPC layer only since the Calendar UI itself doesn't
+consume calendar items yet (018/019 still backlog) — same forward-looking pattern as the scheduler
+feature's own validation.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
