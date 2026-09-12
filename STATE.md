@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 019 — Calendar deadlines, all-day items & reminders
-- **Last updated:** 2026-09-11
+- **Last updated:** 2026-09-12
 
 ## Phases
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-12 — feature 019 (calendar deadlines, all-day items & reminders) tested: added 26 tests (279 → 305, all passing; re-ran full suite 3x, stable) — new `reminderScheduler.test.ts` (9 tests) covers fire-once/no-refire/paused-blocks-firing/multi-item-in-one-tick plus a real-`SimClock` pause/resume integration test; `db.test.ts` (+4) covers `reminderFired` defaulting/round-trip/persistence/migration; `ipc.test.ts` (+2) covers `broadcastReminderFired`; `CalendarView.test.tsx` (+13) covers Deadline creation, All-day toggle + exact local-midnight start time, reminder selection, and a full edit/delete/precedence-rule block; `App.test.tsx` (+2) covers the dismissible reminder banner(s). Caught and fixed a test-authoring race (not a product bug) where an early draft opened the create form on the very first render before the simulated-clock effect resolved. lint/typecheck/build all still pass; phase set to `validate`
 - 2026-09-11 — feature 019 (calendar deadlines, all-day items & reminders) implemented: added `reminderFired` to `CalendarItem` (new column + migration); generalized 018's create-only form into `CalendarItemForm`, reused for create AND edit/delete — every calendar item is now a clickable button opening it pre-filled; new Type (Event/Deadline) and All-day (swaps Start to a native date input) fields cover AC1/AC2; new Reminder select plus a new `ReminderScheduler` (main process, matches the unsolicited-mail scheduler's real-time-poll-but-simulated-time-check shape) covers AC3, broadcasting `calendar:reminder-fired` to a new dismissible amber banner in `App.tsx`; AC4 holds both because `SimClock.now()` itself doesn't advance while paused and because the scheduler also explicitly checks `running`. Manually verified the scheduler's fire-once/no-refire/paused-blocks-firing logic and the DB migration against a scratch copy of the real DB before automated tests. lint/typecheck/build pass, existing suite still 279/279 (one compile fixture touch-up in `CalendarView.test.tsx`'s `makeItem` helper); phase set to `test`
 - 2026-09-11 — feature 018 (calendar views & persistence) accepted by user (including the three accept-round fixes: simulated-clock "today" bug, duplicate ribbon view buttons + inactive-looking tab styling, and hiding the dead "New Meeting" button); logged to CHANGELOG; active feature set to 019 (Calendar deadlines, all-day items & reminders), phase set to `implement`
 - 2026-09-11 — feature 018 (calendar views & persistence) third accept-stage UI fix (same round): removed the ribbon's "New Meeting" button entirely (was a disabled placeholder for meeting invites/RSVP, an explicit v1 non-goal per `docs/SPEC.md`) rather than leave a button that can never be wired up until that feature is built; `CALENDAR_ACTIONS` is now just `['New Event']`; updated `RibbonBar.test.tsx` accordingly. lint/typecheck/build pass; full suite 279/279, re-run 3x, stable; phase stays `accept`

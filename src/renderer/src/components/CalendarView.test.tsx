@@ -239,4 +239,227 @@ describe('CalendarView', () => {
     await waitFor(() => expect(window.api.data.calendarItems.list).toHaveBeenCalled())
     expect(screen.queryByText('Next month thing')).not.toBeInTheDocument()
   })
+
+  it('creating a Deadline sets itemType: "deadline"', async () => {
+    const user = userEvent.setup()
+    setAnchorClock(ANCHOR_MS)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+    vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(makeItem({ itemType: 'deadline' }))
+
+    render(<Harness />)
+    await screen.findByText('No calendar items to show.')
+    await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+    await user.type(within(dialog).getByLabelText('Title'), 'OCF-3 filing')
+    await user.selectOptions(within(dialog).getByLabelText('Type'), 'deadline')
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() =>
+      expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'OCF-3 filing', itemType: 'deadline' })
+      )
+    )
+  })
+
+  it('checking "All day" switches the Start field from a datetime picker to a date-only picker', async () => {
+    const user = userEvent.setup()
+    setAnchorClock(ANCHOR_MS)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+
+    render(<Harness />)
+    await screen.findByText('No calendar items to show.')
+    await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+    expect(within(dialog).getByLabelText('Start')).toHaveAttribute('type', 'datetime-local')
+    await user.click(within(dialog).getByLabelText('All day'))
+    expect(within(dialog).getByLabelText('Start')).toHaveAttribute('type', 'date')
+    // The End field only makes sense for timed events.
+    expect(within(dialog).queryByLabelText('End')).not.toBeInTheDocument()
+  })
+
+  it('creating an all-day item sends allDay: true, endTime: null, and a start time at local midnight of the anchor date', async () => {
+    const user = userEvent.setup()
+    setAnchorClock(ANCHOR_MS) // 2026-03-11 09:00 local
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+    vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(makeItem({ allDay: true }))
+
+    render(<Harness />)
+    await screen.findByText('No calendar items to show.')
+    await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+    await user.type(within(dialog).getByLabelText('Title'), 'Office closed')
+    await user.click(within(dialog).getByLabelText('All day'))
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => expect(window.api.data.calendarItems.create).toHaveBeenCalled())
+    expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Office closed',
+        allDay: true,
+        endTime: null,
+        startTime: new Date(2026, 2, 11).getTime()
+      })
+    )
+  })
+
+  it('selecting a reminder option sets reminderMinutesBefore accordingly', async () => {
+    const user = userEvent.setup()
+    setAnchorClock(ANCHOR_MS)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+    vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(makeItem())
+
+    render(<Harness />)
+    await screen.findByText('No calendar items to show.')
+    await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+    await user.type(within(dialog).getByLabelText('Title'), 'Client call')
+    await user.selectOptions(within(dialog).getByLabelText('Reminder'), '15 minutes before')
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() =>
+      expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Client call', reminderMinutesBefore: 15 })
+      )
+    )
+  })
+
+  it('leaving the reminder as "None" sends reminderMinutesBefore: null', async () => {
+    const user = userEvent.setup()
+    setAnchorClock(ANCHOR_MS)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+    vi.mocked(window.api.data.calendarItems.create).mockResolvedValue(makeItem())
+
+    render(<Harness />)
+    await screen.findByText('No calendar items to show.')
+    await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New Event' })
+
+    await user.type(within(dialog).getByLabelText('Title'), 'Client call')
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }))
+
+    await waitFor(() =>
+      expect(window.api.data.calendarItems.create).toHaveBeenCalledWith(
+        expect.objectContaining({ reminderMinutesBefore: null })
+      )
+    )
+  })
+
+  it('shows "All day" instead of a time for an all-day item in Day view', async () => {
+    setAnchorClock(ANCHOR_MS)
+    vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([
+      makeItem({ allDay: true, title: 'Office closed' })
+    ])
+
+    render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+
+    expect(await screen.findByText('Office closed')).toBeInTheDocument()
+    expect(screen.getByText('All day')).toBeInTheDocument()
+  })
+
+  describe('editing and deleting an existing item', () => {
+    function existingItem(): CalendarItem {
+      return makeItem({
+        id: 'evt-edit',
+        title: 'Team sync',
+        itemType: 'event',
+        allDay: false,
+        reminderMinutesBefore: 30
+      })
+    }
+
+    it('clicking an existing item opens it for editing, pre-filled with its current fields', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+      expect(within(dialog).getByLabelText('Title')).toHaveValue('Team sync')
+      expect(within(dialog).getByLabelText('Type')).toHaveValue('event')
+      expect(within(dialog).getByLabelText('All day')).not.toBeChecked()
+      expect(within(dialog).getByLabelText('Reminder')).toHaveValue('30')
+      expect(within(dialog).getByRole('button', { name: 'Save' })).toBeInTheDocument()
+      expect(within(dialog).getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+    })
+
+    it('saving an edit calls update with the item id and the new fields, then reflects the change', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const original = existingItem()
+      const updated = { ...original, title: 'Team sync (moved)' }
+      vi.mocked(window.api.data.calendarItems.list)
+        .mockResolvedValueOnce([original])
+        .mockResolvedValueOnce([updated])
+      vi.mocked(window.api.data.calendarItems.update).mockResolvedValue(updated)
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+
+      const titleInput = within(dialog).getByLabelText('Title')
+      await user.clear(titleInput)
+      await user.type(titleInput, 'Team sync (moved)')
+      await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() =>
+        expect(window.api.data.calendarItems.update).toHaveBeenCalledWith(
+          original.id,
+          expect.objectContaining({ title: 'Team sync (moved)' })
+        )
+      )
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(await screen.findByText('Team sync (moved)')).toBeInTheDocument()
+    })
+
+    it('clicking Delete removes the item via the delete IPC and closes the form', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const original = existingItem()
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValueOnce([original]).mockResolvedValueOnce([])
+      vi.mocked(window.api.data.calendarItems.delete).mockResolvedValue(undefined)
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+
+      await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+      await waitFor(() => expect(window.api.data.calendarItems.delete).toHaveBeenCalledWith(original.id))
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      await waitFor(() => expect(screen.queryByText('Team sync')).not.toBeInTheDocument())
+    })
+
+    it('opening "New Event" while editing an item closes the edit form in favor of the create form', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
+
+      function EditThenCreateHarness(): ReactElement {
+        const [showCreate, setShowCreate] = useState(false)
+        return (
+          <>
+            <button type="button" onClick={() => setShowCreate(true)}>
+              Open New Event
+            </button>
+            <CalendarView showCreateForm={showCreate} onCloseCreateForm={() => setShowCreate(false)} />
+          </>
+        )
+      }
+
+      render(<EditThenCreateHarness />)
+      await user.click(await screen.findByText('Team sync'))
+      expect(await screen.findByRole('dialog', { name: 'Edit Calendar Item' })).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Open New Event' }))
+
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(await screen.findByRole('dialog', { name: 'New Event' })).toBeInTheDocument()
+    })
+  })
 })

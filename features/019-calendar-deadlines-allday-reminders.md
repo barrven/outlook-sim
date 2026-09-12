@@ -1,7 +1,7 @@
 ---
 id: 019
 title: Calendar deadlines, all-day items & reminders
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -71,7 +71,55 @@ edit/delete wiring), `renderer/src/App.tsx` (reminder banners), `renderer/src/st
 `renderer/src/test/mockApi.ts` (compile fixture touch-up).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 26 tests on top of the manual esbuild sanity-checks done during `/implement` (279 → 305, all
+passing; re-ran the full suite 3x, stable).
+
+- `reminderScheduler.test.ts` (9 tests, new): does nothing paused-but-nominally-due; does nothing
+  running-but-not-yet-due; fires exactly once when due, marking `reminderFired` and calling back
+  with the updated item; does not refire on a later tick; fires exactly at the due boundary
+  (`reminderMinutesBefore: 0`); never fires an item with no reminder configured; fires every due
+  item in one tick while leaving not-yet-due items alone; `start()`/`stop()` real-time polling via
+  fake timers; a real-`SimClock` integration test firing while running, not while paused, across a
+  pause/resume cycle (mirrors the equivalent unsolicited-mail-scheduler test) — this is the
+  strongest AC4 evidence, since it exercises the real clock's frozen-while-paused `now()` rather
+  than a mocked one.
+- `db.test.ts` (+4 tests): `reminderFired` defaults to `false` on create and round-trips through
+  update; survives a close/reopen cycle; the `reminder_fired` column migration path for a pre-existing
+  DB created before reminders existed (mirrors the existing `cc`/`previous_folder_id` migration tests).
+- `ipc.test.ts` (+2 tests): `broadcastReminderFired` sends the fired item on the
+  `calendar:reminder-fired` channel, to every open window (not just the first).
+- `CalendarView.test.tsx` (+13 tests): creating a Deadline sends `itemType:'deadline'` (AC1);
+  checking "All day" swaps the Start field to a date picker and hides End, and submitting sends
+  `allDay:true, endTime:null` with a start time at exact local midnight of the anchor date — computed
+  independently in the test via `new Date(y,m,d).getTime()`, not by re-deriving the implementation's
+  own conversion (AC2); selecting a reminder option sends the right `reminderMinutesBefore`, and
+  leaving it at "None" sends `null` (AC3's "attach a reminder" half); an all-day item shows "All day"
+  instead of a time in Day view; a new `describe('editing and deleting an existing item')` block
+  covers clicking an existing item to open it pre-filled with its current Title/Type/All-day/Reminder,
+  saving an edit calling `update` with the item id and reflecting the change, clicking Delete calling
+  the delete IPC and removing it from view, and opening "New Event" while mid-edit closing the edit
+  form in favor of the create form (locks in the precedence rule from Implementation Notes).
+- `App.test.tsx` (+2 tests): a fired reminder shows a dismissible banner with the item's title
+  (AC3's "visible notification within the app"); multiple fired reminders show independent banners,
+  each dismissible without affecting the others.
+
+One test-authoring bug caught along the way (not a product bug): an early draft of the all-day
+submit test rendered `<CalendarView showCreateForm .../>` with the create form already open on the
+very first render, before the mount effect's `clock.now()` promise resolves — so the form's lazy
+`useState` initializer for `Start` captured the pre-correction `Date.now()` fallback instead of the
+simulated anchor time, and the test failed on the exact `startTime` assertion. Fixed by switching
+that test (and the sibling Deadline/reminder tests, which had the same latent race but happened not
+to assert on anything anchor-dependent) to open the form via a button click after the initial render
+settles, matching the pattern the earlier 018 tests already used. Not a real-world bug: `showCreateForm`
+only ever flips true well after mount in the actual app (a human clicking "New Event" always comes
+long after the `clock.now()` IPC round trip resolves).
+
+Deliberately not covered: the `ticking` reentrancy guard in `ReminderScheduler.tick()` (mirrors the
+mail scheduler's guard) isn't exercised — `tick()` is fully synchronous with no `await` inside it, so
+there's no real gap for a genuine overlapping call to land in, unlike the mail scheduler's
+network-call-based tick. No confirmation-dialog test for Delete, since none exists (documented,
+deliberate, in Implementation Notes). No live Electron GUI click-through — no Xvfb in this sandbox,
+same non-blocking gap as every prior feature, deferred to `/validate`.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

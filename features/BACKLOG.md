@@ -24,7 +24,7 @@
 | 008 | Mail search | done | medium | 008-mail-search.md |
 | 017 | Free-play mode bootstrap | done | medium | 017-free-play-mode-bootstrap.md |
 | 018 | Calendar views & persistence | done | medium | 018-calendar-views-persistence.md |
-| 019 | Calendar deadlines, all-day items & reminders | testing | medium | 019-calendar-deadlines-allday-reminders.md |
+| 019 | Calendar deadlines, all-day items & reminders | validating | medium | 019-calendar-deadlines-allday-reminders.md |
 | 021 | Scenario pack load | backlog | medium | 021-scenario-pack-load.md |
 | 022 | Scenario pack save | backlog | medium | 022-scenario-pack-save.md |
 | 009 | Mail mock attachments | backlog | low | 009-mail-mock-attachments.md |

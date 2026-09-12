@@ -3,7 +3,23 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import type { MailMessage } from '../../shared/data-types'
+import type { CalendarItem, MailMessage } from '../../shared/data-types'
+
+function makeCalendarItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+  return {
+    id: 'cal-1',
+    title: 'Filing deadline',
+    description: '',
+    startTime: new Date(2026, 2, 11, 15, 0).getTime(),
+    endTime: null,
+    allDay: false,
+    reminderMinutesBefore: 15,
+    recurrenceRule: null,
+    itemType: 'deadline',
+    reminderFired: true,
+    ...overrides
+  }
+}
 
 describe('App shell', () => {
   it('renders the classic three-pane layout with a ribbon on launch', async () => {
@@ -427,6 +443,41 @@ describe('App shell', () => {
 
     await user.click(screen.getByRole('button', { name: 'Dismiss' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows a dismissible banner when a calendar reminder fires', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    const [onReminderFired] = vi.mocked(window.api.onReminderFired).mock.calls[0]
+    onReminderFired(makeCalendarItem({ title: 'Filing deadline' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Reminder: "Filing deadline"')
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss reminder' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows multiple fired-reminder banners independently, each dismissible on its own', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onReminderFired] = vi.mocked(window.api.onReminderFired).mock.calls[0]
+    onReminderFired(makeCalendarItem({ id: 'cal-1', title: 'Filing deadline' }))
+    onReminderFired(makeCalendarItem({ id: 'cal-2', title: 'Client call' }))
+
+    expect(await screen.findByText(/Filing deadline/)).toBeInTheDocument()
+    expect(screen.getByText(/Client call/)).toBeInTheDocument()
+
+    const dismissButtons = screen.getAllByRole('button', { name: 'Dismiss reminder' })
+    await user.click(dismissButtons[0])
+
+    expect(screen.queryByText(/Filing deadline/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Client call/)).toBeInTheDocument()
   })
 
   it('leaving Settings via the Calendar tab shows the calendar, not stale mail panes', async () => {

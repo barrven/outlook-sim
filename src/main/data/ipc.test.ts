@@ -20,7 +20,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-const { registerDataIpcHandlers } = await import('./ipc')
+const { broadcastReminderFired, registerDataIpcHandlers } = await import('./ipc')
 const { MailDb } = await import('./db')
 const { ConfigStore } = await import('./config')
 const { SimClock } = await import('./clock')
@@ -442,5 +442,51 @@ describe('registerDataIpcHandlers', () => {
 
       expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe('broadcastReminderFired', () => {
+  it('sends the fired calendar item to every open window on the calendar:reminder-fired channel', () => {
+    const item: CalendarItem = {
+      id: 'cal-1',
+      title: 'Filing deadline',
+      description: '',
+      startTime: 5000,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: 15,
+      recurrenceRule: null,
+      itemType: 'deadline',
+      reminderFired: true
+    }
+    const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+    getAllWindowsMock.mockReset().mockReturnValue([fakeWindow])
+
+    broadcastReminderFired(item)
+
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
+  })
+
+  it('sends to every open window, not just the first', () => {
+    const item: CalendarItem = {
+      id: 'cal-1',
+      title: 'Filing deadline',
+      description: '',
+      startTime: 5000,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: 15,
+      recurrenceRule: null,
+      itemType: 'deadline',
+      reminderFired: true
+    }
+    const windowA: FakeWindow = { webContents: { send: vi.fn() } }
+    const windowB: FakeWindow = { webContents: { send: vi.fn() } }
+    getAllWindowsMock.mockReset().mockReturnValue([windowA, windowB])
+
+    broadcastReminderFired(item)
+
+    expect(windowA.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
+    expect(windowB.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
   })
 })
