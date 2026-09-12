@@ -28,7 +28,7 @@
 | 021 | Scenario pack load | done | medium | 021-scenario-pack-load.md |
 | 022 | Scenario pack save | done | medium | 022-scenario-pack-save.md |
 | 009 | Mail mock attachments | done | low | 009-mail-mock-attachments.md |
-| 020 | Calendar recurring events | accept | low | 020-calendar-recurring-events.md |
+| 020 | Calendar recurring events | done | low | 020-calendar-recurring-events.md |
 
 <!--
 Status values: backlog | implementing | testing | validating | accept | done | blocked

@@ -1,7 +1,7 @@
 ---
 id: 020
 title: Calendar recurring events
-status: accept
+status: done
 priority: low
 ---
 
@@ -167,4 +167,7 @@ reminders or scenario-pack support, so the `ReminderScheduler`'s once-per-templa
 packs' lack of recurrence support are correctly left untouched. No issues found; phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-12 — user reviewed the summary (feature description, all 4 ACs mapped to PASS, the monthly-
+clamping bug fix, and the flagged reminder-scheduler limitation) and selected "Accept" via the accept-
+stage question, noting this was the last feature in the backlog. Decision: **accepted**. Logged to
+`docs/CHANGELOG.md`; status set to `done`.

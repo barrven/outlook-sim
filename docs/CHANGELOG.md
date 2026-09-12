@@ -7,6 +7,18 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-12 — Calendar recurring events (features/020-calendar-recurring-events.md)
+Calendar events and deadlines can now repeat — daily, weekly, or monthly —
+via a new "Repeat" option on the event form. Recurring instances show up
+correctly across the Day, Work Week, Week, and Month views, each marked with
+a small 🔁. Clicking any occurrence of a recurring series now asks whether a
+change should apply to just that occurrence or the whole series, so editing
+or deleting one date never silently affects the others (or vice versa).
+Recurrence patterns and any per-occurrence changes persist across restarts
+like everything else. Note: reminders on a recurring event still only fire
+once, on the series' first occurrence — per-occurrence reminders aren't part
+of this yet.
+
 ## 2026-09-12 — Mail mock attachments (features/009-mail-mock-attachments.md)
 Compose can now attach one or more mock files by typing a filename — shown
 as removable chips, no real file picker or content behind them. Received
