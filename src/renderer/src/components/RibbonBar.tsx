@@ -5,7 +5,9 @@ import OfficeClock from './OfficeClock'
 const TABS = ['File', 'Home', 'Send / Receive', 'Folder', 'View']
 
 const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']
-const CALENDAR_ACTIONS = ['New Event', 'New Meeting', 'Today', 'Day', 'Work Week', 'Week', 'Month']
+// Day/Work Week/Week/Month/Today live in CalendarView's own view-tab header,
+// not here — no need to duplicate the view switcher in the ribbon too.
+const CALENDAR_ACTIONS = ['New Event', 'New Meeting']
 
 interface RibbonBarProps {
   activeModule: ModuleId

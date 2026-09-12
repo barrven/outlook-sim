@@ -39,11 +39,17 @@ describe('RibbonBar', () => {
     expect(onNewEvent).toHaveBeenCalledTimes(1)
   })
 
-  it('leaves Today, Day, Work Week, Week, Month, and New Meeting as disabled placeholders', () => {
+  it('leaves New Meeting as a disabled placeholder', () => {
     render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
 
-    for (const label of ['New Meeting', 'Today', 'Day', 'Work Week', 'Week', 'Month']) {
-      expect(screen.getByRole('button', { name: label })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New Meeting' })).toBeDisabled()
+  })
+
+  it('does not duplicate the Today/Day/Work Week/Week/Month view switcher in the ribbon', () => {
+    render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
+
+    for (const label of ['Today', 'Day', 'Work Week', 'Week', 'Month']) {
+      expect(screen.queryByRole('button', { name: label })).not.toBeInTheDocument()
     }
   })
 

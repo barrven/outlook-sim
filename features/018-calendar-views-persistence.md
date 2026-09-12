@@ -151,5 +151,19 @@ lint/typecheck/build/full suite (278/278, up from 276) — all pass; AC3/AC4 con
 unaffected (this bug was in the "today" marker and default nav target, not the event-bucketing or
 persistence logic those ACs cover). Phase stays `accept`.
 
+**Two more accept-stage UI fixes (same live-check round):**
+1. The ribbon's `Today`/`Day`/`Work Week`/`Week`/`Month` buttons were a redundant duplicate of
+   `CalendarView`'s own view-tab header (both existed as leftover feature-001 placeholders; only
+   one — the real one — should exist). Removed them from `RibbonBar.tsx`'s `CALENDAR_ACTIONS`
+   entirely rather than leaving them as disabled placeholders; `New Event`/`New Meeting` stay.
+   Updated `RibbonBar.test.tsx` accordingly (one test now asserts these buttons are *absent*, not
+   disabled).
+2. `.calendar-view-tab`'s unselected state used `color: var(--text-muted)` — a leftover from when
+   these were static, non-functional mockup text from feature 001 — which made real, clickable tabs
+   read as disabled. Changed to `var(--text)` (matching the `.nav-switcher-item` convention for
+   real, always-enabled tab controls) plus `cursor: pointer`; the `.active` tab's highlighted style
+   is unchanged.
+Re-ran lint/typecheck/build/full suite (279/279) — all pass. Phase stays `accept`.
+
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

@@ -782,10 +782,12 @@ body {
 
 .calendar-view-tab {
   padding: 5px 12px;
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: 2px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  cursor: pointer;
 }
 
 .calendar-view-tab.active {
