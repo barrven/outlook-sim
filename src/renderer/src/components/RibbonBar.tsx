@@ -11,13 +11,15 @@ interface RibbonBarProps {
   activeModule: ModuleId
   onNewEmail?: () => void
   onDelete?: () => void
+  onNewEvent?: () => void
 }
 
-function RibbonBar({ activeModule, onNewEmail, onDelete }: RibbonBarProps): ReactElement {
+function RibbonBar({ activeModule, onNewEmail, onDelete, onNewEvent }: RibbonBarProps): ReactElement {
   const actions = activeModule === 'mail' ? MAIL_ACTIONS : CALENDAR_ACTIONS
   const actionHandlers: Partial<Record<string, () => void>> = {
     'New Email': onNewEmail,
-    Delete: onDelete
+    Delete: onDelete,
+    'New Event': onNewEvent
   }
 
   return (

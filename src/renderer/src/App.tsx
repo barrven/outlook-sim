@@ -18,6 +18,7 @@ function App(): ReactElement {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
   const [messagesVersion, setMessagesVersion] = useState(0)
   const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
+  const [showNewEventForm, setShowNewEventForm] = useState(false)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -61,6 +62,7 @@ function App(): ReactElement {
   function handleSelectModule(moduleId: ModuleId): void {
     setActiveModule(moduleId)
     setShowSettings(false)
+    setShowNewEventForm(false)
   }
 
   function handleEditDraft(message: MailMessage): void {
@@ -130,6 +132,7 @@ function App(): ReactElement {
         activeModule={activeModule}
         onNewEmail={() => window.api.compose.open()}
         onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
+        onNewEvent={() => setShowNewEventForm(true)}
       />
       <div className="app-body">
         <div className="app-nav-rail">
@@ -175,7 +178,10 @@ function App(): ReactElement {
             />
           </>
         ) : (
-          <CalendarView />
+          <CalendarView
+            showCreateForm={showNewEventForm}
+            onCloseCreateForm={() => setShowNewEventForm(false)}
+          />
         )}
       </div>
     </div>
