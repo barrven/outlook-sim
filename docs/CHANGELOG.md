@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-12 — Scenario pack load (features/021-scenario-pack-load.md)
+Settings gets a new "Scenario Pack" section with a "Load Scenario Pack…"
+button. Pick a JSON scenario pack file and it seeds the starting Inbox,
+personas/contacts, and calendar deadlines from the pack — replacing whatever
+was there before, with a confirmation prompt if that would discard existing
+data. A pack can also include "timed" incoming messages that arrive later,
+once the simulated office clock reaches each one's specified time, rather
+than all at once on load. Picking an invalid or corrupted pack file shows a
+specific, readable error instead of crashing.
+
 ## 2026-09-12 — Calendar deadlines, all-day items & reminders (features/019-calendar-deadlines-allday-reminders.md)
 Every calendar item — event or deadline — can now be edited or deleted: click
 it in any view to reopen the same form you created it with, with a Delete

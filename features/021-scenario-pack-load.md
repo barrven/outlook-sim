@@ -1,7 +1,7 @@
 ---
 id: 021
 title: Scenario pack load
-status: accept
+status: done
 priority: medium
 ---
 
@@ -177,4 +177,5 @@ the actual UI, deferred to the user's own check at `/accept`. The `ticking` reen
 genuine gap to exercise it against).
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-12 — User accepted via the `/accept` gate (AskUserQuestion: "Accept"), no changes
+requested. Decision: **accepted**.
