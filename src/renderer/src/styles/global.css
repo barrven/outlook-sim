@@ -779,6 +779,39 @@ body {
   width: 110px;
 }
 
+.reading-pane-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attachment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.attachment-placeholder-note {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
 .reading-pane-body {
   padding: 16px 20px;
   white-space: pre-wrap;
@@ -1094,6 +1127,58 @@ body {
   font-size: 12px;
   line-height: 1;
   padding: 0;
+}
+
+.compose-attachments-field {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compose-attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.compose-attachment-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.compose-attachment-chip button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.compose-attachment-add-form {
+  display: flex;
+  gap: 6px;
+}
+
+.compose-attachment-add-form input {
+  flex: 1 1 auto;
+  padding: 4px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
 }
 
 .compose-body {

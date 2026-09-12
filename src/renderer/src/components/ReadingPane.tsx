@@ -30,9 +30,13 @@ function ReadingPane({
   // (React's recommended pattern for "adjusting state when a prop changes")
   // rather than in an effect, since setState-in-effect triggers a lint error.
   const [categoryDraftMessageId, setCategoryDraftMessageId] = useState(selectedMessageId)
+  // Which attachment (if any) is showing its "no real file behind this"
+  // placeholder note, reset alongside categoryDraft below.
+  const [openAttachmentIndex, setOpenAttachmentIndex] = useState<number | null>(null)
   if (selectedMessageId !== categoryDraftMessageId) {
     setCategoryDraftMessageId(selectedMessageId)
     setCategoryDraft('')
+    setOpenAttachmentIndex(null)
   }
 
   // Tracks which message id we've already run the open/auto-mark-read check
@@ -99,6 +103,12 @@ function ReadingPane({
     window.api.data.messages.update(currentMessage.id, {
       categories: currentMessage.categories.filter((existing) => existing !== category)
     })
+  }
+
+  // "Opening" a mock attachment is just a UI toggle — there's no real file
+  // behind it, so this never touches the filesystem.
+  function handleToggleAttachment(index: number): void {
+    setOpenAttachmentIndex((current) => (current === index ? null : index))
   }
 
   const readToggleLabel = displayedMessage.isRead ? 'Mark as unread' : 'Mark as read'
@@ -201,6 +211,25 @@ function ReadingPane({
             />
           </form>
         </div>
+        {displayedMessage.attachments.length > 0 && (
+          <div className="reading-pane-attachments">
+            {displayedMessage.attachments.map((attachment, index) => (
+              <div key={index} className="attachment-item">
+                <button
+                  type="button"
+                  className="attachment-button"
+                  onClick={() => handleToggleAttachment(index)}
+                >
+                  <span aria-hidden="true">📎</span>
+                  {attachment.filename}
+                </button>
+                {openAttachmentIndex === index && (
+                  <span className="attachment-placeholder-note">Mock attachment — no file content.</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="reading-pane-body">{displayedMessage.body}</div>
     </div>

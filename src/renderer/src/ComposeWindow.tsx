@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactElement } from 'react'
-import type { ComposeIntent, MessageRecipient, Persona } from '../../shared/data-types'
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
+import type { ComposeIntent, MessageAttachment, MessageRecipient, Persona } from '../../shared/data-types'
 import { buildComposeSeed } from './composeIntent'
 
 interface ComposeWindowProps {
@@ -16,6 +16,8 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
   const [ccSelection, setCcSelection] = useState('')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  const [attachments, setAttachments] = useState<MessageAttachment[]>([])
+  const [attachmentDraft, setAttachmentDraft] = useState('')
   const [loaded, setLoaded] = useState(!draftId && !sourceMessageId)
 
   useEffect(() => {
@@ -38,6 +40,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       setCc(message.cc)
       setSubject(message.subject)
       setBody(message.body)
+      setAttachments(message.attachments)
       setLoaded(true)
     })
     return () => {
@@ -76,6 +79,18 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
     setCc((prev) => prev.filter((recipient) => recipient.email !== email))
   }
 
+  function handleAddAttachment(event: FormEvent): void {
+    event.preventDefault()
+    const filename = attachmentDraft.trim()
+    setAttachmentDraft('')
+    if (!filename) return
+    setAttachments((prev) => [...prev, { filename }])
+  }
+
+  function removeAttachment(index: number): void {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function persist(folderId: 'drafts' | 'sent'): Promise<void> {
     const [identity, timestamp] = await Promise.all([window.api.data.identity.get(), window.api.data.clock.now()])
     const fields = {
@@ -85,6 +100,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       toName,
       toEmail,
       cc,
+      attachments,
       fromName: identity.displayName,
       fromEmail: identity.fromEmail,
       timestamp
@@ -190,6 +206,37 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
         />
+      </div>
+      <div className="compose-field-row compose-field-row-attachments">
+        <label htmlFor="compose-attachment">Attachments</label>
+        <div className="compose-attachments-field">
+          {attachments.length > 0 && (
+            <ul className="compose-attachments-list">
+              {attachments.map((attachment, index) => (
+                <li key={index} className="compose-attachment-chip">
+                  📎 {attachment.filename}
+                  <button
+                    type="button"
+                    aria-label={`Remove attachment ${attachment.filename}`}
+                    onClick={() => removeAttachment(index)}
+                  >
+                    &times;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form className="compose-attachment-add-form" onSubmit={handleAddAttachment}>
+            <input
+              id="compose-attachment"
+              type="text"
+              placeholder="Add attachment filename"
+              value={attachmentDraft}
+              onChange={(event) => setAttachmentDraft(event.target.value)}
+            />
+            <button type="submit">Add</button>
+          </form>
+        </div>
       </div>
       <textarea
         className="compose-body"
