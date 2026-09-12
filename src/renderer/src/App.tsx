@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
-import type { Folder, MailMessage } from '../../shared/data-types'
+import type { CalendarItem, Folder, MailMessage } from '../../shared/data-types'
 import type { ModuleId } from './types'
 import RibbonBar from './components/RibbonBar'
 import NavSwitcher from './components/NavSwitcher'
@@ -19,6 +19,7 @@ function App(): ReactElement {
   const [messagesVersion, setMessagesVersion] = useState(0)
   const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
+  const [firedReminders, setFiredReminders] = useState<CalendarItem[]>([])
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -52,6 +53,16 @@ function App(): ReactElement {
       setLlmBackgroundError(`Unsolicited mail generation failed: ${error}`)
     })
   }, [])
+
+  useEffect(() => {
+    return window.api.onReminderFired((item) => {
+      setFiredReminders((prev) => [...prev, item])
+    })
+  }, [])
+
+  function dismissReminder(id: string): void {
+    setFiredReminders((prev) => prev.filter((item) => item.id !== id))
+  }
 
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
@@ -128,6 +139,16 @@ function App(): ReactElement {
           </button>
         </div>
       )}
+      {firedReminders.map((item) => (
+        <div key={item.id} className="reminder-banner" role="alert">
+          <span>
+            Reminder: &quot;{item.title}&quot; at {new Date(item.startTime).toLocaleString()}
+          </span>
+          <button type="button" aria-label="Dismiss reminder" onClick={() => dismissReminder(item.id)}>
+            &times;
+          </button>
+        </div>
+      ))}
       <RibbonBar
         activeModule={activeModule}
         onNewEmail={() => window.api.compose.open()}

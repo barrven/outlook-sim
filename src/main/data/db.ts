@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS calendar_items (
   all_day INTEGER NOT NULL DEFAULT 0,
   reminder_minutes_before INTEGER,
   recurrence_rule TEXT,
-  item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline'))
+  item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline')),
+  reminder_fired INTEGER NOT NULL DEFAULT 0
 );
 `
 
@@ -97,6 +98,7 @@ interface CalendarItemRow {
   reminder_minutes_before: number | null
   recurrence_rule: string | null
   item_type: string
+  reminder_fired: number
 }
 
 function folderFromRow(row: FolderRow): Folder {
@@ -133,7 +135,8 @@ function calendarItemFromRow(row: CalendarItemRow): CalendarItem {
     allDay: row.all_day === 1,
     reminderMinutesBefore: row.reminder_minutes_before,
     recurrenceRule: row.recurrence_rule,
-    itemType: row.item_type as CalendarItem['itemType']
+    itemType: row.item_type as CalendarItem['itemType'],
+    reminderFired: row.reminder_fired === 1
   }
 }
 
@@ -150,6 +153,7 @@ export class MailDb {
     this.db.exec(SCHEMA)
     this.migrateMessagesCcColumn()
     this.migrateMessagesPreviousFolderIdColumn()
+    this.migrateCalendarItemsReminderFiredColumn()
     this.seedDefaultFolders()
   }
 
@@ -166,6 +170,13 @@ export class MailDb {
     const columns = this.db.prepare('PRAGMA table_info(messages)').all() as { name: string }[]
     if (!columns.some((column) => column.name === 'previous_folder_id')) {
       this.db.exec('ALTER TABLE messages ADD COLUMN previous_folder_id TEXT REFERENCES folders(id)')
+    }
+  }
+
+  private migrateCalendarItemsReminderFiredColumn(): void {
+    const columns = this.db.prepare('PRAGMA table_info(calendar_items)').all() as { name: string }[]
+    if (!columns.some((column) => column.name === 'reminder_fired')) {
+      this.db.exec("ALTER TABLE calendar_items ADD COLUMN reminder_fired INTEGER NOT NULL DEFAULT 0")
     }
   }
 
@@ -311,12 +322,12 @@ export class MailDb {
 
   createCalendarItem(item: NewCalendarItem): CalendarItem {
     const id = generateId()
-    const full: CalendarItem = { id, ...item }
+    const full: CalendarItem = { id, reminderFired: false, ...item }
     this.db
       .prepare(
         `INSERT INTO calendar_items
-          (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, item_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, item_type, reminder_fired)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         full.id,
@@ -327,7 +338,8 @@ export class MailDb {
         full.allDay ? 1 : 0,
         full.reminderMinutesBefore,
         full.recurrenceRule,
-        full.itemType
+        full.itemType,
+        full.reminderFired ? 1 : 0
       )
     return full
   }
@@ -340,7 +352,7 @@ export class MailDb {
       .prepare(
         `UPDATE calendar_items SET
           title = ?, description = ?, start_time = ?, end_time = ?, all_day = ?,
-          reminder_minutes_before = ?, recurrence_rule = ?, item_type = ?
+          reminder_minutes_before = ?, recurrence_rule = ?, item_type = ?, reminder_fired = ?
          WHERE id = ?`
       )
       .run(
@@ -352,6 +364,7 @@ export class MailDb {
         updated.reminderMinutesBefore,
         updated.recurrenceRule,
         updated.itemType,
+        updated.reminderFired ? 1 : 0,
         id
       )
     return updated

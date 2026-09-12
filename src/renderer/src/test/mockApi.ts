@@ -95,6 +95,7 @@ export function createMockApi(): Window['api'] {
     },
     onMessagesChanged: vi.fn().mockReturnValue(() => {}),
     onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),
-    onUnsolicitedMailFailed: vi.fn().mockReturnValue(() => {})
+    onUnsolicitedMailFailed: vi.fn().mockReturnValue(() => {}),
+    onReminderFired: vi.fn().mockReturnValue(() => {})
   }
 }

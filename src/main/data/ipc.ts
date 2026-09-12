@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
+  CalendarItem,
   CalendarItemPatch,
   LlmGenerateInput,
   MailMessagePatch,
@@ -33,6 +34,12 @@ function broadcastPersonaReplyFailed(error: string): void {
 export function broadcastUnsolicitedMailFailed(error: string): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('llm:unsolicited-mail-failed', error)
+  }
+}
+
+export function broadcastReminderFired(item: CalendarItem): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('calendar:reminder-fired', item)
   }
 }
 

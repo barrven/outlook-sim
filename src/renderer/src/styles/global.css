@@ -61,6 +61,27 @@ body {
   line-height: 1;
 }
 
+.reminder-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background: #fff4ce;
+  border-bottom: 1px solid #c19c00;
+  color: #4a3f00;
+  font-size: 12px;
+}
+
+.reminder-banner button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
 /* Ribbon */
 
 .ribbon {
@@ -846,18 +867,30 @@ body {
 .calendar-day-event {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
+  width: 100%;
   padding: 4px 6px;
   margin-bottom: 4px;
   background: var(--pane-bg);
   border: 1px solid var(--selected-border);
   border-radius: 2px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
   font-size: 12px;
 }
 
 .calendar-day-event-time {
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.calendar-day-event.deadline,
+.calendar-month-event.deadline {
+  border-color: #c19c00;
+  background: #fff9e6;
 }
 
 .calendar-month-grid {
@@ -892,12 +925,18 @@ body {
 }
 
 .calendar-month-event {
+  display: block;
+  width: 100%;
   padding: 2px 4px;
   margin-bottom: 2px;
   background: var(--pane-bg);
   border: 1px solid var(--selected-border);
   border-radius: 2px;
+  font: inherit;
   font-size: 11px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -922,7 +961,12 @@ body {
   color: var(--text-muted);
 }
 
+.calendar-event-form-row-checkbox input {
+  flex: 0 0 auto;
+}
+
 .calendar-event-form-row input,
+.calendar-event-form-row select,
 .calendar-event-form-row textarea {
   flex: 1 1 auto;
   padding: 5px 6px;

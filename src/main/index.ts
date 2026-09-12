@@ -3,7 +3,13 @@ import type { ComposeOpenOptions } from '../shared/data-types'
 import { SimClock } from './data/clock'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
-import { broadcastMessagesChanged, broadcastUnsolicitedMailFailed, registerDataIpcHandlers } from './data/ipc'
+import {
+  broadcastMessagesChanged,
+  broadcastReminderFired,
+  broadcastUnsolicitedMailFailed,
+  registerDataIpcHandlers
+} from './data/ipc'
+import { ReminderScheduler } from './data/reminderScheduler'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
 import { createComposeWindow, createMainWindow } from './windows'
 
@@ -23,6 +29,9 @@ app.whenReady().then(() => {
   )
   scheduler.start()
 
+  const reminderScheduler = new ReminderScheduler(mailDb, simClock, (item) => broadcastReminderFired(item))
+  reminderScheduler.start()
+
   const mainWindow = createMainWindow()
 
   ipcMain.handle('window:openCompose', (_event, options?: ComposeOpenOptions) => {
@@ -35,6 +44,7 @@ app.whenReady().then(() => {
   app.on('before-quit', () => {
     simClock.pause()
     scheduler.stop()
+    reminderScheduler.stop()
   })
 
   app.on('activate', () => {

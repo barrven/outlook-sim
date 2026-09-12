@@ -74,9 +74,13 @@ export interface CalendarItem {
   reminderMinutesBefore: number | null
   recurrenceRule: string | null
   itemType: CalendarItemType
+  // Set once the reminder scheduler has fired this item's reminder, so it
+  // never fires twice (including across app restarts).
+  reminderFired: boolean
 }
 
-export type NewCalendarItem = Omit<CalendarItem, 'id'>
+export type NewCalendarItem = Omit<CalendarItem, 'id' | 'reminderFired'> &
+  Partial<Pick<CalendarItem, 'reminderFired'>>
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
 

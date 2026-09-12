@@ -90,6 +90,7 @@ declare global {
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
+      onReminderFired: (callback: (item: CalendarItem) => void) => () => void
     }
   }
 }
