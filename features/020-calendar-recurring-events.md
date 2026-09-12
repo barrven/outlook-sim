@@ -1,7 +1,7 @@
 ---
 id: 020
 title: Calendar recurring events
-status: validating
+status: accept
 priority: low
 ---
 
@@ -112,7 +112,59 @@ documented pre-existing limitation being surfaced, not new behavior added by thi
 build all still pass; phase set to `validate`.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (406/406) re-run 3x, stable. Confirmed via `git diff`
+(`74d73fd..b1ca480`) that `/test` touched only test files/docs plus one 7-line change in `recurrence.ts` —
+diffed it directly and confirmed it's a type-signature-only fix (de-genericizing `upsertException` to work
+around a TS discriminated-union inference quirk); the function body (filter + spread) is byte-identical,
+no behavior change.
+
+Acceptance criteria:
+- **User can create a recurring event with a repeat pattern (daily/weekly/monthly at minimum)** — PASS.
+  Verified by reading `CalendarView.tsx`'s `RECURRENCE_OPTIONS` (Does not repeat/Daily/Weekly/Monthly) and
+  `CalendarItemForm`'s `handleSubmit`, which sends `recurrenceRule: recurrenceSelection || null` to
+  `calendarItems.create`. Confirmed by 3 `CalendarView.test.tsx` tests (default value, Daily → `'daily'`,
+  default → `null`) plus a live check (below).
+- **Recurring instances appear correctly across day/work-week/week/month views** — PASS. Verified by
+  code inspection that all four views share one `expandOccurrences(items, rangeStartMs, rangeEndExclusiveMs)`
+  call computed once from `getVisibleDays(view, anchorMs)` — the view only changes which days are asked
+  for, not how occurrences are computed or rendered. The Test Notes flagged work-week as *not* separately
+  unit-tested (reasoning: shared code path) — treated that as a claim to verify, not take on faith: ran a
+  live check (below) that specifically exercises `getVisibleDays('workWeek', ...)` alongside the other
+  three, confirming a weekly-recurring item correctly shows only its one weekday occurrence in that view.
+  Also directly confirmed the previously-fixed monthly day-of-month clamping bug (Jan 31 → Feb 28 → Mar
+  31, not permanently stuck at 28) via the dedicated regression test in `recurrence.test.ts`, which is
+  exactly the kind of subtle date-math bug that would otherwise slip through.
+- **Editing or deleting a single instance vs. the whole series is unambiguous to the user** — PASS.
+  Directly read `handleSaveInstance`/`handleDeleteInstance` (`CalendarView.tsx:341-373`): both only ever
+  call `calendarItems.update(series.id, {recurrenceExceptions: upsertException(...)})`, never touching the
+  series' own template fields and never calling `calendarItems.delete` — so "this event" structurally
+  cannot affect the rest of the series or remove it. `handleUpdateSeries`/`handleDeleteSeries` are the same
+  calls a plain non-recurring item already used before this feature, unchanged. The scope-chooser dialog
+  (`role="dialog" aria-label="Edit Recurring Item"`) only appears when `occurrence.isRecurring`, confirmed
+  live end-to-end (below): editing occurrence 2 of a series left occurrences 1/3/4 completely untouched,
+  and deleting the whole series via a *different*, unaffected occurrence removed everything.
+- **Recurrence persists across restarts** — PASS. New `recurrence_exceptions` column + migration
+  confirmed via 3 `db.test.ts` tests, plus a live check against a scratch copy of the real, in-use
+  `~/.config/outlook-sim/outlook-sim.db` (5 pre-existing real calendar items): opened it (exercising the
+  real migration path against a real production-shaped file), created a weekly recurring item, added an
+  exception, closed and reopened `MailDb` against the same file (simulating an app restart) — both
+  `recurrenceRule` and `recurrenceExceptions` came back byte-for-byte identical. Real on-disk file
+  confirmed unchanged (md5) afterward; all work happened against the scratch copy, and the test item was
+  deleted from the copy before comparing.
+
+**Live end-to-end check performed:** ran a standalone script (`tsx`, not part of the real suite) against
+the scratch copy above exercising `expandOccurrences` across all four `getVisibleDays` view types for a
+weekly-recurring "Weekly status report" series with one moved/renamed occurrence — work-week and week
+each showed exactly the one in-range Monday occurrence, month showed all four September occurrences with
+the excepted one correctly replaced (not duplicated) by its override, and the surrounding untouched
+occurrences stayed natural. This closes the one specific gap the Test Notes themselves flagged (work-week
+view, untested at the unit level) with real evidence rather than leaving it purely on trust.
+
+Non-blocking gaps, consistent with every prior feature: no live multi-window Electron GUI click-through
+(no Xvfb in this sandbox). Also re-confirming the two deliberate, already-flagged out-of-scope items from
+Implementation Notes are genuinely out of scope, not silently-missed ACs: none of the 4 ACs above mention
+reminders or scenario-pack support, so the `ReminderScheduler`'s once-per-template-row firing and scenario
+packs' lack of recurrence support are correctly left untouched. No issues found; phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
