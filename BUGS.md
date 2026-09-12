@@ -13,6 +13,9 @@
 | ID | Title | Status | Related feature | Fixed | File |
 |----|-------|--------|------------------|-------|------|
 | B001 | Settings screen had no way to close | fixed | features/010-settings-provider-model-api-key.md | 2026-09-11 | #b001-settings-screen-had-no-way-to-close |
+| B002 | Sent items are marked unread | open | | | #b002-sent-items-are-marked-unread |
+| B003 | Persona replies don't include the email chain | open | | | #b003-persona-replies-dont-include-the-email-chain |
+| B004 | Sent emails don't show attachments in Sent Items | open | | | #b004-sent-emails-dont-show-attachments-in-sent-items |
 
 <!-- Status values: open | fixed | wontfix -->
 
@@ -36,3 +39,42 @@ what else changes later.
 
 **Files:** `src/renderer/src/App.tsx`, `src/renderer/src/components/SettingsView.tsx`,
 `src/renderer/src/styles/global.css`
+
+## B002 — Sent items are marked unread
+
+**Reported:** 2026-09-12
+**Status:** open
+
+Emails sent by the trainee land in Sent Items marked as unread. Since the
+trainee is the one who sent them, they should be created as already read —
+"unread" should only apply to incoming mail the trainee hasn't opened yet.
+Likely stems from `MailDb`'s message-insert path (`src/main/data/db.ts`)
+always defaulting `isRead: false` regardless of destination folder.
+
+**Files:** `src/main/data/db.ts`
+
+## B003 — Persona replies don't include the email chain
+
+**Reported:** 2026-09-12
+**Status:** open
+
+When a persona replies to an email, the reply body doesn't include the
+prior message(s) in the thread (no quoted history), unlike real email
+clients which append the chain the new message is replying to.
+
+**Files:** `src/main/llm/personaReply.ts` (likely)
+
+## B004 — Sent emails don't show attachments in Sent Items
+
+**Reported:** 2026-09-12
+**Status:** open
+
+Composing an email with an attachment and sending it drops the attachment
+from the copy that lands in Sent Items — reopening the sent message shows
+no attachment even though one was attached at send time. `ComposeWindow.tsx`
+does include `attachments` in its submitted payload, so the loss likely
+happens on the send/persist path (not saving attachments onto the Sent
+Items copy) or in `ReadingPane.tsx`'s attachment display for sent mail.
+
+**Files:** `src/renderer/src/ComposeWindow.tsx`, `src/main/data/db.ts`,
+`src/renderer/src/components/ReadingPane.tsx`

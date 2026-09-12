@@ -1,7 +1,7 @@
 ---
 id: 009
 title: Mail mock attachments
-status: accept
+status: done
 priority: low
 ---
 
@@ -110,4 +110,8 @@ the pre-fix code, pass after). Re-ran lint/typecheck/build/full suite (373/373, 
 Phase stays `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-12 — user manually tested by composing an email with a mock attachment to a persona, which
+surfaced the persona-reply gap fixed above (in a prior turn, before this formal accept). After reviewing
+the summary (all 4 ACs mapped to PASS, validation results, and the accept-round fix), the user selected
+"Accept" via the accept-stage question. Decision: **accepted**. Logged to `docs/CHANGELOG.md`; status set
+to `done`.

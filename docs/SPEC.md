@@ -92,6 +92,17 @@ practice only.
   specified in the source prompt. `/features` will default to a reasonable
   scheduler interval unless the user specifies one first.
 
+## Ideas for next spec revision
+_Staging area for feature ideas noticed outside the dev loop (not bugs —
+see `BUGS.md` for those). `/spec` should fold these into Core Requirements
+or Non-goals as appropriate, then clear them from this list._
+
+- Network fetch error banner (currently just a message + dismiss ✕, added
+  in feature 016/personaReply's error handling) should also get a **Retry**
+  button, and failures should be logged somewhere durable for
+  troubleshooting repeated failures (currently only surfaced transiently in
+  the UI banner, nowhere persisted). Noted 2026-09-12.
+
 ## Changelog of spec revisions
 _Appended by `/retro` — what changed about the spec itself and why._
 

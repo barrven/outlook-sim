@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-12 — Mail mock attachments (features/009-mail-mock-attachments.md)
+Compose can now attach one or more mock files by typing a filename — shown
+as removable chips, no real file picker or content behind them. Received
+and drafted messages show attachments as named, clickable buttons in the
+reading pane; clicking one just confirms it's a placeholder with no file
+content, never touching the real filesystem. Attachments persist with the
+message across restarts like any other field. Simulated persona replies now
+also know a file was attached (by name only), so they no longer contradict
+what's visibly attached in the trainee's own mailbox.
+
 ## 2026-09-12 — Scenario pack save (features/022-scenario-pack-save.md)
 Settings' "Scenario Pack" section gains a "Save Scenario Pack…" button
 alongside Load. Pick a destination filename and it writes the current

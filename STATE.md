@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 1
-- **Phase:** accept
-- **Active feature:** 009 — Mail mock attachments
+- **Phase:** implement
+- **Active feature:** 020 — Calendar recurring events
 - **Last updated:** 2026-09-12
 
 ## Phases
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-12 — feature 009 (mail mock attachments) accepted by user; logged to CHANGELOG; only feature 020 (Calendar recurring events) remains in the backlog; active feature set to 020, phase set to `implement`
 - 2026-09-12 — feature 009 (mail mock attachments) accept-stage fix: user found live that a persona's LLM reply denied seeing a mock attachment the trainee had sent. Root cause: `personaReply.ts`'s thread-transcript builder (feature 015) never referenced `message.attachments` at all. Fixed by adding an `Attachments: <filenames>` line per message that has any; not a 009-AC failure, but a real cross-feature inconsistency. Added 2 regression tests (371 → 373, stable); lint/typecheck/build all still pass; phase stays `accept`
 - 2026-09-12 — feature 009 (mail mock attachments) validated: lint/typecheck/build pass; full test suite (371/371) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs, no implementation drift; all 4 ACs verified by tests + code inspection plus a live check — attachments confirmed structurally file-I/O-free (grepped all of `src/main`/`src/preload`, found only an opaque JSON column) and confirmed to survive a real restart via a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db` (added attachments to a real message, closed/reopened `MailDb`, got identical content back); real on-disk DB confirmed byte-for-byte unchanged (md5) afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-12 — feature 009 (mail mock attachments) tested: added 10 tests (361 → 371, all passing; re-ran full suite 3x, stable) — `ComposeWindow.test.tsx` (+5) covers adding/removing attachment chips, sending them along, draft prefill, and reply deliberately not carrying attachments over; `ReadingPane.test.tsx` (+4) covers attachment rendering, the click-to-toggle placeholder note (with no `messages.update` call as a proxy for "no real file I/O"), and the note resetting on message change; `db.test.ts` (+1) covers attachments surviving a close/reopen cycle. lint/typecheck/build all still pass; phase set to `validate`
