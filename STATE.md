@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 024 (Fix — persona replies quote the prior thread chain)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
+  chain) validated: lint/typecheck/build pass; full test suite (414/414)
+  re-run 3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs plus `vitest.config.ts`'s `include` list, no implementation
+  drift; all 4 ACs verified by tests + code inspection plus a live
+  end-to-end check — bundled `db.ts`/`config.ts`/`clock.ts`/`personaReply.ts`
+  standalone with `esbuild` and ran `generatePersonaReply` against a scratch
+  copy of the real, in-use `~/AppData/Roaming/outlook-sim` data (real law-firm
+  training scenario, 15 personas, 27 messages, a real configured Gemini API
+  key): a genuine LLM reply came back with the stored body correctly
+  containing "\<reply text\>" followed by the exact "On \<date\>, Name
+  \<email\> wrote:" header and "\> "-prefixed quoted original, including a
+  quoted blank line — matching feature 005's convention byte-for-byte, since
+  both paths call the same shared `quoteBody()`; real on-disk DB/config files
+  confirmed untouched (only the scratch copy was written to); no live
+  multi-window Electron GUI click-through attempted (no Xvfb, same
+  non-blocking gap as every prior feature); phase set to `accept`.
 - 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
   chain) tested: added a new `src/shared/quoteBody.test.ts` (4 tests) — the
   shared `quoteBody()` extracted in `/implement` had no dedicated test file

@@ -1,7 +1,7 @@
 ---
 id: 024
 title: Fix — persona replies quote the prior thread chain
-status: validating
+status: accept
 priority: high
 ---
 
@@ -95,7 +95,58 @@ surrounding text are). Full suite (414/414, up from 408) re-run 3x locally,
 stable; lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 414/414, re-run 3x, stable.
+`git diff b3b6df2..787e564` (the `/test` stage's commit) confirms it touched
+only test files, docs, and `vitest.config.ts`'s `include` list — no
+implementation drift in `src/shared/quoteBody.ts`, `src/main/llm/personaReply.ts`,
+or `src/renderer/src/composeIntent.ts`.
+
+Acceptance criteria:
+- **AC1** (stored body includes the immediately-preceding message quoted, in
+  addition to the LLM's new text) — **pass**. Verified by code inspection
+  (`personaReply.ts`: `body = text + quoteBody(sentMessage)`) and by test
+  (exact byte-for-byte match test in `personaReply.test.ts`). Also verified
+  live: bundled `db.ts`/`config.ts`/`clock.ts`/`personaReply.ts` standalone
+  with `esbuild` and ran `generatePersonaReply` against a scratch copy of the
+  real, in-use `~/AppData/Roaming/outlook-sim` data (a real law-firm training
+  scenario: 15 personas, 27 real inbox/sent messages, a real configured
+  Gemini API key) — inserted a real trainee-authored sent message to a real
+  persona (Patricia Sim) and got back a genuine LLM reply ("Got it.") whose
+  stored body was exactly `<reply text>\n\nOn <date>, Nifisa Venables
+  <nafisa.venables@grillo.ca> wrote:\n> Hi Patricia,\n> \n> Please just
+  reply...\n> \n> Thanks,\n> Nifisa` — the quoted block present, correct,
+  and multi-line (including a quoted blank line). Real on-disk
+  `outlook-sim.db`/config JSON files confirmed untouched (only the scratch
+  copy was written to).
+- **AC2** (same nesting convention as feature 005, not an invented separate
+  format) — **pass**. Both `composeIntent.ts` (renderer, feature 005) and
+  `personaReply.ts` (main, this feature) call the identical
+  `src/shared/quoteBody.ts` function — verified by inspection (single shared
+  import, no duplicated logic) and by test (`personaReply.test.ts`'s new
+  test computes `quoteBody(sentMessage)` independently and asserts the
+  persona reply's body equals `llmText + thatQuote`, byte-for-byte — not
+  just "looks similar"). The live check above additionally confirms the
+  real output shape matches what `composeIntent.test.ts` already locks in
+  for the trainee's own replies (header line + "> "-per-line quoting).
+- **AC3** (existing persona-reply tests updated to assert quoted content) —
+  **pass**. `personaReply.test.ts`'s pre-existing "inserts the generated
+  reply…" test now asserts the exact header and a "> "-prefixed original
+  line, not just a loose substring check on the raw un-prefixed text.
+- **AC4** (a thread with no prior messages doesn't crash or produce a
+  malformed quote) — **pass**. Holds structurally: `quoteBody()` is only
+  ever called with `sentMessage`, which is guaranteed non-null by the
+  function's own early return (`db.getMessage(sentMessageId)` not found →
+  `{ ok: false, error: 'Sent message not found.' }`, checked before any
+  quoting happens) — so there is no code path where a reply is generated
+  from a message that doesn't exist. Verified by a dedicated test named for
+  this AC (no crash, no LLM call, no Inbox insert) plus `quoteBody.test.ts`
+  independently confirming the function itself doesn't throw on a
+  degenerate (empty-body) input.
+
+No live multi-window Electron GUI click-through attempted (no Xvfb, same
+non-blocking gap as every prior feature) — the standalone live-API check
+above is the strongest available substitute, same pattern used for prior
+`/validate` stages.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
