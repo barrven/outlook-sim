@@ -474,6 +474,32 @@ describe('App shell', () => {
     expect(screen.getByText(/Client call/)).toBeInTheDocument()
   })
 
+  it('026: two occurrences of the SAME recurring series firing in one session get independent, independently-dismissible banners', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onReminderFired] = vi.mocked(window.api.onReminderFired).mock.calls[0]
+    // Same seriesId, different occurrence (originalStartTime) — the exact
+    // shape a recurring series' 1st and 2nd occurrence firing produce.
+    onReminderFired(
+      makeFiredReminder({ id: 'cal-1:1000', seriesId: 'cal-1', title: 'Daily standup', startTime: 1000 })
+    )
+    onReminderFired(
+      makeFiredReminder({ id: 'cal-1:87400000', seriesId: 'cal-1', title: 'Daily standup', startTime: 87_400_000 })
+    )
+
+    const alerts = await screen.findAllByRole('alert')
+    expect(alerts).toHaveLength(2)
+
+    const dismissButtons = screen.getAllByRole('button', { name: 'Dismiss reminder' })
+    await user.click(dismissButtons[0])
+
+    // Dismissing one occurrence's banner leaves the other series-mate intact
+    // — proves dismissal keys off the per-occurrence id, not seriesId.
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+  })
+
   it('leaving Settings via the Calendar tab shows the calendar, not stale mail panes', async () => {
     const user = userEvent.setup()
     render(<App />)

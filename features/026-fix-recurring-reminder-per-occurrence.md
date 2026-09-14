@@ -1,7 +1,7 @@
 ---
 id: 026
 title: Fix — recurring event reminders fire per occurrence
-status: testing
+status: validating
 priority: high
 ---
 
@@ -106,7 +106,51 @@ suite still 422/422 (421 baseline + 1 migration test added here, rest are
 touch-ups, no count regression). phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added a new `describe('026: recurring reminders fire per occurrence', ...)`
+block in `reminderScheduler.test.ts` (6 tests) plus one `App.test.tsx` test
+for the UI-facing consequence — 428 total (422 → 428), all AC-traceable by
+name:
+
+- **AC1** — a daily recurring item's 1st, 2nd, and 3rd occurrence each fire
+  their own reminder across three separate ticks, with three distinct
+  `FiredReminder.id`s (`${seriesId}:${originalStartTime}`) and
+  `remindersFired` ending up length 3 on the series row.
+- **AC2** — ticking repeatedly at the same due moment never refires that
+  occurrence (3 ticks → still 1 call), while a later occurrence firing
+  independently still works (moving to occurrence 2's due time correctly
+  adds exactly one more call, not zero and not a re-fire of occurrence 1).
+- **AC3** (two tests) — a occurrence deleted via `recurrenceExceptions`
+  never fires even once its natural due time has fully passed (occurrence 1
+  and 3 around it still fire normally, proving the skip is scoped to just
+  that occurrence); an occurrence edited to a new (later, same-day) start
+  time does NOT fire at its old natural due time but DOES fire at the new
+  due time, reporting the exception's overridden title. Deliberately moved
+  the edited occurrence only 3 hours later (not to another day) so no
+  other daily occurrence's own due time could fall in the test's window and
+  produce an ambiguous multi-fire result — caught this exact ambiguity via
+  a first draft of the test failing with 6 calls instead of 1, which
+  turned out to be correct scheduler behavior (multiple long-overdue
+  occurrences all becoming due in one big time jump) rather than a bug,
+  just not what that specific test was trying to isolate.
+- **AC4** (regression) — a plain non-recurring item still fires at most
+  once, `remindersFired` ending up exactly `[startTime]`; the full
+  pre-existing suite (paused-no-fire, due-boundary, no-reminder-configured,
+  multi-item-single-tick, start/stop polling, real-`SimClock`
+  pause/resume integration) is unchanged and still passes, since none of it
+  used `recurrenceRule` — same execution path as before this feature.
+- `App.test.tsx` — a dedicated test fires two occurrences of the *same*
+  `seriesId` (not two different series, which the pre-existing multi-banner
+  test already covered) and confirms both render as independent alerts and
+  dismissing one leaves the other, proving `FiredReminder.id` (not
+  `seriesId`) is what the banner keys off — the actual UI bug the old
+  `CalendarItem`-as-broadcast-payload shape would have hit.
+
+Deliberately not covered: the `REMINDER_LOOKAHEAD_MS` window's edge (an
+occurrence whose reminder becomes due more than 2 days before its own
+start) — no reminder-lead UI option gets anywhere close to that, and the
+constant is directly visible/reviewable in `reminderScheduler.ts` rather
+than needing a test to pin its exact value. Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

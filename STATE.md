@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 026 (Fix — recurring event reminders fire per occurrence)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 026 (fix: recurring event reminders fire per
+  occurrence) tested: added 6 tests (422 → 428, all passing; re-run 3x,
+  stable), all AC-traceable by name in `reminderScheduler.test.ts`'s new
+  "026: recurring reminders fire per occurrence" block plus one
+  `App.test.tsx` test — AC1 (1st/2nd/3rd occurrence each fire distinctly
+  across ticks), AC2 (no refire of the same occurrence across repeated
+  ticks, while a later occurrence still fires independently), AC3 x2 (a
+  deleted occurrence never fires; an occurrence edited to a new start time
+  fires at the new time, not the old one — a first draft of this test
+  caught its own ambiguity, 6 calls instead of 1, correctly diagnosed as
+  multiple long-overdue occurrences firing in one big time jump rather
+  than a bug, then re-scoped to isolate just the one occurrence), AC4
+  regression (non-recurring items still fire at most once, full
+  pre-existing suite unchanged); `App.test.tsx` proves two occurrences of
+  the *same* series get independent, independently-dismissible banners
+  (the actual UI-facing consequence of the old `CalendarItem`-keyed
+  broadcast shape). lint/typecheck/build all pass; phase set to
+  `validate`.
 - 2026-09-14 — feature 026 (fix: recurring event reminders fire per
   occurrence) implemented: root cause was `CalendarItem.reminderFired`
   being a single boolean on the series' template row, so a recurring

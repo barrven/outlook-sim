@@ -170,6 +170,196 @@ describe('ReminderScheduler', () => {
     }
   })
 
+  describe('026: recurring reminders fire per occurrence', () => {
+    it('AC1: fires a distinct reminder for the 2nd and 3rd occurrence, not only the 1st', () => {
+      const dayMs = 24 * 60 * 60_000
+      const series = db.createCalendarItem(
+        makeItem({
+          title: 'Daily standup',
+          startTime: 1_000_000, // occurrence 1
+          reminderMinutesBefore: 10,
+          recurrenceRule: 'daily'
+        })
+      )
+      const onFired = vi.fn()
+      const scheduler = new ReminderScheduler(db, clock, onFired)
+      const getState = (now: number): ReturnType<typeof clock.getState> => ({
+        anchorSimTime: now,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+
+      // Occurrence 1 due (startTime - 10min = 400_000).
+      vi.spyOn(clock, 'now').mockReturnValue(400_000)
+      vi.spyOn(clock, 'getState').mockReturnValue(getState(400_000))
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(1)
+
+      // Occurrence 2 (next day) due.
+      vi.spyOn(clock, 'now').mockReturnValue(1_000_000 + dayMs - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue(getState(1_000_000 + dayMs - 600_000))
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(2)
+
+      // Occurrence 3 (two days later) due.
+      vi.spyOn(clock, 'now').mockReturnValue(1_000_000 + 2 * dayMs - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue(getState(1_000_000 + 2 * dayMs - 600_000))
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(3)
+
+      const occurrenceIds = onFired.mock.calls.map((call) => (call[0] as FiredReminder).id)
+      expect(new Set(occurrenceIds).size).toBe(3) // all distinct
+      expect(occurrenceIds.every((id) => id.startsWith(`${series.id}:`))).toBe(true)
+      expect(db.getCalendarItem(series.id)?.remindersFired).toHaveLength(3)
+    })
+
+    it('AC2: does not refire the same occurrence twice, even across many ticks, while still firing later ones', () => {
+      const dayMs = 24 * 60 * 60_000
+      db.createCalendarItem(
+        makeItem({ startTime: 1_000_000, reminderMinutesBefore: 10, recurrenceRule: 'daily' })
+      )
+      const onFired = vi.fn()
+      const scheduler = new ReminderScheduler(db, clock, onFired)
+
+      vi.spyOn(clock, 'now').mockReturnValue(400_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 400_000, anchorRealTime: 0, running: true, speed: 1 })
+      scheduler.tick()
+      scheduler.tick()
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(1) // occurrence 1 only ever once
+
+      vi.spyOn(clock, 'now').mockReturnValue(1_000_000 + dayMs - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({
+        anchorSimTime: 1_000_000 + dayMs - 600_000,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+      scheduler.tick()
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(2) // occurrence 2 fires once, occurrence 1 still doesn't refire
+    })
+
+    it('AC3: a deleted occurrence (recurrence exception) never fires, even when due', () => {
+      const dayMs = 24 * 60 * 60_000
+      const series = db.createCalendarItem(
+        makeItem({ startTime: 1_000_000, reminderMinutesBefore: 10, recurrenceRule: 'daily' })
+      )
+      const occurrence2NaturalStart = 1_000_000 + dayMs
+      db.updateCalendarItem(series.id, {
+        recurrenceExceptions: [{ originalStartTime: occurrence2NaturalStart, deleted: true }]
+      })
+      const onFired = vi.fn()
+      const scheduler = new ReminderScheduler(db, clock, onFired)
+
+      // Occurrence 1 due — fires normally.
+      vi.spyOn(clock, 'now').mockReturnValue(400_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 400_000, anchorRealTime: 0, running: true, speed: 1 })
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(1)
+
+      // Occurrence 2's natural due time passes — deleted, must not fire.
+      vi.spyOn(clock, 'now').mockReturnValue(occurrence2NaturalStart - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({
+        anchorSimTime: occurrence2NaturalStart - 600_000,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(1) // still just occurrence 1
+
+      // Occurrence 3's due time passes — unaffected by occurrence 2's deletion.
+      vi.spyOn(clock, 'now').mockReturnValue(1_000_000 + 2 * dayMs - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({
+        anchorSimTime: 1_000_000 + 2 * dayMs - 600_000,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(2)
+    })
+
+    it('AC3: an occurrence edited to a new start time fires its reminder relative to the new time, not the natural one', () => {
+      const dayMs = 24 * 60 * 60_000
+      const series = db.createCalendarItem(
+        makeItem({ startTime: 1_000_000, reminderMinutesBefore: 10, recurrenceRule: 'daily' })
+      )
+      const occurrence2NaturalStart = 1_000_000 + dayMs
+      // Moved later the same day (not to another day) so no other daily
+      // occurrence's own natural due time falls in between — keeps this test
+      // isolated to occurrence 2's behavior specifically.
+      const occurrence2NewStart = occurrence2NaturalStart + 3 * 60 * 60_000
+      db.updateCalendarItem(series.id, {
+        recurrenceExceptions: [
+          {
+            originalStartTime: occurrence2NaturalStart,
+            deleted: false,
+            title: 'Daily standup (moved)',
+            description: '',
+            startTime: occurrence2NewStart,
+            endTime: null,
+            allDay: false,
+            reminderMinutesBefore: 10,
+            itemType: 'deadline'
+          }
+        ]
+      })
+      const onFired = vi.fn()
+      const scheduler = new ReminderScheduler(db, clock, onFired)
+
+      // Occurrence 1 fires and is out of the way first, so only occurrence 2's
+      // behavior is under test below.
+      vi.spyOn(clock, 'now').mockReturnValue(400_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 400_000, anchorRealTime: 0, running: true, speed: 1 })
+      scheduler.tick()
+      onFired.mockClear()
+
+      // At the OLD natural due time, the occurrence has moved — must not fire yet.
+      vi.spyOn(clock, 'now').mockReturnValue(occurrence2NaturalStart - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({
+        anchorSimTime: occurrence2NaturalStart - 600_000,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+      scheduler.tick()
+      expect(onFired).not.toHaveBeenCalled()
+
+      // At the NEW due time, it fires — keyed by originalStartTime (stable)
+      // but reporting the overridden title/startTime.
+      vi.spyOn(clock, 'now').mockReturnValue(occurrence2NewStart - 600_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({
+        anchorSimTime: occurrence2NewStart - 600_000,
+        anchorRealTime: 0,
+        running: true,
+        speed: 1
+      })
+      scheduler.tick()
+      expect(onFired).toHaveBeenCalledTimes(1)
+      const fired = onFired.mock.calls[0][0] as FiredReminder
+      expect(fired.title).toBe('Daily standup (moved)')
+      expect(fired.startTime).toBe(occurrence2NewStart)
+      expect(fired.id).toBe(`${series.id}:${occurrence2NaturalStart}`)
+    })
+
+    it('AC4 (regression): a non-recurring item still fires at most once, same as before per-occurrence tracking existed', () => {
+      const created = db.createCalendarItem(makeItem({ startTime: 1_000_000, reminderMinutesBefore: 10 }))
+      const onFired = vi.fn()
+      const scheduler = new ReminderScheduler(db, clock, onFired)
+
+      vi.spyOn(clock, 'now').mockReturnValue(400_000)
+      vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 400_000, anchorRealTime: 0, running: true, speed: 1 })
+      scheduler.tick()
+      scheduler.tick()
+
+      expect(onFired).toHaveBeenCalledTimes(1)
+      expect(db.getCalendarItem(created.id)?.remindersFired).toEqual([created.startTime])
+    })
+  })
+
   it('integrates with a real SimClock: fires while running, not while paused, across a pause/resume cycle', () => {
     const now = clock.now()
     db.createCalendarItem(makeItem({ startTime: now, reminderMinutesBefore: 10 })) // already due (now - 10min < now)
