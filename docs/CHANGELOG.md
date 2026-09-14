@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — Fix: sent mail created as read, not unread (features/023-fix-sent-mail-marked-read.md)
+Messages the trainee sends — via Send, Reply, Reply All, or Forward — now
+land in Sent Items already marked read, since the trainee obviously already
+"read" what they just wrote. "Unread" now only ever applies to genuinely
+incoming mail (persona replies, unsolicited scheduler mail, scenario-pack
+inbox seeding). Existing sent messages are unaffected — nothing was
+retroactively changed.
+
 ## 2026-09-12 — Calendar recurring events (features/020-calendar-recurring-events.md)
 Calendar events and deadlines can now repeat — daily, weekly, or monthly —
 via a new "Repeat" option on the event form. Recurring instances show up

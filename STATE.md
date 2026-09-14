@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 023 (Fix — sent mail created as read, not unread)
+- **Phase:** implement
+- **Active feature:** 024 (Fix — persona replies quote the prior thread chain)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,9 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
+  accepted by user; logged to CHANGELOG; active feature set to 024 (Fix —
+  persona replies quote the prior thread chain), phase set to `implement`.
 - 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
   validated: lint/typecheck/build pass; full test suite (408/408) re-run 3x,
   stable; confirmed via `git diff` that `/test` touched only test files/docs,

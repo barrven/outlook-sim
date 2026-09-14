@@ -1,7 +1,7 @@
 ---
 id: 023
 title: Fix — sent mail created as read, not unread
-status: accept
+status: done
 priority: high
 ---
 
@@ -102,4 +102,6 @@ or migration involved.
 All 4 ACs pass. Status set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — presented the summary (2-line `ComposeWindow.tsx` fix, AC-by-AC
+mapping, validation results) via AskUserQuestion. User selected **Accept**.
+Decision: accepted, status set to `done`.
