@@ -173,6 +173,93 @@ describe('MailDb', () => {
     db = new MailDb(baseDir)
   })
 
+  it('B004/025 AC1+AC2: a Sent Items message created with attachments keeps them, including after a close/reopen', () => {
+    const sent = db.createMessage({
+      folderId: 'sent',
+      subject: 'Signed contract attached',
+      body: 'Please see attached.',
+      fromName: 'Trainee',
+      fromEmail: 'trainee@example.com',
+      toName: 'Carol',
+      toEmail: 'carol@example.com',
+      timestamp: 1000,
+      attachments: [{ filename: 'contract.pdf' }],
+      isRead: true
+    })
+    expect(sent.attachments).toEqual([{ filename: 'contract.pdf' }])
+    // "Reopening" the sent message (AC2) is a plain re-fetch, same as the
+    // Reading Pane does — not tied to a close/reopen of the whole DB.
+    expect(db.getMessage(sent.id)?.attachments).toEqual([{ filename: 'contract.pdf' }])
+
+    db.close()
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getMessage(sent.id)?.attachments).toEqual([{ filename: 'contract.pdf' }])
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('B004/025 AC1: sending an existing draft (create-then-update-to-sent, as ComposeWindow does) keeps its attachments', () => {
+    const draft = db.createMessage({
+      folderId: 'drafts',
+      subject: 'Draft with attachment',
+      body: '',
+      fromName: '',
+      fromEmail: '',
+      toName: '',
+      toEmail: '',
+      timestamp: 500,
+      attachments: [{ filename: 'notes.txt' }]
+    })
+
+    const sent = db.updateMessage(draft.id, {
+      folderId: 'sent',
+      toName: 'Carol',
+      toEmail: 'carol@example.com',
+      attachments: [{ filename: 'notes.txt' }, { filename: 'addendum.pdf' }],
+      isRead: true
+    })
+
+    expect(sent?.attachments).toEqual([{ filename: 'notes.txt' }, { filename: 'addendum.pdf' }])
+    expect(db.getMessage(draft.id)?.attachments).toEqual([{ filename: 'notes.txt' }, { filename: 'addendum.pdf' }])
+  })
+
+  it('B004/025 AC4: a reply/forward-shaped Sent Items message with a freshly-added attachment persists it', () => {
+    const replySent = db.createMessage({
+      folderId: 'sent',
+      subject: 'Re: Quarterly numbers',
+      body: 'Here you go.\n\n> original text',
+      fromName: 'Trainee',
+      fromEmail: 'trainee@example.com',
+      toName: 'Priya Shah',
+      toEmail: 'priya@example.com',
+      timestamp: 2000,
+      attachments: [{ filename: 'updated-numbers.xlsx' }],
+      isRead: true
+    })
+
+    expect(db.getMessage(replySent.id)?.attachments).toEqual([{ filename: 'updated-numbers.xlsx' }])
+  })
+
+  it('B004/025 AC3 (regression): editing a draft without touching attachments leaves its attachments untouched', () => {
+    const draft = db.createMessage({
+      folderId: 'drafts',
+      subject: 'Draft',
+      body: '',
+      fromName: '',
+      fromEmail: '',
+      toName: '',
+      toEmail: '',
+      timestamp: 500,
+      attachments: [{ filename: 'keep-me.txt' }]
+    })
+
+    const resaved = db.updateMessage(draft.id, { subject: 'Draft, edited' })
+
+    expect(resaved?.attachments).toEqual([{ filename: 'keep-me.txt' }])
+    expect(db.getMessage(draft.id)?.attachments).toEqual([{ filename: 'keep-me.txt' }])
+  })
+
   it('returns null when getting or updating a message that does not exist', () => {
     expect(db.getMessage('missing')).toBeNull()
     expect(db.updateMessage('missing', { isRead: true })).toBeNull()

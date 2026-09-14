@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 025 (Fix — attachments persist on the Sent Items copy)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
+  copy) tested: since `/implement` found no code defect, added regression
+  coverage closing the gap that let B004 go unverified — 7 new tests
+  (414 → 421, all passing, re-run 3x stable): `db.test.ts` (+4, real
+  `MailDb`, no mocking) covers a `sent`-folder create with attachments
+  surviving both an immediate re-fetch and a close/reopen, the
+  draft-then-update-to-sent path `ComposeWindow` actually uses, a reply/
+  forward-shaped sent message with an attachment, and a regression check
+  that editing a draft without touching `attachments` in the patch leaves
+  it untouched; `ComposeWindow.test.tsx` (+2) covers attaching a file while
+  replying and while forwarding, asserting it reaches `messages.create`
+  (previously only fresh-compose was covered); `ReadingPane.test.tsx` (+1)
+  covers a `sent`-folder message's attachments actually rendering (no
+  prior test had set `folderId: 'sent'` specifically). lint/typecheck/build
+  all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
   copy) implemented: investigated `BUGS.md` B004 across the full data path
   (`ComposeWindow.tsx`'s `persist()` → `db:messages:create`/`update` IPC

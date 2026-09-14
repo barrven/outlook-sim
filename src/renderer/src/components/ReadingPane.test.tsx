@@ -391,6 +391,19 @@ describe('ReadingPane', () => {
     expect(screen.queryByText(/no file content/)).not.toBeInTheDocument()
   })
 
+  it('B004/025 AC2: reopening a Sent Items message shows its attachments same as any other folder', async () => {
+    const sentMessageWithAttachment: MailMessage = {
+      ...MESSAGE,
+      folderId: 'sent',
+      attachments: [{ filename: 'contract.pdf' }]
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(sentMessageWithAttachment)
+
+    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: /contract\.pdf/ })).toBeInTheDocument()
+  })
+
   it('shows no attachments row for a message with none', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // attachments: []
 

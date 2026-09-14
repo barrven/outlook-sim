@@ -1,7 +1,7 @@
 ---
 id: 025
 title: Fix — attachments persist on the Sent Items copy
-status: testing
+status: validating
 priority: high
 ---
 
@@ -66,7 +66,47 @@ silently reintroduce this — left for `/test` to add, per the loop's normal
 division of labor.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Since `/implement` found no code defect, this stage's job was closing the
+coverage gap that let B004 go unverified: prior tests only proved
+`ComposeWindow` *called* `messages.create`/`update` with the right
+`attachments` (mocked IPC) or that `db.ts` attachments survive a close/
+reopen for an `inbox`-folder message — nothing exercised a real `sent`-
+folder create, the update-based "resend an edited draft" path, or the
+Reading Pane actually displaying attachments on a `sent` message.
+
+Added 7 tests total, all named `B004/025 AC<n>: ...` for traceability:
+
+`src/main/data/db.test.ts` (+4, integration-level against a real `MailDb`,
+no mocking):
+- AC1+AC2: a `sent`-folder message created with attachments keeps them on
+  an immediate re-fetch (the Reading Pane's "reopen" path) and after a full
+  close/reopen of the database.
+- AC1: sending an *existing draft* — `createMessage` into `drafts` then
+  `updateMessage` to `folderId: 'sent'`, exactly the path `ComposeWindow`'s
+  `draftId` branch takes — keeps/updates attachments correctly.
+- AC4: a reply/forward-shaped `sent` message (quoted body, `Re:` subject)
+  with an attachment persists it.
+- AC3 (regression): editing a draft's subject without touching
+  `attachments` in the patch leaves the existing attachments untouched
+  (proves `updateMessage`'s merge doesn't need `attachments` re-sent every
+  time, and doesn't accidentally clear it when absent from the patch).
+
+`src/renderer/src/ComposeWindow.test.tsx` (+2): AC4 specifically for the
+renderer path — adding an attachment chip while replying, and while
+forwarding, then Send, asserts `messages.create` is called with exactly
+that attachment. (The pre-existing "sending them along" test only covered
+a fresh compose, not reply/forward.)
+
+`src/renderer/src/components/ReadingPane.test.tsx` (+1): AC2 — a message
+with `folderId: 'sent'` and an attachment renders the attachment button,
+same as the pre-existing (inbox-folder) attachment-rendering test, closing
+the gap that no test had ever set `folderId: 'sent'` specifically.
+
+Full suite 414 → 421, all passing, re-run 3x stable. lint/typecheck/build
+all pass. Deliberately not covered: real Electron contextBridge/IPC
+serialization (same non-blocking sandbox gap noted in every prior
+feature — no Xvfb here); if the reported bug is real and lives there
+rather than in the traced Node-side path, these tests wouldn't catch it.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

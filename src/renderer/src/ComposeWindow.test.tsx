@@ -339,6 +339,52 @@ describe('ComposeWindow', () => {
       expect(close).toHaveBeenCalled()
     })
 
+    it('B004/025 AC4: an attachment added while replying is included on the Sent Items copy', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="reply" />)
+
+      await screen.findByDisplayValue('Re: Quarterly numbers')
+      await user.type(screen.getByLabelText('Attachments'), 'updated-numbers.xlsx')
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folderId: 'sent',
+          attachments: [{ filename: 'updated-numbers.xlsx' }]
+        })
+      )
+    })
+
+    it('B004/025 AC4: an attachment added while forwarding is included on the Sent Items copy', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<ComposeWindow sourceMessageId="src-1" intent="forward" />)
+
+      await screen.findByDisplayValue('Fwd: Quarterly numbers')
+      await user.type(screen.getByLabelText('Attachments'), 'cover-sheet.pdf')
+      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await user.selectOptions(screen.getByLabelText('To'), 'morgan@example.com')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folderId: 'sent',
+          attachments: [{ filename: 'cover-sheet.pdf' }]
+        })
+      )
+    })
+
     it('replying also triggers persona reply generation (AC1 covers sending AND replying)', async () => {
       const user = userEvent.setup()
       mockClose()
