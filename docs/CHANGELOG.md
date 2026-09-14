@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — Fix: persona replies quote the prior thread chain (features/024-fix-persona-reply-quotes-thread.md)
+When a persona replies to a trainee's message, the reply now quotes the
+message it's replying to — "On [date], Name <email> wrote:" followed by the
+original text with "> " prefixes — the same convention the trainee's own
+Reply/Reply All/Forward already use. Previously a persona's reply was just
+the bare new text with no quoted context, unlike a real email client.
+
 ## 2026-09-14 — Fix: sent mail created as read, not unread (features/023-fix-sent-mail-marked-read.md)
 Messages the trainee sends — via Send, Reply, Reply All, or Forward — now
 land in Sent Items already marked read, since the trainee obviously already

@@ -1,7 +1,7 @@
 ---
 id: 024
 title: Fix — persona replies quote the prior thread chain
-status: accept
+status: done
 priority: high
 ---
 
@@ -13,14 +13,14 @@ text. Matches how the trainee's own Reply/Reply All/Forward already quote
 the body (feature 005).
 
 ## Acceptance Criteria
-- [ ] A persona reply's stored message body includes the immediately-
+- [x] A persona reply's stored message body includes the immediately-
       preceding message quoted, in addition to the LLM-generated new reply
       text
-- [ ] Quoting follows the same nesting convention as the trainee's own
+- [x] Quoting follows the same nesting convention as the trainee's own
       reply-quoting (feature 005) rather than inventing a separate format
-- [ ] Existing persona-reply generation tests are updated to assert quoted
+- [x] Existing persona-reply generation tests are updated to assert quoted
       content is present
-- [ ] A thread with no prior messages (shouldn't happen for a reply, but
+- [x] A thread with no prior messages (shouldn't happen for a reply, but
       guard it) doesn't crash or produce a malformed quote block
 
 ## Implementation Notes
@@ -149,4 +149,7 @@ above is the strongest available substitute, same pattern used for prior
 `/validate` stages.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — presented the summary (description, AC-by-AC mapping,
+validation results incl. the live real-scenario check) via `AskUserQuestion`
+with accept / request changes / reject as the three options. User selected
+**Accept**. Decision: accepted.

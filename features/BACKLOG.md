@@ -30,7 +30,7 @@
 | 009 | Mail mock attachments | done | low | 009-mail-mock-attachments.md |
 | 020 | Calendar recurring events | done | low | 020-calendar-recurring-events.md |
 | 023 | Fix — sent mail created as read, not unread | done | high | 023-fix-sent-mail-marked-read.md |
-| 024 | Fix — persona replies quote the prior thread chain | accept | high | 024-fix-persona-reply-quotes-thread.md |
+| 024 | Fix — persona replies quote the prior thread chain | done | high | 024-fix-persona-reply-quotes-thread.md |
 | 025 | Fix — attachments persist on the Sent Items copy | backlog | high | 025-fix-sent-attachments-dropped.md |
 | 026 | Fix — recurring event reminders fire per occurrence | backlog | high | 026-fix-recurring-reminder-per-occurrence.md |
 | 047 | FileVine tab — folder structure and client association | backlog | high | 047-filevine-folders-and-clients.md |
