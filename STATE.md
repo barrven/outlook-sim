@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 026 (Fix — recurring event reminders fire per occurrence)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 026 (fix: recurring event reminders fire per
+  occurrence) validated: lint/typecheck/build pass; full test suite
+  (428/428) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests + code inspection plus a fresh live end-to-end check —
+  bundled `db.ts`/`reminderScheduler.ts` standalone with `esbuild` and ran
+  a real `MailDb` against a scratch copy of the real, in-use
+  `~/AppData/Roaming/outlook-sim/outlook-sim.db`: a daily recurring event
+  fired distinct, correctly-timed reminders on day 1 and day 2 (the actual
+  bug — previously impossible), with no double-fire on a re-tick; real
+  on-disk DB confirmed byte-for-byte unchanged (md5) afterward. No live
+  multi-window Electron GUI click-through attempted (no Xvfb, same
+  non-blocking gap as every prior feature). Phase set to `accept`.
 - 2026-09-14 — feature 026 (fix: recurring event reminders fire per
   occurrence) tested: added 6 tests (422 → 428, all passing; re-run 3x,
   stable), all AC-traceable by name in `reminderScheduler.test.ts`'s new

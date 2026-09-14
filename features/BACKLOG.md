@@ -32,7 +32,7 @@
 | 023 | Fix — sent mail created as read, not unread | done | high | 023-fix-sent-mail-marked-read.md |
 | 024 | Fix — persona replies quote the prior thread chain | done | high | 024-fix-persona-reply-quotes-thread.md |
 | 025 | Fix — attachments persist on the Sent Items copy | done | high | 025-fix-sent-attachments-dropped.md |
-| 026 | Fix — recurring event reminders fire per occurrence | validating | high | 026-fix-recurring-reminder-per-occurrence.md |
+| 026 | Fix — recurring event reminders fire per occurrence | accept | high | 026-fix-recurring-reminder-per-occurrence.md |
 | 047 | FileVine tab — folder structure and client association | backlog | high | 047-filevine-folders-and-clients.md |
 | 048 | FileVine notes/files CRUD with Markdown content | backlog | high | 048-filevine-notes-markdown.md |
 | 027 | LLM error banner — Retry button and durable failure log | backlog | medium | 027-llm-error-retry-and-log.md |

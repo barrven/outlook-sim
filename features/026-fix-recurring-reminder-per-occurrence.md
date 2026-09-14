@@ -1,7 +1,7 @@
 ---
 id: 026
 title: Fix — recurring event reminders fire per occurrence
-status: validating
+status: accept
 priority: high
 ---
 
@@ -153,7 +153,61 @@ than needing a test to pin its exact value. Full suite re-run 3x, stable;
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 428/428, re-run 3x, stable.
+`git diff c5e851f..67e0cd6` (the `/test` stage's commit) confirms it
+touched only `reminderScheduler.test.ts`, `App.test.tsx`, `STATE.md`, and
+the feature/backlog docs — no implementation drift.
+
+Acceptance criteria:
+- **AC1** (2nd/3rd/etc. occurrence fires, not only the 1st) — **pass**.
+  `reminderScheduler.test.ts`'s new test drives a daily series through
+  three separate due-times and confirms three distinct `FiredReminder.id`s
+  and `remindersFired` ending up length 3. Verified live, independently of
+  `/test`'s suite: bundled `db.ts`/`reminderScheduler.ts` standalone with
+  `esbuild` and ran a real (non-mocked) `MailDb` + a fake but faithful
+  clock against a scratch copy of the real, in-use
+  `~/AppData/Roaming/outlook-sim/outlook-sim.db` — a daily recurring
+  "Client status call" fired on day 1 AND day 2 (two distinct, correctly-
+  titled/timed reminders) — the actual behavior the old single-boolean
+  scheme could never produce.
+- **AC2** (no double-fire for the same occurrence) — **pass**. Covered by
+  both the pre-existing non-recurring "does not refire" test (unchanged)
+  and the new recurring-specific test (3 ticks at the same due moment →
+  still 1 call, then a later occurrence's own due time correctly adds
+  exactly one more). The live check above re-ticked day 2's due moment a
+  second time with no additional fire.
+- **AC3** (exceptions respected: deleted occurrence never fires; edited
+  occurrence fires relative to its new time) — **pass**. Two dedicated
+  tests: a deleted occurrence's natural due time passing produces no fire
+  (occurrences before/after it are unaffected), and an occurrence edited to
+  a later same-day time does not fire at the old natural due time but does
+  fire at the new one, reporting the exception's overridden title. This
+  relies on `expandOccurrences` (shared with the calendar view, feature
+  020) already handling exceptions correctly — confirmed by inspection
+  that the scheduler filters/computes off the *occurrence's* (possibly
+  overridden) `startTime`/`reminderMinutesBefore`, never the series
+  template's raw values.
+- **AC4** (non-recurring items' reminder behavior unaffected) — **pass**.
+  The entire pre-existing `reminderScheduler.test.ts` suite (paused-no-fire,
+  not-yet-due, fires-once, due-boundary, no-reminder-configured,
+  multi-item-single-tick, start/stop real-time polling, real-`SimClock`
+  pause/resume integration) passes unchanged — none of those tests set
+  `recurrenceRule`, so they exercise the exact same code path
+  (`expandOccurrences` degenerates to `[item.startTime]` for a non-recurring
+  item) as before this feature, just now going through the shared
+  occurrence-expansion function instead of a direct field check. A new
+  explicit "AC4 (regression)" test locks in `remindersFired` ending up
+  exactly `[startTime]` for such an item.
+
+Also spot-checked the one design tradeoff flagged in Implementation Notes
+(unbounded past-occurrence re-walking per tick for a long-running series):
+not a correctness issue, `MAX_OCCURRENCE_ITERATIONS` bounds it, and it's
+consistent with this scheduler's pre-existing full-table-poll pragmatism —
+not a blocker for this fix's scope.
+
+Real on-disk `outlook-sim.db`/config confirmed byte-for-byte unchanged
+(md5) after the live check. No live multi-window Electron GUI click-through
+attempted (no Xvfb, same non-blocking gap as every prior feature).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
