@@ -114,6 +114,23 @@ export type NewCalendarItem = Omit<CalendarItem, 'id' | 'remindersFired' | 'recu
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
 
+// A case-file/matter folder in the FileVine module (feature 047). Folders
+// nest via `parentId` (file-system-like, not the flat list mail folders
+// use); `clientPersonaId` optionally associates a folder with a configured
+// persona as its "client". Notes/files (feature 048) and LLM context
+// wiring (feature 049) are out of this type's scope.
+export interface FileVineFolder {
+  id: string
+  name: string
+  parentId: string | null
+  clientPersonaId: string | null
+}
+
+export type NewFileVineFolder = Omit<FileVineFolder, 'id' | 'parentId' | 'clientPersonaId'> &
+  Partial<Pick<FileVineFolder, 'parentId' | 'clientPersonaId'>>
+
+export type FileVineFolderPatch = Partial<Omit<FileVineFolder, 'id'>>
+
 // Broadcast when the reminder scheduler fires a specific occurrence's
 // reminder. Deliberately not `CalendarItem` itself: `id` here is unique per
 // *occurrence* firing (`seriesId:originalStartTime`), not per series, so two

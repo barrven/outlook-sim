@@ -4,24 +4,38 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
 
-describe('RibbonBar', () => {
-  it('renders ribbon tabs and mail actions as disabled placeholders', () => {
-    render(<RibbonBar activeModule="mail" />)
+// Home/FileVine are now real tabs (feature 047) — every render needs these,
+// even tests unrelated to them.
+function tabProps(overrides: Partial<{ showFileVine: boolean }> = {}): {
+  showFileVine: boolean
+  onSelectHomeTab: () => void
+  onSelectFileVineTab: () => void
+} {
+  return { showFileVine: false, onSelectHomeTab: vi.fn(), onSelectFileVineTab: vi.fn(), ...overrides }
+}
 
-    expect(screen.getByRole('button', { name: 'Home' })).toBeDisabled()
+describe('RibbonBar', () => {
+  it('renders ribbon tabs and mail actions, with only Home/FileVine/New Email interactive', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+    expect(screen.getByRole('button', { name: 'Home' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'FileVine' })).toBeEnabled()
+    for (const tab of ['File', 'Send / Receive', 'Folder', 'View']) {
+      expect(screen.getByRole('button', { name: tab })).toBeDisabled()
+    }
     expect(screen.getByRole('button', { name: 'New Email' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument()
   })
 
   it('swaps to calendar actions when the calendar module is active', () => {
-    render(<RibbonBar activeModule="calendar" />)
+    render(<RibbonBar activeModule="calendar" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'New Event' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Email' })).not.toBeInTheDocument()
   })
 
   it('leaves New Event disabled when no onNewEvent handler is provided', () => {
-    render(<RibbonBar activeModule="calendar" />)
+    render(<RibbonBar activeModule="calendar" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'New Event' })).toBeDisabled()
   })
@@ -29,7 +43,7 @@ describe('RibbonBar', () => {
   it('enables New Event and calls onNewEvent when a handler is provided', async () => {
     const user = userEvent.setup()
     const onNewEvent = vi.fn()
-    render(<RibbonBar activeModule="calendar" onNewEvent={onNewEvent} />)
+    render(<RibbonBar activeModule="calendar" {...tabProps()} onNewEvent={onNewEvent} />)
 
     const button = screen.getByRole('button', { name: 'New Event' })
     expect(button).toBeEnabled()
@@ -40,13 +54,13 @@ describe('RibbonBar', () => {
   })
 
   it('hides New Meeting until meeting invites/RSVP are actually built', () => {
-    render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
+    render(<RibbonBar activeModule="calendar" {...tabProps()} onNewEvent={vi.fn()} />)
 
     expect(screen.queryByRole('button', { name: 'New Meeting' })).not.toBeInTheDocument()
   })
 
   it('does not duplicate the Today/Day/Work Week/Week/Month view switcher in the ribbon', () => {
-    render(<RibbonBar activeModule="calendar" onNewEvent={vi.fn()} />)
+    render(<RibbonBar activeModule="calendar" {...tabProps()} onNewEvent={vi.fn()} />)
 
     for (const label of ['Today', 'Day', 'Work Week', 'Week', 'Month']) {
       expect(screen.queryByRole('button', { name: label })).not.toBeInTheDocument()
@@ -56,7 +70,7 @@ describe('RibbonBar', () => {
   it('enables New Email and calls onNewEmail when a handler is provided', async () => {
     const user = userEvent.setup()
     const onNewEmail = vi.fn()
-    render(<RibbonBar activeModule="mail" onNewEmail={onNewEmail} />)
+    render(<RibbonBar activeModule="mail" {...tabProps()} onNewEmail={onNewEmail} />)
 
     const button = screen.getByRole('button', { name: 'New Email' })
     expect(button).toBeEnabled()
@@ -67,7 +81,7 @@ describe('RibbonBar', () => {
   })
 
   it('leaves Delete disabled when no onDelete handler is provided', () => {
-    render(<RibbonBar activeModule="mail" />)
+    render(<RibbonBar activeModule="mail" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
   })
@@ -75,7 +89,7 @@ describe('RibbonBar', () => {
   it('enables Delete and calls onDelete when a handler is provided', async () => {
     const user = userEvent.setup()
     const onDelete = vi.fn()
-    render(<RibbonBar activeModule="mail" onDelete={onDelete} />)
+    render(<RibbonBar activeModule="mail" {...tabProps()} onDelete={onDelete} />)
 
     const button = screen.getByRole('button', { name: 'Delete' })
     expect(button).toBeEnabled()
@@ -83,5 +97,28 @@ describe('RibbonBar', () => {
     await user.click(button)
 
     expect(onDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('FileVine tab between Home and View calls onSelectFileVineTab and becomes the active tab', async () => {
+    const user = userEvent.setup()
+    const onSelectFileVineTab = vi.fn()
+    render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} onSelectFileVineTab={onSelectFileVineTab} />)
+
+    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|Send \/ Receive|Folder|FileVine|View)$/ }).map((b) => b.textContent)
+    expect(tabNames.indexOf('FileVine')).toBeGreaterThan(tabNames.indexOf('Home'))
+    expect(tabNames.indexOf('FileVine')).toBeLessThan(tabNames.indexOf('View'))
+
+    await user.click(screen.getByRole('button', { name: 'FileVine' }))
+    expect(onSelectFileVineTab).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks FileVine active (not Home) when showFileVine is true, and vice versa', () => {
+    const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: true })} />)
+    expect(screen.getByRole('button', { name: 'FileVine' })).toHaveClass('active')
+    expect(screen.getByRole('button', { name: 'Home' })).not.toHaveClass('active')
+
+    rerender(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} />)
+    expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
+    expect(screen.getByRole('button', { name: 'FileVine' })).not.toHaveClass('active')
   })
 })

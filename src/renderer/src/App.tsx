@@ -8,6 +8,7 @@ import CalendarFolderPane from './components/CalendarFolderPane'
 import MessageListPane from './components/MessageListPane'
 import ReadingPane from './components/ReadingPane'
 import CalendarView from './components/CalendarView'
+import FileVineView from './components/FileVineView'
 import SettingsView from './components/SettingsView'
 
 function App(): ReactElement {
@@ -20,6 +21,7 @@ function App(): ReactElement {
   const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
   const [firedReminders, setFiredReminders] = useState<FiredReminder[]>([])
+  const [showFileVine, setShowFileVine] = useState(false)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -68,12 +70,31 @@ function App(): ReactElement {
     setSelectedFolderId(folderId)
     setSelectedMessageId(null)
     setShowSettings(false)
+    setShowFileVine(false)
   }
 
   function handleSelectModule(moduleId: ModuleId): void {
     setActiveModule(moduleId)
     setShowSettings(false)
     setShowNewEventForm(false)
+    setShowFileVine(false)
+  }
+
+  // FileVine (feature 047) is a ribbon-tab overlay scoped to the Mail
+  // module — spec: "swaps the center/right content area... while the
+  // left-hand folder pane keeps showing the mail folder list". Selecting
+  // either tab forces activeModule to 'mail' so that pane is always what's
+  // underneath it.
+  function handleSelectHomeTab(): void {
+    setActiveModule('mail')
+    setShowSettings(false)
+    setShowFileVine(false)
+  }
+
+  function handleSelectFileVineTab(): void {
+    setActiveModule('mail')
+    setShowSettings(false)
+    setShowFileVine(true)
   }
 
   function handleEditDraft(message: MailMessage): void {
@@ -151,6 +172,9 @@ function App(): ReactElement {
       ))}
       <RibbonBar
         activeModule={activeModule}
+        showFileVine={showFileVine}
+        onSelectHomeTab={handleSelectHomeTab}
+        onSelectFileVineTab={handleSelectFileVineTab}
         onNewEmail={() => window.api.compose.open()}
         onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
         onNewEvent={() => setShowNewEventForm(true)}
@@ -179,26 +203,30 @@ function App(): ReactElement {
             onScenarioPackLoaded={() => setSelectedMessageId(null)}
           />
         ) : activeModule === 'mail' ? (
-          <>
-            <MessageListPane
-              selectedFolderId={selectedFolderId}
-              selectedFolderName={selectedFolder?.name ?? ''}
-              selectedMessageId={selectedMessageId}
-              onSelectMessage={setSelectedMessageId}
-              messagesVersion={messagesVersion}
-            />
-            <ReadingPane
-              selectedMessageId={selectedMessageId}
-              messagesVersion={messagesVersion}
-              onEditDraft={handleEditDraft}
-              onReply={handleReply}
-              onReplyAll={handleReplyAll}
-              onForward={handleForward}
-              onDelete={handleDeleteMessage}
-              onRestore={handleRestoreMessage}
-              onPermanentDelete={handlePermanentDeleteMessage}
-            />
-          </>
+          showFileVine ? (
+            <FileVineView />
+          ) : (
+            <>
+              <MessageListPane
+                selectedFolderId={selectedFolderId}
+                selectedFolderName={selectedFolder?.name ?? ''}
+                selectedMessageId={selectedMessageId}
+                onSelectMessage={setSelectedMessageId}
+                messagesVersion={messagesVersion}
+              />
+              <ReadingPane
+                selectedMessageId={selectedMessageId}
+                messagesVersion={messagesVersion}
+                onEditDraft={handleEditDraft}
+                onReply={handleReply}
+                onReplyAll={handleReplyAll}
+                onForward={handleForward}
+                onDelete={handleDeleteMessage}
+                onRestore={handleRestoreMessage}
+                onPermanentDelete={handlePermanentDeleteMessage}
+              />
+            </>
+          )
         ) : (
           <CalendarView
             showCreateForm={showNewEventForm}

@@ -2,10 +2,12 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type {
   ApplyScenarioPackResult,
   CalendarItemPatch,
+  FileVineFolderPatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
+  NewFileVineFolder,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -76,6 +78,16 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     db.updateCalendarItem(id, patch)
   )
   ipcMain.handle('db:calendarItems:delete', (_event, id: string) => db.deleteCalendarItem(id))
+
+  ipcMain.handle('db:fileVineFolders:list', () => db.listFileVineFolders())
+  ipcMain.handle('db:fileVineFolders:get', (_event, id: string) => db.getFileVineFolder(id))
+  ipcMain.handle('db:fileVineFolders:create', (_event, folder: NewFileVineFolder) =>
+    db.createFileVineFolder(folder)
+  )
+  ipcMain.handle('db:fileVineFolders:update', (_event, id: string, patch: FileVineFolderPatch) =>
+    db.updateFileVineFolder(id, patch)
+  )
+  ipcMain.handle('db:fileVineFolders:delete', (_event, id: string) => db.deleteFileVineFolder(id))
 
   ipcMain.handle('config:settings:get', () => config.getSettings())
   ipcMain.handle('config:settings:set', (_event, settings: Settings) => config.setSettings(settings))

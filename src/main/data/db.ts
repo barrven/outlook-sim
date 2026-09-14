@@ -4,10 +4,13 @@ import { DatabaseSync } from 'node:sqlite'
 import type {
   CalendarItem,
   CalendarItemPatch,
+  FileVineFolder,
+  FileVineFolderPatch,
   Folder,
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
+  NewFileVineFolder,
   NewFolder,
   NewMailMessage,
   RecurrenceFrequency
@@ -55,6 +58,13 @@ CREATE TABLE IF NOT EXISTS calendar_items (
   recurrence_exceptions TEXT NOT NULL DEFAULT '[]',
   item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline')),
   reminders_fired TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS filevine_folders (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id TEXT REFERENCES filevine_folders(id),
+  client_persona_id TEXT
 );
 `
 
@@ -104,6 +114,13 @@ interface CalendarItemRow {
   reminders_fired: string
 }
 
+interface FileVineFolderRow {
+  id: string
+  name: string
+  parent_id: string | null
+  client_persona_id: string | null
+}
+
 function folderFromRow(row: FolderRow): Folder {
   return { id: row.id, name: row.name, type: row.type as Folder['type'], sortOrder: row.sort_order }
 }
@@ -142,6 +159,10 @@ function calendarItemFromRow(row: CalendarItemRow): CalendarItem {
     itemType: row.item_type as CalendarItem['itemType'],
     remindersFired: JSON.parse(row.reminders_fired)
   }
+}
+
+function fileVineFolderFromRow(row: FileVineFolderRow): FileVineFolder {
+  return { id: row.id, name: row.name, parentId: row.parent_id, clientPersonaId: row.client_persona_id }
 }
 
 function generateId(): string {
@@ -403,6 +424,63 @@ export class MailDb {
 
   deleteCalendarItem(id: string): void {
     this.db.prepare('DELETE FROM calendar_items WHERE id = ?').run(id)
+  }
+
+  // FileVine folders
+
+  listFileVineFolders(): FileVineFolder[] {
+    const rows = this.db
+      .prepare('SELECT * FROM filevine_folders ORDER BY name ASC')
+      .all() as unknown as FileVineFolderRow[]
+    return rows.map(fileVineFolderFromRow)
+  }
+
+  getFileVineFolder(id: string): FileVineFolder | null {
+    const row = this.db.prepare('SELECT * FROM filevine_folders WHERE id = ?').get(id) as
+      | FileVineFolderRow
+      | undefined
+    return row ? fileVineFolderFromRow(row) : null
+  }
+
+  createFileVineFolder(folder: NewFileVineFolder): FileVineFolder {
+    const id = generateId()
+    const full: FileVineFolder = { id, parentId: null, clientPersonaId: null, ...folder }
+    this.db
+      .prepare('INSERT INTO filevine_folders (id, name, parent_id, client_persona_id) VALUES (?, ?, ?, ?)')
+      .run(full.id, full.name, full.parentId, full.clientPersonaId)
+    return full
+  }
+
+  updateFileVineFolder(id: string, patch: FileVineFolderPatch): FileVineFolder | null {
+    const existing = this.getFileVineFolder(id)
+    if (!existing) return null
+    const updated: FileVineFolder = { ...existing, ...patch, id }
+    this.db
+      .prepare('UPDATE filevine_folders SET name = ?, parent_id = ?, client_persona_id = ? WHERE id = ?')
+      .run(updated.name, updated.parentId, updated.clientPersonaId, id)
+    return updated
+  }
+
+  // Deletes a folder and all of its descendants — mirrors a real
+  // file-system folder delete removing its contents, rather than silently
+  // orphaning/reparenting children to the root.
+  deleteFileVineFolder(id: string): void {
+    const all = this.listFileVineFolders()
+    const toDelete = new Set<string>()
+    const collect = (folderId: string): void => {
+      toDelete.add(folderId)
+      for (const folder of all) {
+        if (folder.parentId === folderId) collect(folder.id)
+      }
+    }
+    collect(id)
+    // `collect` visits a folder before its children (pre-order), so
+    // reversing guarantees every descendant is deleted before its parent —
+    // required by the parent_id foreign key, since a parent can't be
+    // deleted while a still-existing child still references it.
+    for (const folderId of [...toDelete].reverse()) {
+      this.db.prepare('DELETE FROM filevine_folders WHERE id = ?').run(folderId)
+    }
   }
 
   // Free-play session

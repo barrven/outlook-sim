@@ -4,6 +4,8 @@ import type {
   CalendarItemPatch,
   ClockState,
   ComposeOpenOptions,
+  FileVineFolder,
+  FileVineFolderPatch,
   FiredReminder,
   Folder,
   LlmGenerateInput,
@@ -11,6 +13,7 @@ import type {
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
+  NewFileVineFolder,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -42,6 +45,13 @@ export interface DataApi {
     get: (id: string) => Promise<CalendarItem | null>
     create: (item: NewCalendarItem) => Promise<CalendarItem>
     update: (id: string, patch: CalendarItemPatch) => Promise<CalendarItem | null>
+    delete: (id: string) => Promise<void>
+  }
+  fileVineFolders: {
+    list: () => Promise<FileVineFolder[]>
+    get: (id: string) => Promise<FileVineFolder | null>
+    create: (folder: NewFileVineFolder) => Promise<FileVineFolder>
+    update: (id: string, patch: FileVineFolderPatch) => Promise<FileVineFolder | null>
     delete: (id: string) => Promise<void>
   }
   settings: {

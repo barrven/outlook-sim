@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 047 (FileVine tab — folder structure and client association)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,29 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 047 (FileVine tab — folder structure and client
+  association) implemented: new `FileVineFolder` type (nests via
+  `parentId`, loosely references a persona as `clientPersonaId`) plus a
+  `filevine_folders` SQLite table and full CRUD on `MailDb`, mirroring
+  `calendarItems`'s conventions; `db:fileVineFolders:*` IPC channels +
+  `window.api.data.fileVineFolders`. New `FileVineView.tsx` (two-pane tree
+  + detail UI, always-expanded nested lists, inline create/rename/delete
+  following `FolderPane.tsx`'s conventions). `RibbonBar`'s tab row — static/
+  disabled since feature 001 — gained a real, clickable "FileVine" tab
+  between Home and View; clicking it (or Home) overlays/hides
+  `FileVineView` in `App.tsx` in place of the message list/reading pane
+  while staying in the Mail module, so the mail folder pane stays visible
+  underneath it per spec. Caught and fixed a real bug live before writing
+  any tests: cascade-deleting a folder with children threw a `FOREIGN KEY
+  constraint failed` (deleted parent before children in insertion order);
+  fixed by deleting in reverse pre-order. Verified end-to-end with a
+  standalone `esbuild`-bundled `db.ts` script (real `MailDb`) and a
+  throwaway RTL smoke test of the full UI flow (written, run, deleted —
+  not part of the diff) before finishing. lint/typecheck/build pass;
+  existing suite 428 → 430 (2 new RibbonBar tests for the now-interactive
+  tab; `RibbonBar.test.tsx`/`ipc.test.ts` needed compile/content
+  touch-ups, no unrelated behavior changes). Notes/files CRUD (048) and
+  LLM context wiring (049) deliberately out of scope. Phase set to `test`.
 - 2026-09-14 — feature 026 (fix: recurring event reminders fire per
   occurrence) accepted by user; logged to CHANGELOG. All four high-priority
   bug fixes (023-026) are now done. Active feature set to 047 (FileVine tab

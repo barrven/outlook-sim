@@ -3,10 +3,12 @@ import type {
   ApplyScenarioPackResult,
   CalendarItemPatch,
   ComposeOpenOptions,
+  FileVineFolderPatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
+  NewFileVineFolder,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -40,6 +42,14 @@ const api = {
       create: (item: NewCalendarItem) => ipcRenderer.invoke('db:calendarItems:create', item),
       update: (id: string, patch: CalendarItemPatch) => ipcRenderer.invoke('db:calendarItems:update', id, patch),
       delete: (id: string) => ipcRenderer.invoke('db:calendarItems:delete', id)
+    },
+    fileVineFolders: {
+      list: () => ipcRenderer.invoke('db:fileVineFolders:list'),
+      get: (id: string) => ipcRenderer.invoke('db:fileVineFolders:get', id),
+      create: (folder: NewFileVineFolder) => ipcRenderer.invoke('db:fileVineFolders:create', folder),
+      update: (id: string, patch: FileVineFolderPatch) =>
+        ipcRenderer.invoke('db:fileVineFolders:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('db:fileVineFolders:delete', id)
     },
     settings: {
       get: () => ipcRenderer.invoke('config:settings:get'),
