@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 047 (FileVine tab — folder structure and client association)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 047 (FileVine tab — folder structure and client
+  association) tested: added 21 tests (430 → 451, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 4 layers — `db.test.ts` (+7,
+  real `MailDb`): create/rename/delete, nesting, a regression test pinning
+  the `/implement`-stage cascade-delete FK fix, client associate/change/
+  un-associate, and close/reopen persistence; `ipc.test.ts` (+1, incl. the
+  exhaustive channel-list update): full CRUD through the actual registered
+  handlers; new `FileVineView.test.tsx` (+11, in-memory fake store): empty
+  states, create/nest/rename/delete, a DOM-structure test proving real
+  nesting (not flat-with-indentation), and client association incl.
+  pre-selected existing client and switching between personas; `App.test.tsx`
+  (+2, on top of 2 `RibbonBar.test.tsx` tests already added during
+  `/implement` for AC1): the FileVine tab actually swapping the
+  center/right content area while the mail folder pane stays visible, and
+  that selecting a mail folder / switching to Calendar both close it.
+  lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-14 — feature 047 (FileVine tab — folder structure and client
   association) implemented: new `FileVineFolder` type (nests via
   `parentId`, loosely references a persona as `clientPersonaId`) plus a

@@ -825,4 +825,85 @@ describe('MailDb', () => {
     // reassign so the outer afterEach's db.close() doesn't double-close
     db = new MailDb(baseDir)
   })
+
+  // FileVine folders (feature 047)
+
+  it('047 AC3: creates, renames, and deletes a folder', () => {
+    const created = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    expect(created.parentId).toBeNull()
+    expect(created.clientPersonaId).toBeNull()
+    expect(db.listFileVineFolders().map((f) => f.id)).toEqual([created.id])
+
+    const renamed = db.updateFileVineFolder(created.id, { name: 'Smith v. Jones (Amended)' })
+    expect(renamed?.name).toBe('Smith v. Jones (Amended)')
+    expect(db.getFileVineFolder(created.id)?.name).toBe('Smith v. Jones (Amended)')
+
+    db.deleteFileVineFolder(created.id)
+    expect(db.listFileVineFolders()).toEqual([])
+  })
+
+  it('047 AC3: nests folders under other folders (a real tree, not a flat list)', () => {
+    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
+    const grandchild = db.createFileVineFolder({ name: 'Depositions', parentId: child.id })
+
+    expect(db.getFileVineFolder(child.id)?.parentId).toBe(root.id)
+    expect(db.getFileVineFolder(grandchild.id)?.parentId).toBe(child.id)
+  })
+
+  it('047 AC3 (regression): deleting a folder with children cascades to descendants, without a foreign-key error', () => {
+    // A first implementation deleted the parent before its children (plain
+    // insertion order) and threw "FOREIGN KEY constraint failed" — this
+    // pins the fix (delete deepest-first).
+    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
+    const grandchild = db.createFileVineFolder({ name: 'Depositions', parentId: child.id })
+    const unrelated = db.createFileVineFolder({ name: 'Unrelated matter' })
+
+    expect(() => db.deleteFileVineFolder(root.id)).not.toThrow()
+
+    const remaining = db.listFileVineFolders().map((f) => f.id)
+    expect(remaining).toEqual([unrelated.id])
+    expect(remaining).not.toContain(root.id)
+    expect(remaining).not.toContain(child.id)
+    expect(remaining).not.toContain(grandchild.id)
+  })
+
+  it('047 AC4: associates a folder with a persona as its client, then un-associates it', () => {
+    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
+
+    const associated = db.updateFileVineFolder(folder.id, { clientPersonaId: 'persona-1' })
+    expect(associated?.clientPersonaId).toBe('persona-1')
+    expect(db.getFileVineFolder(folder.id)?.clientPersonaId).toBe('persona-1')
+
+    const changed = db.updateFileVineFolder(folder.id, { clientPersonaId: 'persona-2' })
+    expect(changed?.clientPersonaId).toBe('persona-2')
+
+    const unassociated = db.updateFileVineFolder(folder.id, { clientPersonaId: null })
+    expect(unassociated?.clientPersonaId).toBeNull()
+  })
+
+  it('047 AC5: folder structure and client association persist across a close/reopen cycle', () => {
+    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
+    db.updateFileVineFolder(root.id, { clientPersonaId: 'persona-1' })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getFileVineFolder(root.id)).toEqual({
+      id: root.id,
+      name: 'Smith v. Jones',
+      parentId: null,
+      clientPersonaId: 'persona-1'
+    })
+    expect(reopened.getFileVineFolder(child.id)?.parentId).toBe(root.id)
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('returns null when getting or updating a FileVine folder that does not exist', () => {
+    expect(db.getFileVineFolder('missing')).toBeNull()
+    expect(db.updateFileVineFolder('missing', { name: 'x' })).toBeNull()
+  })
 })

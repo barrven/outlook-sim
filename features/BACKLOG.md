@@ -33,7 +33,7 @@
 | 024 | Fix — persona replies quote the prior thread chain | done | high | 024-fix-persona-reply-quotes-thread.md |
 | 025 | Fix — attachments persist on the Sent Items copy | done | high | 025-fix-sent-attachments-dropped.md |
 | 026 | Fix — recurring event reminders fire per occurrence | done | high | 026-fix-recurring-reminder-per-occurrence.md |
-| 047 | FileVine tab — folder structure and client association | testing | high | 047-filevine-folders-and-clients.md |
+| 047 | FileVine tab — folder structure and client association | validating | high | 047-filevine-folders-and-clients.md |
 | 048 | FileVine notes/files CRUD with Markdown content | backlog | high | 048-filevine-notes-markdown.md |
 | 027 | LLM error banner — Retry button and durable failure log | backlog | medium | 027-llm-error-retry-and-log.md |
 | 028 | Trainee identity & personas — org-structure fields | backlog | medium | 028-org-structure-fields.md |

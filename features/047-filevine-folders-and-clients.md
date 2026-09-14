@@ -1,7 +1,7 @@
 ---
 id: 047
 title: FileVine tab — folder structure and client association
-status: testing
+status: validating
 priority: high
 ---
 
@@ -114,7 +114,53 @@ compile/content touch-ups for the new props/channels, no unrelated
 behavior changes). Phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 21 tests across 4 layers (430 → 451, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`db.test.ts`** (+7, real `MailDb`, no mocking) — AC3: create/rename/
+  delete; nesting (parent/child/grandchild); a regression test pinning the
+  cascade-delete fix (`deleteFileVineFolder` on a folder with children no
+  longer throws `FOREIGN KEY constraint failed`, and all descendants —
+  plus only descendants, not an unrelated sibling folder — are gone
+  afterward). AC4: associate → change → un-associate a client persona.
+  AC5: folder structure and client association survive a close/reopen
+  cycle, including a nested child's `parentId`. Plus a not-found regression
+  (`getFileVineFolder`/`updateFileVineFolder` on a missing id).
+- **`ipc.test.ts`** (+1) — the exhaustive channel-list test now includes
+  all 5 `db:fileVineFolders:*` channels; a new test drives create (incl.
+  nesting) → list → get → update (client association) → delete through the
+  actual registered IPC handlers, not `MailDb` directly.
+- **`FileVineView.test.tsx`** (+11, new file) — the component layer, via a
+  small in-memory fake store (same pattern other panes' tests use for
+  personas/messages) so create/rename/delete/associate round-trip
+  realistically without a real `MailDb`. AC3: empty state; create a root
+  folder (and that submitting a blank name is a no-op); create a nested
+  subfolder under an existing one, asserting via `create`'s call args that
+  the correct `parentId` was sent; a DOM-structure test proving a child
+  folder is actually nested *inside* its parent's own subtree (a
+  `.filevine-tree-children` list inside the parent's `<li>`), not just
+  visually indented in a flat list; rename; delete. AC4: selecting a folder
+  shows the "select a folder" empty detail state until then; associating a
+  client, showing the folder's *existing* client pre-selected on load, un-
+  associating (back to "No client"), and changing to a different persona —
+  each asserting both the `update` call's exact patch and the resulting
+  "Client: Name (Role)" summary text.
+- **`App.test.tsx`** (+2, on top of the 2 `RibbonBar.test.tsx` tests added
+  during `/implement` which already cover AC1 — the tab's position and
+  active-state) — AC2: clicking FileVine swaps the center/right area
+  (asserted by both the FileVine heading appearing and the message-list/
+  reading-pane text disappearing) while the mail folder pane (`Mailbox`
+  header + `Inbox` button) stays visible, and clicking Home returns to the
+  normal mail view; selecting a mail folder while FileVine is open returns
+  to mail view (exercises the `handleSelectFolder` reset); switching to
+  the Calendar module while FileVine is open closes it (exercises the
+  `handleSelectModule` reset).
+
+Deliberately not covered: real Electron IPC/contextBridge serialization
+(same non-blocking sandbox gap noted in every prior feature — no Xvfb
+here); notes/files CRUD and LLM context wiring, since those are features
+048/049's scope, not this one's ACs. Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

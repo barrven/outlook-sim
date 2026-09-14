@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   CalendarItem,
   ClockState,
+  FileVineFolder,
   FiredReminder,
   Folder,
   LlmGenerateResult,
@@ -142,6 +143,27 @@ describe('registerDataIpcHandlers', () => {
     expect((handlers.get('db:calendarItems:list')!(fakeEvent) as CalendarItem[]).map((i) => i.id)).toEqual([
       created.id
     ])
+  })
+
+  it('047: creates, nests, updates, and deletes a FileVine folder through the IPC channels', () => {
+    const root = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
+    const child = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
+      name: 'Discovery',
+      parentId: root.id
+    }) as FileVineFolder
+
+    expect((handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).map((f) => f.id).sort()).toEqual(
+      [root.id, child.id].sort()
+    )
+    expect(handlers.get('db:fileVineFolders:get')!(fakeEvent, child.id)).toMatchObject({ parentId: root.id })
+
+    const updated = handlers.get('db:fileVineFolders:update')!(fakeEvent, root.id, {
+      clientPersonaId: 'persona-1'
+    }) as FileVineFolder
+    expect(updated.clientPersonaId).toBe('persona-1')
+
+    handlers.get('db:fileVineFolders:delete')!(fakeEvent, root.id)
+    expect(handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).toEqual([])
   })
 
   it('broadcasts a messages-changed event to every open window on create, update, and delete', () => {
