@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 024 (Fix — persona replies quote the prior thread chain)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
+  chain) tested: added a new `src/shared/quoteBody.test.ts` (4 tests) — the
+  shared `quoteBody()` extracted in `/implement` had no dedicated test file
+  yet; discovered and fixed a real gap while adding it — `vitest.config.ts`'s
+  `include` list covered only `src/renderer/**` and `src/main/**`, so
+  `src/shared/**` tests were silently never run by `npm test`; added
+  `'src/shared/**/*.test.ts'` to `include`. Strengthened `personaReply.test.ts`
+  with an exact byte-for-byte comparison against an independently-computed
+  `quoteBody(sentMessage)` (AC2, "identical convention not just similar") and
+  an explicit AC4-named test for the missing-prior-message guard (no crash,
+  no LLM call, no Inbox insert). Full suite 408 → 414, all passing, re-run 3x
+  stable; lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
   chain) implemented: extracted the trainee's own reply-quoting format
   (feature 005) out of `composeIntent.ts`'s private `quoteBody()` into a new

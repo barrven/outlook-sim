@@ -7,6 +7,7 @@ import { ConfigStore } from '../data/config'
 import { MailDb } from '../data/db'
 import { SimClock } from '../data/clock'
 import { findThread, generatePersonaReply } from './personaReply'
+import { quoteBody } from '../../shared/quoteBody'
 
 const PERSONA: Persona = {
   id: 'p1',
@@ -85,6 +86,20 @@ describe('generatePersonaReply', () => {
     expect(result).toEqual({ ok: false, error: 'Sent message not found.' })
   })
 
+  it('AC4: guards against a missing prior message — no crash, no malformed quote, no message inserted', async () => {
+    // There is no real "reply with nothing to quote" case (a reply always
+    // has the sentMessage that triggered it), so the guard is the early
+    // not-found return above: it's exercised the same way, and asserted
+    // again here under the AC's own name for traceability.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    const result = await generatePersonaReply(db, config, clock, 'does-not-exist')
+
+    expect(result).toEqual({ ok: false, error: 'Sent message not found.' })
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(db.listMessages('inbox')).toEqual([])
+  })
+
   it('inserts the generated reply into Inbox from the persona, addressed to the trainee, with simulated time', async () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
@@ -106,10 +121,28 @@ describe('generatePersonaReply', () => {
         isRead: false
       })
       expect(result.message.body).toContain('Sure, noon works!')
-      expect(result.message.body).toContain('Want to grab lunch?')
+      // AC1/AC2: the immediately-preceding message (the one that triggered
+      // this reply) is quoted using the same "On <date>, Name <email>
+      // wrote:" + "> "-per-line convention as the trainee's own
+      // Reply/Reply All/Forward (feature 005, composeIntent.ts's quoteBody).
+      expect(result.message.body).toContain('Jordan Trainee <jordan@example.com> wrote:')
+      expect(result.message.body).toContain('> Want to grab lunch?')
     }
     expect(db.listMessages('inbox')).toHaveLength(1)
     nowSpy.mockRestore()
+  })
+
+  it('quotes the sent message using the exact same shared quoteBody() format the trainee\'s own replies use', async () => {
+    const message = sendMessage({ body: 'Line one\nLine two' })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id)
+
+    expect(result).toMatchObject({ ok: true, replied: true })
+    if (result.ok && result.replied) {
+      const expectedQuote = quoteBody(message)
+      expect(result.message.body).toBe(`Sure, noon works!${expectedQuote}`)
+    }
   })
 
   it('sends the system prompt, persona details, and thread history to the LLM', async () => {
