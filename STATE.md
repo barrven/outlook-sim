@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 023 (Fix — sent mail created as read, not unread)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
+  validated: lint/typecheck/build pass; full test suite (408/408) re-run 3x,
+  stable; confirmed via `git diff` that `/test` touched only test files/docs,
+  no implementation drift, and that the entire implementation is a 2-line
+  change in `ComposeWindow.tsx`; all 4 ACs verified by the test suite plus a
+  live scripted check — bundled `db.ts` standalone with `tsx` against a real
+  (non-mocked) `MailDb`/SQLite in a fresh temp dir: a real Send-shaped insert
+  landed `is_read: 1`, a real inbox-shaped insert (no `isRead` passed, as
+  every incoming-mail path does) landed `is_read: 0`, and a "legacy"
+  pre-fix-shaped sent message (`isRead: false`) survived a close/reopen
+  cycle unchanged, confirming no retroactive migration; no real
+  `~/.config/outlook-sim` install exists in this (Windows) environment to
+  cross-check against, unlike prior sessions' Linux sandbox — noted, not
+  blocking, since the change is renderer-side logic only with no schema
+  change; no live multi-window Electron GUI click-through attempted (no
+  Xvfb, same non-blocking gap as every prior feature); phase set to `accept`.
 - 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
   tested: added 2 tests (406 → 408, all passing; re-ran full suite 3x,
   stable) and extended 8 existing assertions in place of new scaffolding —

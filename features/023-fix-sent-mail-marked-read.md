@@ -1,7 +1,7 @@
 ---
 id: 023
 title: Fix — sent mail created as read, not unread
-status: validating
+status: accept
 priority: high
 ---
 
@@ -12,12 +12,12 @@ obviously already "read" what they just wrote. "Unread" now only ever
 applies to genuinely incoming mail.
 
 ## Acceptance Criteria
-- [ ] A message created via Send lands in Sent Items with `isRead: true`
-- [ ] A message created via Reply/Reply All/Forward lands in Sent Items with
+- [x] A message created via Send lands in Sent Items with `isRead: true`
+- [x] A message created via Reply/Reply All/Forward lands in Sent Items with
       `isRead: true`
-- [ ] Incoming mail (persona replies, unsolicited-mail scheduler, scenario-
+- [x] Incoming mail (persona replies, unsolicited-mail scheduler, scenario-
       pack-loaded inbox messages) still defaults to `isRead: false`
-- [ ] Existing already-sent messages are unaffected — no retroactive bulk
+- [x] Existing already-sent messages are unaffected — no retroactive bulk
       update/migration of historical data
 
 ## Implementation Notes
@@ -59,7 +59,47 @@ Deliberately not tested: a live multi-window Electron click-through (no
 Xvfb, same non-blocking gap as every prior feature) — deferred to `/validate`.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass; full test suite (408/408) re-run 3x, stable.
+Confirmed via `git diff a5751c0..7f640a7` that `/test` touched only test
+files/docs plus `STATE.md`/`features/*` bookkeeping — no implementation
+drift; `git diff 779c765..a5751c0` shows the entire implementation is a
+2-line change in `src/renderer/src/ComposeWindow.tsx` (`isRead: folderId ===
+'sent'` added to the shared `persist()` fields object). Grepped the whole
+`src/` tree for `folderId: 'sent'` in production code and confirmed
+`ComposeWindow.tsx` is the only place a message is created into Sent Items —
+no other call site needed the fix.
+
+All 4 ACs verified by the test suite plus a live scripted check (standalone
+`tsx` run of the real, non-mocked `MailDb` against a fresh temp SQLite db,
+not mocked):
+- **AC1 (Send → `isRead: true`):** `ComposeWindow.test.tsx`'s Send test
+  asserts it; live check confirms the raw `is_read` column is `1` for a
+  message created with `folderId: 'sent', isRead: true` — pass.
+- **AC2 (Reply/Reply All/Forward → `isRead: true`):** `ComposeWindow.test.tsx`
+  covers all three via the same `persist('sent')` path (single call site, so
+  one code change covers all four entry points) — pass.
+- **AC3 (incoming mail still defaults `isRead: false`):** `personaReply.ts`,
+  `scheduler.ts` (unsolicited mail), `scenarioMailScheduler.ts`, and
+  `scenarioPack.ts`'s inbox seeding all create into `folderId: 'inbox'`
+  without ever setting `isRead`, confirmed by inspection and now asserted in
+  each corresponding test file; live check confirms an inbox message created
+  with no `isRead` field defaults to `is_read: 0` — pass.
+- **AC4 (no retroactive migration):** `db.ts`'s insert/update SQL and
+  defaulting logic are untouched (only `ComposeWindow.tsx`'s renderer-side
+  value changed) — no migration function was added, confirmed by inspection
+  and by the live check: a "legacy" sent message created with `isRead: false`
+  (simulating pre-fix data) still reads back `isRead: false` after a full
+  `db.close()`/reopen cycle — pass.
+
+Not attempted: a live multi-window Electron GUI click-through (no Xvfb in
+this Windows sandbox; consistent, non-blocking gap noted on every prior
+feature). No real `~/.config/outlook-sim` install exists in this environment
+to cross-check (this session runs on a different machine than prior
+sessions' Linux sandbox), so the live check used a fresh scratch db instead
+— sufficient given the change is entirely renderer-side logic with no schema
+or migration involved.
+
+All 4 ACs pass. Status set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
