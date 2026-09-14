@@ -1,7 +1,7 @@
 ---
 id: 026
 title: Fix — recurring event reminders fire per occurrence
-status: accept
+status: done
 priority: high
 ---
 
@@ -12,13 +12,13 @@ the series' Reminder setting), not only once on the series' first
 occurrence.
 
 ## Acceptance Criteria
-- [ ] A recurring event with a reminder fires the reminder banner for its
+- [x] A recurring event with a reminder fires the reminder banner for its
       2nd/3rd/etc. occurrence, not only the 1st
-- [ ] A reminder does not re-fire twice for the same occurrence
-- [ ] A per-occurrence exception (feature 020) is respected: a deleted
+- [x] A reminder does not re-fire twice for the same occurrence
+- [x] A per-occurrence exception (feature 020) is respected: a deleted
       occurrence's reminder never fires; an occurrence edited to a new start
       time fires its reminder relative to the new time
-- [ ] Non-recurring items' reminder behavior (feature 019) is unaffected
+- [x] Non-recurring items' reminder behavior (feature 019) is unaffected
 
 ## Implementation Notes
 Root cause: `CalendarItem.reminderFired` was a single boolean on the series'
@@ -210,4 +210,7 @@ Real on-disk `outlook-sim.db`/config confirmed byte-for-byte unchanged
 attempted (no Xvfb, same non-blocking gap as every prior feature).
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — presented the summary (description, AC-by-AC mapping,
+validation results incl. the live real-scenario check) via
+`AskUserQuestion` with accept / request changes / reject as the three
+options. User selected **Accept**. Decision: accepted.

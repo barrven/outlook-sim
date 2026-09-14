@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 026 (Fix — recurring event reminders fire per occurrence)
+- **Phase:** implement
+- **Active feature:** 047 (FileVine tab — folder structure and client association)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 026 (fix: recurring event reminders fire per
+  occurrence) accepted by user; logged to CHANGELOG. All four high-priority
+  bug fixes (023-026) are now done. Active feature set to 047 (FileVine tab
+  — folder structure and client association), phase set to `implement`.
 - 2026-09-14 — feature 026 (fix: recurring event reminders fire per
   occurrence) validated: lint/typecheck/build pass; full test suite
   (428/428) re-run 3x, stable; confirmed via `git diff` that `/test`

@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — Fix: recurring event reminders fire per occurrence (features/026-fix-recurring-reminder-per-occurrence.md)
+A recurring event or deadline's reminder now fires for every occurrence
+that reaches its reminder time — the 2nd, 3rd, and so on — instead of only
+ever once on the series' very first occurrence. Deleted occurrences (per
+feature 020's per-occurrence editing) still never fire, and an occurrence
+edited to a new time fires its reminder relative to that new time rather
+than the original one. Non-recurring reminders are unaffected.
+
 ## 2026-09-14 — Fix: attachments persist on the Sent Items copy (features/025-fix-sent-attachments-dropped.md)
 Investigated the reported bug (`BUGS.md` B004: attachments dropping from
 the Sent Items copy of a message) and could not reproduce it against the
