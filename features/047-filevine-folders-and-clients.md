@@ -1,7 +1,7 @@
 ---
 id: 047
 title: FileVine tab — folder structure and client association
-status: validating
+status: accept
 priority: high
 ---
 
@@ -163,7 +163,68 @@ here); notes/files CRUD and LLM context wiring, since those are features
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 451/451, re-run 3x, stable.
+`git diff 9325c91..0d239c2` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria:
+- **AC1** (FileVine tab appears between Home and View) — **pass**.
+  `RibbonBar.test.tsx`'s new test asserts `TABS.indexOf('FileVine')` sits
+  strictly between `Home` and `View`; verified by inspection of
+  `RibbonBar.tsx`'s `TABS` array (`['File', 'Home', 'Send / Receive',
+  'Folder', 'FileVine', 'View']`).
+- **AC2** (clicking swaps the center/right content area; left folder pane
+  keeps showing mail folders) — **pass**. `App.test.tsx`'s new test clicks
+  the FileVine tab and confirms the message-list/reading-pane content
+  disappears while the FileVine heading appears, *and* that the mail
+  folder pane (`Mailbox` header + `Inbox` button) stays visible throughout
+  — the actual mechanism spec Core Requirement 15 describes. Also covers
+  the reverse (Home tab returns to the mail view) and the two ways this
+  should implicitly close (selecting a mail folder; switching to the
+  Calendar module), both of which reuse the same reset pattern
+  `showSettings`/`showNewEventForm` already use elsewhere in `App.tsx`.
+- **AC3** (create/rename/delete, nested like a file system, not flat) —
+  **pass**. `db.test.ts` proves real parent/child/grandchild nesting and a
+  cascade-delete that removes exactly the deleted folder's descendants
+  (not an unrelated sibling); `FileVineView.test.tsx` proves the UI's
+  create/rename/delete round-trip through the API with the right
+  arguments, plus a DOM-structure test confirming a child folder is
+  actually nested inside its parent's own subtree (`<ul
+  class="filevine-tree-children">` inside the parent's `<li>`), not merely
+  indented in a flat list. Verified live, independently of `/test`'s
+  suite: bundled `db.ts` standalone with `esbuild` and built a 3-level
+  nested structure (a case matter → Discovery → IME Reports) against a
+  scratch copy of the real, in-use
+  `~/AppData/Roaming/outlook-sim/outlook-sim.db` — deleting the middle
+  folder ("Discovery") correctly cascaded to its child ("IME Reports")
+  while leaving the unrelated root folder intact. This is also where
+  `/implement` caught and fixed a real bug (cascade-delete originally threw
+  `FOREIGN KEY constraint failed` by deleting parents before children) —
+  now covered by a dedicated regression test.
+- **AC4** (associate any folder with one persona as its client, change/
+  un-associate later) — **pass**. `db.test.ts` and `FileVineView.test.tsx`
+  both cover associate → change → un-associate, the latter also asserting
+  the UI's "Client: Name (Role)" summary text updates correctly and that
+  an existing association is pre-selected in the `<select>` on load (not
+  just settable). Live check above associated the matter folder with a
+  real persona email (`c.torres@email.test`) from the real, in-use
+  scenario data.
+- **AC5** (folder structure and associations persist across restarts) —
+  **pass**. `db.test.ts` covers a close/reopen cycle at the unit level;
+  the live check above independently confirms the same against the real
+  on-disk database file — the 3-folder nested structure and the client
+  association both came back identical after a full `MailDb` close/reopen.
+  Real on-disk `outlook-sim.db` confirmed byte-for-byte unchanged (md5)
+  afterward — only the scratch copy was written to.
+
+No live multi-window Electron GUI click-through attempted. Unlike prior
+features' sandboxed sessions, this one runs on a real Windows machine
+rather than a headless Linux sandbox, but as a background job it still has
+no attached display to drive a real Electron window through — same
+non-blocking gap as every prior feature, for a different underlying
+reason. The standalone live-data check plus the RTL-driven `App.test.tsx`/
+`FileVineView.test.tsx` coverage (which exercises the real rendered DOM,
+just not a real OS window) is the strongest available substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

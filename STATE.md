@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 047 (FileVine tab — folder structure and client association)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 047 (FileVine tab — folder structure and client
+  association) validated: lint/typecheck/build pass; full test suite
+  (451/451) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 5 ACs
+  verified by tests + code inspection plus a live end-to-end check —
+  bundled `db.ts` standalone with `esbuild` and built a 3-level nested
+  folder structure with a real persona client association against a
+  scratch copy of the real, in-use
+  `~/AppData/Roaming/outlook-sim/outlook-sim.db`: nesting, client
+  association, and a close/reopen cycle all round-tripped correctly, and
+  deleting a mid-tree folder correctly cascaded to its child while leaving
+  an unrelated sibling intact; real on-disk DB confirmed byte-for-byte
+  unchanged (md5) afterward. No live multi-window Electron GUI
+  click-through attempted — this session runs on a real Windows machine
+  but, as a background job, has no attached display; same non-blocking
+  gap as every prior feature, different underlying reason. Phase set to
+  `accept`.
 - 2026-09-14 — feature 047 (FileVine tab — folder structure and client
   association) tested: added 21 tests (430 → 451, all passing; re-run 3x,
   stable), all AC-traceable by number, across 4 layers — `db.test.ts` (+7,
