@@ -103,7 +103,8 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       attachments,
       fromName: identity.displayName,
       fromEmail: identity.fromEmail,
-      timestamp
+      timestamp,
+      isRead: folderId === 'sent'
     }
     let messageId: string
     if (draftId) {

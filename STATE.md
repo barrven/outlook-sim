@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 023 (Fix — sent mail created as read, not unread)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
+  implemented: `ComposeWindow.tsx`'s single `persist()` call site (shared by
+  Send/Reply/Reply All/Forward and Save & Close) now sends `isRead: folderId
+  === 'sent'` to `messages.create`/`messages.update`; every incoming-mail
+  creation path (`personaReply.ts`, unsolicited-mail `scheduler.ts`,
+  `scenarioMailScheduler.ts`, `scenarioPack.ts` inbox seeding) never sets
+  `isRead` and was confirmed by inspection to be untouched, still defaulting
+  to unread via `MailDb.createMessage`. No retroactive migration — only the
+  renderer's sent value changed, not `db.ts`'s insert/update SQL or
+  defaulting. lint/typecheck/build pass, existing suite still 406/406
+  unchanged; phase set to `test`.
 - 2026-09-14 — iteration 2 backlog generated: decomposed the revised spec's
   new/changed Core Requirements into 27 new features (023-049) — 4 bug
   fixes (023-026, high priority: sent-mail-read, persona-reply quoting,

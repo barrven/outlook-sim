@@ -1,7 +1,7 @@
 ---
 id: 023
 title: Fix — sent mail created as read, not unread
-status: backlog
+status: testing
 priority: high
 ---
 
@@ -21,7 +21,20 @@ applies to genuinely incoming mail.
       update/migration of historical data
 
 ## Implementation Notes
-_Filled in during `/implement` — approach taken, files touched, tradeoffs._
+Single call site drives all of Send/Reply/Reply All/Forward: `ComposeWindow.tsx`'s
+`persist()` already receives the destination `folderId` ('sent' | 'drafts') and
+was the only place building the fields object passed to `messages.create`/
+`messages.update` for trainee-authored mail. Added `isRead: folderId === 'sent'`
+to that object — Send lands read, Save & Close (drafts) stays unread as before
+(unaffected, not in scope). `MailDb.createMessage` already defaulted `isRead:
+false` when the field is omitted, and every incoming-mail creation path
+(`personaReply.ts`, `scheduler.ts`'s unsolicited mail, `scenarioMailScheduler.ts`,
+`scenarioPack.ts`'s inbox seeding) never sets `isRead`, so all of those are
+untouched and still default to unread — verified by inspection, no code changes
+needed there. No retroactive migration: existing rows are untouched since the
+insert/update SQL and defaulting logic in `db.ts` were not changed, only the
+value the renderer sends. Files touched: `src/renderer/src/ComposeWindow.tsx`.
+lint/typecheck/build pass; existing suite still 406/406 unchanged.
 
 ## Test Notes
 _Filled in during `/test` — what's covered, what's deliberately not._
