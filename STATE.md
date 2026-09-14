@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 024 (Fix — persona replies quote the prior thread chain)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
+  chain) implemented: extracted the trainee's own reply-quoting format
+  (feature 005) out of `composeIntent.ts`'s private `quoteBody()` into a new
+  shared `src/shared/quoteBody.ts`, used by both `composeIntent.ts`
+  (renderer) and `personaReply.ts` (main) — guarantees the two never drift
+  apart rather than just documenting a matching convention. Persona replies
+  now build their stored body as `text + quoteBody(sentMessage)`; the
+  "immediately-preceding message" is exactly `sentMessage` (the trainee's
+  message that triggered the reply), which the function's existing early-
+  return already guarantees is non-null, so the no-prior-message guard (AC4)
+  holds structurally rather than via an added conditional. One existing
+  `personaReply.test.ts` assertion needed a compile/content touch-up
+  (exact-body match → `toContain` checks) since the body now legitimately
+  contains more than just the LLM's text; `composeIntent.test.ts` untouched
+  and still passing, confirming the extraction didn't change trainee-side
+  behavior. lint/typecheck/build pass, existing suite still 408/408; also
+  live-verified the exact quote format with a standalone `tsx` script
+  against a real `MailDb`/`SimClock`. phase set to `test`.
 - 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
   accepted by user; logged to CHANGELOG; active feature set to 024 (Fix —
   persona replies quote the prior thread chain), phase set to `implement`.

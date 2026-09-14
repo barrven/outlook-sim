@@ -1,4 +1,5 @@
 import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
+import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
@@ -115,10 +116,16 @@ export async function generatePersonaReply(
     return { ok: true, replied: false }
   }
 
+  // Quote the message being replied to (the one that triggered this call),
+  // the same "On <date>, X wrote:" convention the trainee's own
+  // Reply/Reply All/Forward uses (feature 005) — sentMessage is always
+  // present here (checked above), so there's never an empty quote block.
+  const body = `${text}${quoteBody(sentMessage)}`
+
   const message = db.createMessage({
     folderId: 'inbox',
     subject: sentMessage.subject,
-    body: text,
+    body,
     fromName: persona.displayName,
     fromEmail: persona.email,
     toName: identity.displayName,

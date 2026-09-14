@@ -98,7 +98,6 @@ describe('generatePersonaReply', () => {
       expect(result.message).toMatchObject({
         folderId: 'inbox',
         subject: 'Lunch plans',
-        body: 'Sure, noon works!',
         fromName: 'Morgan Rivera',
         fromEmail: 'morgan@example.com',
         toName: 'Jordan Trainee',
@@ -106,6 +105,8 @@ describe('generatePersonaReply', () => {
         timestamp: 5000,
         isRead: false
       })
+      expect(result.message.body).toContain('Sure, noon works!')
+      expect(result.message.body).toContain('Want to grab lunch?')
     }
     expect(db.listMessages('inbox')).toHaveLength(1)
     nowSpy.mockRestore()

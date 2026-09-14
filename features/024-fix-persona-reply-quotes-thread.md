@@ -1,7 +1,7 @@
 ---
 id: 024
 title: Fix — persona replies quote the prior thread chain
-status: backlog
+status: testing
 priority: high
 ---
 
@@ -24,7 +24,37 @@ the body (feature 005).
       guard it) doesn't crash or produce a malformed quote block
 
 ## Implementation Notes
-_Filled in during `/implement` — approach taken, files touched, tradeoffs._
+Extracted the trainee's own reply-quoting format (feature 005) out of
+`composeIntent.ts`'s private `quoteBody()` into a new shared function,
+`src/shared/quoteBody.ts` — `composeIntent.ts` (renderer) and
+`personaReply.ts` (main) both now call the identical implementation, so
+there's no risk of the two formats drifting apart (satisfies AC2 by
+construction rather than by convention-copying). `personaReply.ts` now
+builds the persona's reply body as `` `${text}${quoteBody(sentMessage)}` ``
+— `sentMessage` (the trainee's message that triggered the reply) is exactly
+"the immediately-preceding message" a real persona would be replying to, and
+it's already guaranteed non-null by the existing early-return a few lines up
+(`db.getMessage(sentMessageId)` not found → error), so the quote block can
+never be built from a missing message (AC4's guard holds structurally, not
+via an added conditional). The `thread` array (used for the LLM prompt,
+unchanged) was deliberately not used for the quote source — it's a broader
+multi-message transcript, whereas the quote's job is narrower ("what
+directly preceded this reply").
+
+Files touched: `src/shared/quoteBody.ts` (new), `src/renderer/src/composeIntent.ts`
+(quoteBody extracted, behavior unchanged — confirmed via existing
+`composeIntent.test.ts`, still 100% passing untouched), `src/main/llm/personaReply.ts`.
+One existing test (`personaReply.test.ts`'s Inbox-insert test) needed a
+compile/assertion touch-up since it asserted an exact `body` string that the
+new quote block now extends — changed to `toContain` checks for both the
+new reply text and the quoted original; no other behavior changed.
+lint/typecheck/build pass; existing suite still 408/408 (17/18 personaReply
+tests unaffected, 1 touched). Live-verified the exact output format with a
+standalone `tsx` script against a real, non-mocked `MailDb`/`SimClock` — the
+persona reply body came back as `"Sure, noon works!\n\nOn 3/1/2026, 10:00:00
+AM, Jordan Trainee <jordan@example.com> wrote:\n> Want to grab lunch
+tomorrow?"`, byte-for-byte the same header/quote-prefix shape
+`composeIntent.ts` produces for the trainee's own replies.
 
 ## Test Notes
 _Filled in during `/test` — what's covered, what's deliberately not._

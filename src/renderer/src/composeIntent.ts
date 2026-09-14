@@ -1,4 +1,5 @@
 import type { ComposeIntent, MailMessage, MessageRecipient, TraineeIdentity } from '../../shared/data-types'
+import { quoteBody } from '../../shared/quoteBody'
 
 export type { ComposeIntent }
 
@@ -14,15 +15,6 @@ function addSubjectPrefix(subject: string, prefix: 'Re:' | 'Fwd:'): string {
   const trimmed = subject.trim()
   if (new RegExp(`^${prefix}\\s`, 'i').test(trimmed)) return trimmed
   return trimmed ? `${prefix} ${trimmed}` : prefix
-}
-
-function quoteBody(message: MailMessage): string {
-  const header = `On ${new Date(message.timestamp).toLocaleString()}, ${message.fromName} <${message.fromEmail}> wrote:`
-  const quoted = message.body
-    .split('\n')
-    .map((line) => `> ${line}`)
-    .join('\n')
-  return `\n\n${header}\n${quoted}`
 }
 
 export function buildComposeSeed(
