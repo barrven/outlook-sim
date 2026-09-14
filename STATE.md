@@ -3,10 +3,10 @@
 This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
-- **Outer iteration:** 1
-- **Phase:** retro
+- **Outer iteration:** 2
+- **Phase:** spec
 - **Active feature:** _none — backlog complete_
-- **Last updated:** 2026-09-12
+- **Last updated:** 2026-09-14
 
 ## Phases
 
@@ -18,6 +18,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — retro for iteration 1 closed: all 22 backlog features shipped and accepted. Revised `docs/SPEC.md` with the user (three open `BUGS.md` items folded in as Core Requirements, plus a large set of new/changed requirements gathered interactively — Settings scenario-pack/persona enhancements, ribbon rework incl. Settings-in-File-menu and a new About section, mail multi-select + context menu + pop-out windows, calendar view/edit-mode split + pop-out, simulated-clock mini-calendar, a scoped-in lightweight Tasks panel, an element-level styling pass, and a new "FileVine" case-file/matter panel that explicitly reverses a prior non-goal). Outer iteration bumped to 2, phase set to `spec` per the retro routing rule (spec changed this iteration) — `/spec` (or straight to `/features`) is next.
 - 2026-09-12 — feature 020 (calendar recurring events) accepted by user; logged to CHANGELOG; backlog is now fully `done` — no active feature; phase set to `retro`
 - 2026-09-12 — feature 020 (calendar recurring events) validated: lint/typecheck/build pass; full test suite (406/406) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs plus a 7-line type-signature-only fix in `recurrence.ts` (verified the function body is byte-identical, no behavior change); all 4 ACs verified by tests + code inspection plus a live end-to-end check — bundled `db.ts`/`recurrence.ts`/`calendarDates.ts` standalone with `tsx` against a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db` (5 real calendar items): the `recurrence_exceptions` migration ran cleanly, a weekly recurring item + an instance exception survived a simulated restart byte-for-byte, and occurrence expansion was independently re-checked across all 4 view types (day/workWeek/week/month) — specifically closing the one gap the Test Notes themselves flagged as unit-untested (work-week), which came back correct; real on-disk file confirmed byte-for-byte unchanged (md5) afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
 - 2026-09-12 — feature 020 (calendar recurring events) tested: added 33 tests (373 → 406, all passing; re-ran full suite 3x, stable) — new `recurrence.test.ts` (17) covers occurrence expansion (daily/weekly/monthly, DST safety, the monthly-clamping regression itself, exceptions matching by natural start time) and `upsertException`; `CalendarView.test.tsx` (+13) covers the Repeat select, multi-view occurrence display, the recurring 🔁 indicator, and the full "this event vs. the whole series" chooser/edit/delete flows; `db.test.ts` (+3) covers recurrenceRule/recurrenceExceptions defaulting, round-tripping through update, surviving a close/reopen cycle, and the column migration against a simulated pre-020 database. lint/typecheck/build all still pass; phase set to `validate`
