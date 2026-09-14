@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CalendarItem, NewCalendarItem } from '../../shared/data-types'
+import type { FiredReminder, NewCalendarItem } from '../../shared/data-types'
 import { SimClock } from './clock'
 import { MailDb } from './db'
 import { ReminderScheduler } from './reminderScheduler'
@@ -48,7 +48,7 @@ describe('ReminderScheduler', () => {
     scheduler.tick()
 
     expect(onFired).not.toHaveBeenCalled()
-    expect(db.listCalendarItems()[0].reminderFired).toBe(false)
+    expect(db.listCalendarItems()[0].remindersFired).toEqual([])
   })
 
   it('does nothing while running but not yet due', () => {
@@ -64,7 +64,7 @@ describe('ReminderScheduler', () => {
     expect(onFired).not.toHaveBeenCalled()
   })
 
-  it('fires exactly once due and running, marking reminderFired and calling back with the updated item', () => {
+  it('fires exactly once due and running, marking the occurrence fired and calling back with it', () => {
     const created = db.createCalendarItem(makeItem({ startTime: 1_000_000, reminderMinutesBefore: 10 }))
     vi.spyOn(clock, 'now').mockReturnValue(400_000)
     vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 400_000, anchorRealTime: 0, running: true, speed: 1 })
@@ -74,10 +74,10 @@ describe('ReminderScheduler', () => {
     scheduler.tick()
 
     expect(onFired).toHaveBeenCalledTimes(1)
-    const fired = onFired.mock.calls[0][0] as CalendarItem
-    expect(fired.id).toBe(created.id)
-    expect(fired.reminderFired).toBe(true)
-    expect(db.getCalendarItem(created.id)?.reminderFired).toBe(true)
+    const fired = onFired.mock.calls[0][0] as FiredReminder
+    expect(fired.seriesId).toBe(created.id)
+    expect(fired.id).toBe(`${created.id}:${created.startTime}`)
+    expect(db.getCalendarItem(created.id)?.remindersFired).toEqual([created.startTime])
   })
 
   it('does not refire on a subsequent tick once already fired', () => {
@@ -135,9 +135,9 @@ describe('ReminderScheduler', () => {
 
     new ReminderScheduler(db, clock, onFired).tick()
 
-    const firedIds = onFired.mock.calls.map((call) => (call[0] as CalendarItem).id)
-    expect(firedIds.sort()).toEqual([due1.id, due2.id].sort())
-    expect(db.getCalendarItem(notYetDue.id)?.reminderFired).toBe(false)
+    const firedSeriesIds = onFired.mock.calls.map((call) => (call[0] as FiredReminder).seriesId)
+    expect(firedSeriesIds.sort()).toEqual([due1.id, due2.id].sort())
+    expect(db.getCalendarItem(notYetDue.id)?.remindersFired).toEqual([])
   })
 
   it('start() schedules real-time polling and stop() clears it', () => {

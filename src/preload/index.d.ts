@@ -4,6 +4,7 @@ import type {
   CalendarItemPatch,
   ClockState,
   ComposeOpenOptions,
+  FiredReminder,
   Folder,
   LlmGenerateInput,
   LlmGenerateResult,
@@ -101,7 +102,7 @@ declare global {
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
-      onReminderFired: (callback: (item: CalendarItem) => void) => () => void
+      onReminderFired: (callback: (reminder: FiredReminder) => void) => () => void
     }
   }
 }

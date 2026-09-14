@@ -95,21 +95,37 @@ export interface CalendarItem {
   allDay: boolean
   reminderMinutesBefore: number | null
   // Only the series' anchor/template item carries this; individual
-  // occurrences are computed, not stored (see `src/renderer/src/recurrence.ts`).
+  // occurrences are computed, not stored (see `src/shared/recurrence.ts`).
   recurrenceRule: RecurrenceFrequency | null
   // Per-occurrence overrides/deletions for a recurring series; empty for a
   // non-recurring item.
   recurrenceExceptions: CalendarRecurrenceException[]
   itemType: CalendarItemType
-  // Set once the reminder scheduler has fired this item's reminder, so it
-  // never fires twice (including across app restarts).
-  reminderFired: boolean
+  // The `originalStartTime` (see CalendarOccurrence) of every occurrence
+  // whose reminder has already fired, so none of them fire twice —
+  // including across app restarts. For a non-recurring item this holds at
+  // most its own `startTime`, the same "has it fired yet" behavior a plain
+  // boolean gave before recurring reminders needed per-occurrence tracking.
+  remindersFired: number[]
 }
 
-export type NewCalendarItem = Omit<CalendarItem, 'id' | 'reminderFired' | 'recurrenceExceptions'> &
-  Partial<Pick<CalendarItem, 'reminderFired' | 'recurrenceExceptions'>>
+export type NewCalendarItem = Omit<CalendarItem, 'id' | 'remindersFired' | 'recurrenceExceptions'> &
+  Partial<Pick<CalendarItem, 'remindersFired' | 'recurrenceExceptions'>>
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
+
+// Broadcast when the reminder scheduler fires a specific occurrence's
+// reminder. Deliberately not `CalendarItem` itself: `id` here is unique per
+// *occurrence* firing (`seriesId:originalStartTime`), not per series, so two
+// occurrences of the same recurring series firing in the same tick get
+// distinct, independently-dismissible banners; `title`/`startTime` reflect
+// that occurrence's actual (possibly exception-overridden) values.
+export interface FiredReminder {
+  id: string
+  seriesId: string
+  title: string
+  startTime: number
+}
 
 export type LlmProvider = 'openai' | 'anthropic' | 'gemini' | 'xai'
 

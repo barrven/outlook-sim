@@ -299,7 +299,7 @@ describe('applyScenarioPack', () => {
       endTime: expectedStart + 30 * 60_000,
       reminderMinutesBefore: 60,
       itemType: 'deadline',
-      reminderFired: false
+      remindersFired: []
     })
   })
 

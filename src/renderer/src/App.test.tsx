@@ -3,21 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import type { CalendarItem, MailMessage } from '../../shared/data-types'
+import type { FiredReminder, MailMessage } from '../../shared/data-types'
 
-function makeCalendarItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+function makeFiredReminder(overrides: Partial<FiredReminder> = {}): FiredReminder {
   return {
-    id: 'cal-1',
+    id: 'cal-1:1000',
+    seriesId: 'cal-1',
     title: 'Filing deadline',
-    description: '',
     startTime: new Date(2026, 2, 11, 15, 0).getTime(),
-    endTime: null,
-    allDay: false,
-    reminderMinutesBefore: 15,
-    recurrenceRule: null,
-    recurrenceExceptions: [],
-    itemType: 'deadline',
-    reminderFired: true,
     ...overrides
   }
 }
@@ -454,7 +447,7 @@ describe('App shell', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 
     const [onReminderFired] = vi.mocked(window.api.onReminderFired).mock.calls[0]
-    onReminderFired(makeCalendarItem({ title: 'Filing deadline' }))
+    onReminderFired(makeFiredReminder({ title: 'Filing deadline' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Reminder: "Filing deadline"')
 
@@ -468,8 +461,8 @@ describe('App shell', () => {
     await screen.findByRole('button', { name: 'Inbox' })
 
     const [onReminderFired] = vi.mocked(window.api.onReminderFired).mock.calls[0]
-    onReminderFired(makeCalendarItem({ id: 'cal-1', title: 'Filing deadline' }))
-    onReminderFired(makeCalendarItem({ id: 'cal-2', title: 'Client call' }))
+    onReminderFired(makeFiredReminder({ id: 'cal-1:1000', title: 'Filing deadline' }))
+    onReminderFired(makeFiredReminder({ id: 'cal-2:1000', title: 'Client call' }))
 
     expect(await screen.findByText(/Filing deadline/)).toBeInTheDocument()
     expect(screen.getByText(/Client call/)).toBeInTheDocument()

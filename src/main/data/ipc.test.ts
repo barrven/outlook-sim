@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   CalendarItem,
   ClockState,
+  FiredReminder,
   Folder,
   LlmGenerateResult,
   MailMessage,
@@ -565,49 +566,35 @@ describe('registerDataIpcHandlers', () => {
 })
 
 describe('broadcastReminderFired', () => {
-  it('sends the fired calendar item to every open window on the calendar:reminder-fired channel', () => {
-    const item: CalendarItem = {
-      id: 'cal-1',
+  it('sends the fired reminder to every open window on the calendar:reminder-fired channel', () => {
+    const reminder: FiredReminder = {
+      id: 'cal-1:5000',
+      seriesId: 'cal-1',
       title: 'Filing deadline',
-      description: '',
-      startTime: 5000,
-      endTime: null,
-      allDay: false,
-      reminderMinutesBefore: 15,
-      recurrenceRule: null,
-      recurrenceExceptions: [],
-      itemType: 'deadline',
-      reminderFired: true
+      startTime: 5000
     }
     const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
     getAllWindowsMock.mockReset().mockReturnValue([fakeWindow])
 
-    broadcastReminderFired(item)
+    broadcastReminderFired(reminder)
 
-    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', reminder)
   })
 
   it('sends to every open window, not just the first', () => {
-    const item: CalendarItem = {
-      id: 'cal-1',
+    const reminder: FiredReminder = {
+      id: 'cal-1:5000',
+      seriesId: 'cal-1',
       title: 'Filing deadline',
-      description: '',
-      startTime: 5000,
-      endTime: null,
-      allDay: false,
-      reminderMinutesBefore: 15,
-      recurrenceRule: null,
-      recurrenceExceptions: [],
-      itemType: 'deadline',
-      reminderFired: true
+      startTime: 5000
     }
     const windowA: FakeWindow = { webContents: { send: vi.fn() } }
     const windowB: FakeWindow = { webContents: { send: vi.fn() } }
     getAllWindowsMock.mockReset().mockReturnValue([windowA, windowB])
 
-    broadcastReminderFired(item)
+    broadcastReminderFired(reminder)
 
-    expect(windowA.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
-    expect(windowB.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', item)
+    expect(windowA.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', reminder)
+    expect(windowB.webContents.send).toHaveBeenCalledWith('calendar:reminder-fired', reminder)
   })
 })

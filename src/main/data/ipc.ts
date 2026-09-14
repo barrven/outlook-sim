@@ -1,8 +1,8 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
   ApplyScenarioPackResult,
-  CalendarItem,
   CalendarItemPatch,
+  FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
@@ -40,9 +40,9 @@ export function broadcastUnsolicitedMailFailed(error: string): void {
   }
 }
 
-export function broadcastReminderFired(item: CalendarItem): void {
+export function broadcastReminderFired(reminder: FiredReminder): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('calendar:reminder-fired', item)
+    win.webContents.send('calendar:reminder-fired', reminder)
   }
 }
 

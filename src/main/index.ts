@@ -33,7 +33,7 @@ app.whenReady().then(() => {
   )
   scheduler.start()
 
-  const reminderScheduler = new ReminderScheduler(mailDb, simClock, (item) => broadcastReminderFired(item))
+  const reminderScheduler = new ReminderScheduler(mailDb, simClock, (reminder) => broadcastReminderFired(reminder))
   reminderScheduler.start()
 
   const scenarioMailScheduler = new ScenarioMailScheduler(mailDb, configStore, simClock, () =>

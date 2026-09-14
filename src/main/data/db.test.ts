@@ -626,7 +626,7 @@ describe('MailDb', () => {
     db = new MailDb(baseDir)
   })
 
-  it('defaults a new calendar item to reminderFired: false, and round-trips it through update', () => {
+  it('defaults a new calendar item to remindersFired: [], and round-trips it through update', () => {
     const created = db.createCalendarItem({
       title: 'Filing deadline',
       description: '',
@@ -637,11 +637,11 @@ describe('MailDb', () => {
       recurrenceRule: null,
       itemType: 'deadline'
     })
-    expect(created.reminderFired).toBe(false)
+    expect(created.remindersFired).toEqual([])
 
-    const fired = db.updateCalendarItem(created.id, { reminderFired: true })
-    expect(fired?.reminderFired).toBe(true)
-    expect(db.getCalendarItem(created.id)?.reminderFired).toBe(true)
+    const fired = db.updateCalendarItem(created.id, { remindersFired: [5000] })
+    expect(fired?.remindersFired).toEqual([5000])
+    expect(db.getCalendarItem(created.id)?.remindersFired).toEqual([5000])
   })
 
   it('persists a fired reminder across a close/reopen cycle', () => {
@@ -655,17 +655,17 @@ describe('MailDb', () => {
       recurrenceRule: null,
       itemType: 'deadline'
     })
-    db.updateCalendarItem(created.id, { reminderFired: true })
+    db.updateCalendarItem(created.id, { remindersFired: [5000] })
     db.close()
 
     const reopened = new MailDb(baseDir)
-    expect(reopened.getCalendarItem(created.id)?.reminderFired).toBe(true)
+    expect(reopened.getCalendarItem(created.id)?.remindersFired).toEqual([5000])
     reopened.close()
     // reassign so the outer afterEach's db.close() doesn't double-close
     db = new MailDb(baseDir)
   })
 
-  it('adds the reminder_fired column when opening a database created before reminders existed', () => {
+  it('adds the reminders_fired column when opening a database created before reminders existed', () => {
     db.close()
     const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
     raw.exec('DROP TABLE calendar_items')
@@ -687,10 +687,46 @@ describe('MailDb', () => {
     raw.close()
 
     const migrated = new MailDb(baseDir)
-    expect(migrated.getCalendarItem('legacy-1')?.reminderFired).toBe(false)
+    expect(migrated.getCalendarItem('legacy-1')?.remindersFired).toEqual([])
 
-    const fired = migrated.updateCalendarItem('legacy-1', { reminderFired: true })
-    expect(fired?.reminderFired).toBe(true)
+    const fired = migrated.updateCalendarItem('legacy-1', { remindersFired: [5000] })
+    expect(fired?.remindersFired).toEqual([5000])
+
+    migrated.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('backfills reminders_fired from a pre-026 reminder_fired boolean column, using the item\'s own startTime as the fired occurrence', () => {
+    db.close()
+    const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+    raw.exec('DROP TABLE calendar_items')
+    raw.exec(`CREATE TABLE calendar_items (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      start_time INTEGER NOT NULL,
+      end_time INTEGER,
+      all_day INTEGER NOT NULL DEFAULT 0,
+      reminder_minutes_before INTEGER,
+      recurrence_rule TEXT,
+      recurrence_exceptions TEXT NOT NULL DEFAULT '[]',
+      item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline')),
+      reminder_fired INTEGER NOT NULL DEFAULT 0
+    )`)
+    raw.exec(
+      `INSERT INTO calendar_items (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, item_type, reminder_fired)
+       VALUES ('fired-1', 'Already fired', '', 5000, NULL, 0, 15, NULL, 'deadline', 1)`
+    )
+    raw.exec(
+      `INSERT INTO calendar_items (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, item_type, reminder_fired)
+       VALUES ('not-fired-1', 'Not fired yet', '', 6000, NULL, 0, 15, NULL, 'deadline', 0)`
+    )
+    raw.close()
+
+    const migrated = new MailDb(baseDir)
+    expect(migrated.getCalendarItem('fired-1')?.remindersFired).toEqual([5000])
+    expect(migrated.getCalendarItem('not-fired-1')?.remindersFired).toEqual([])
 
     migrated.close()
     // reassign so the outer afterEach's db.close() doesn't double-close

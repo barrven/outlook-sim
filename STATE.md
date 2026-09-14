@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 026 (Fix — recurring event reminders fire per occurrence)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 026 (fix: recurring event reminders fire per
+  occurrence) implemented: root cause was `CalendarItem.reminderFired`
+  being a single boolean on the series' template row, so a recurring
+  series' reminder could fire at most once ever. Replaced it with
+  `remindersFired: number[]` (per-occurrence `originalStartTime` keys);
+  moved `recurrence.ts` to `src/shared/` so the main-process
+  `ReminderScheduler` reuses the exact same occurrence-expansion/exception
+  logic the renderer's calendar view already had, rather than
+  reimplementing it; scheduler now expands each item's occurrences within a
+  lookahead window and fires/marks each due-and-unfired one independently.
+  New `FiredReminder` broadcast type (keyed per-occurrence, not per-series)
+  replaces `CalendarItem` on the `calendar:reminder-fired` channel so
+  multiple fired occurrences of one series get independently-dismissible
+  banners. `db.ts` migration adds `reminders_fired` and back-fills from any
+  pre-026 `reminder_fired` boolean. Live-verified all 4 ACs with a
+  standalone script driving a real `MailDb`/`SimClock`/`ReminderScheduler`
+  through a daily recurring event across 4 simulated days (distinct fires
+  per day, no double-fire, deleted occurrence skipped, edited occurrence
+  fires at its new time not the old one). lint/typecheck/build pass;
+  existing suite 422/422 (421 baseline + 1 new migration test; rest are
+  compile/rename touch-ups, no behavior change to prior features). Phase
+  set to `test`.
 - 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
   copy) accepted by user: asked directly whether the underlying bug
   (`BUGS.md` B004) was still observed live; user confirmed no, likely a

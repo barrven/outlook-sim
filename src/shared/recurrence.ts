@@ -1,6 +1,9 @@
 // Pure logic for expanding a recurring CalendarItem into individual
 // occurrences within a visible date range, kept free of React so it can be
-// unit-tested directly (same convention as calendarDates.ts).
+// unit-tested directly (same convention as calendarDates.ts) and shared
+// between the renderer's calendar view and the main process's reminder
+// scheduler (feature 026), which both need to know an individual
+// occurrence's actual (possibly exception-overridden) start time.
 //
 // A recurring series is stored as a single CalendarItem (the "template"):
 // its own title/description/startTime/endTime/allDay/reminderMinutesBefore/
@@ -8,7 +11,7 @@
 // occurrence has a CalendarRecurrenceException. Occurrences are computed on
 // the fly, never persisted individually — only the template row and its
 // exceptions live in the database.
-import type { CalendarItem, CalendarItemType, CalendarRecurrenceException } from '../../shared/data-types'
+import type { CalendarItem, CalendarItemType, CalendarRecurrenceException } from './data-types'
 
 export interface CalendarOccurrence {
   // The template CalendarItem's id — use this to find/patch the series row.

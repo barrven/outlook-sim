@@ -1,9 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   ApplyScenarioPackResult,
-  CalendarItem,
   CalendarItemPatch,
   ComposeOpenOptions,
+  FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
@@ -98,8 +98,8 @@ const api = {
     ipcRenderer.on('llm:unsolicited-mail-failed', listener)
     return () => ipcRenderer.removeListener('llm:unsolicited-mail-failed', listener)
   },
-  onReminderFired: (callback: (item: CalendarItem) => void) => {
-    const listener = (_event: unknown, item: CalendarItem): void => callback(item)
+  onReminderFired: (callback: (reminder: FiredReminder) => void) => {
+    const listener = (_event: unknown, reminder: FiredReminder): void => callback(reminder)
     ipcRenderer.on('calendar:reminder-fired', listener)
     return () => ipcRenderer.removeListener('calendar:reminder-fired', listener)
   }

@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS calendar_items (
   recurrence_rule TEXT,
   recurrence_exceptions TEXT NOT NULL DEFAULT '[]',
   item_type TEXT NOT NULL DEFAULT 'event' CHECK (item_type IN ('event', 'deadline')),
-  reminder_fired INTEGER NOT NULL DEFAULT 0
+  reminders_fired TEXT NOT NULL DEFAULT '[]'
 );
 `
 
@@ -101,7 +101,7 @@ interface CalendarItemRow {
   recurrence_rule: string | null
   recurrence_exceptions: string
   item_type: string
-  reminder_fired: number
+  reminders_fired: string
 }
 
 function folderFromRow(row: FolderRow): Folder {
@@ -140,7 +140,7 @@ function calendarItemFromRow(row: CalendarItemRow): CalendarItem {
     recurrenceRule: row.recurrence_rule as RecurrenceFrequency | null,
     recurrenceExceptions: JSON.parse(row.recurrence_exceptions),
     itemType: row.item_type as CalendarItem['itemType'],
-    reminderFired: row.reminder_fired === 1
+    remindersFired: JSON.parse(row.reminders_fired)
   }
 }
 
@@ -157,7 +157,7 @@ export class MailDb {
     this.db.exec(SCHEMA)
     this.migrateMessagesCcColumn()
     this.migrateMessagesPreviousFolderIdColumn()
-    this.migrateCalendarItemsReminderFiredColumn()
+    this.migrateCalendarItemsRemindersFiredColumn()
     this.migrateCalendarItemsRecurrenceExceptionsColumn()
     this.seedDefaultFolders()
   }
@@ -178,10 +178,27 @@ export class MailDb {
     }
   }
 
-  private migrateCalendarItemsReminderFiredColumn(): void {
+  // Replaces the single reminder_fired boolean (feature 019) with a JSON
+  // array of fired occurrences' originalStartTime (feature 026, so a
+  // recurring series' reminder can fire once per occurrence instead of only
+  // ever once for the whole series). A pre-026 database still has the old
+  // column; back-fill it into the new one before it goes unused — a
+  // previously-fired item's only fireable occurrence was its own template
+  // start time, so that's the correct (and only) originalStartTime to carry
+  // forward.
+  private migrateCalendarItemsRemindersFiredColumn(): void {
     const columns = this.db.prepare('PRAGMA table_info(calendar_items)').all() as { name: string }[]
-    if (!columns.some((column) => column.name === 'reminder_fired')) {
-      this.db.exec("ALTER TABLE calendar_items ADD COLUMN reminder_fired INTEGER NOT NULL DEFAULT 0")
+    if (columns.some((column) => column.name === 'reminders_fired')) return
+    this.db.exec("ALTER TABLE calendar_items ADD COLUMN reminders_fired TEXT NOT NULL DEFAULT '[]'")
+    if (columns.some((column) => column.name === 'reminder_fired')) {
+      const firedRows = this.db
+        .prepare('SELECT id, start_time FROM calendar_items WHERE reminder_fired = 1')
+        .all() as { id: string; start_time: number }[]
+      for (const row of firedRows) {
+        this.db
+          .prepare('UPDATE calendar_items SET reminders_fired = ? WHERE id = ?')
+          .run(JSON.stringify([row.start_time]), row.id)
+      }
     }
   }
 
@@ -334,11 +351,11 @@ export class MailDb {
 
   createCalendarItem(item: NewCalendarItem): CalendarItem {
     const id = generateId()
-    const full: CalendarItem = { id, reminderFired: false, recurrenceExceptions: [], ...item }
+    const full: CalendarItem = { id, remindersFired: [], recurrenceExceptions: [], ...item }
     this.db
       .prepare(
         `INSERT INTO calendar_items
-          (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, recurrence_exceptions, item_type, reminder_fired)
+          (id, title, description, start_time, end_time, all_day, reminder_minutes_before, recurrence_rule, recurrence_exceptions, item_type, reminders_fired)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
@@ -352,7 +369,7 @@ export class MailDb {
         full.recurrenceRule,
         JSON.stringify(full.recurrenceExceptions),
         full.itemType,
-        full.reminderFired ? 1 : 0
+        JSON.stringify(full.remindersFired)
       )
     return full
   }
@@ -365,7 +382,7 @@ export class MailDb {
       .prepare(
         `UPDATE calendar_items SET
           title = ?, description = ?, start_time = ?, end_time = ?, all_day = ?,
-          reminder_minutes_before = ?, recurrence_rule = ?, recurrence_exceptions = ?, item_type = ?, reminder_fired = ?
+          reminder_minutes_before = ?, recurrence_rule = ?, recurrence_exceptions = ?, item_type = ?, reminders_fired = ?
          WHERE id = ?`
       )
       .run(
@@ -378,7 +395,7 @@ export class MailDb {
         updated.recurrenceRule,
         JSON.stringify(updated.recurrenceExceptions),
         updated.itemType,
-        updated.reminderFired ? 1 : 0,
+        JSON.stringify(updated.remindersFired),
         id
       )
     return updated

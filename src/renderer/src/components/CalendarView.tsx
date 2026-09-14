@@ -15,7 +15,7 @@ import {
   startOfDayMs,
   type CalendarViewId
 } from '../calendarDates'
-import { expandOccurrences, upsertException, type CalendarOccurrence } from '../recurrence'
+import { expandOccurrences, upsertException, type CalendarOccurrence } from '../../../shared/recurrence'
 
 const VIEW_OPTIONS: { id: CalendarViewId; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -515,7 +515,7 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
               recurrenceRule: null,
               recurrenceExceptions: [],
               itemType: openOccurrence.itemType,
-              reminderFired: false
+              remindersFired: []
             }}
             initialStartMs={openOccurrence.startTime}
             hideRecurrenceField

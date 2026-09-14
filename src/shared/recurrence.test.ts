@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { expandOccurrences, upsertException, type CalendarOccurrence } from './recurrence'
-import type { CalendarItem, CalendarRecurrenceException } from '../../shared/data-types'
+import type { CalendarItem, CalendarRecurrenceException } from './data-types'
 
 function day(year: number, monthIndex: number, dayOfMonth: number, hours = 0, minutes = 0): number {
   return new Date(year, monthIndex, dayOfMonth, hours, minutes).getTime()
@@ -18,7 +18,7 @@ function baseItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
     recurrenceRule: 'daily',
     recurrenceExceptions: [],
     itemType: 'event',
-    reminderFired: false,
+    remindersFired: [],
     ...overrides
   }
 }
