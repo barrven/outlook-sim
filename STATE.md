@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** spec
-- **Active feature:** _none — backlog complete_
+- **Phase:** implement
+- **Active feature:** 023 (Fix — sent mail created as read, not unread)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — iteration 2 backlog generated: decomposed the revised spec's
+  new/changed Core Requirements into 27 new features (023-049) — 4 bug
+  fixes (023-026, high priority: sent-mail-read, persona-reply quoting,
+  Sent Items attachments, per-occurrence recurring reminders), the FileVine
+  module (047/048 high priority for the core folder/client/notes CRUD, 049
+  medium for the LLM-context wiring), and the rest of the spec revision's
+  scope (Settings/scenario-pack/persona enhancements, ribbon rework, mail
+  multi-select/context-menu/pop-out, calendar view/edit split + pop-out,
+  clock mini-calendar, Tasks panel, styling pass) at medium/low priority.
+  None of the 22 `done` features from iteration 1 were touched or
+  invalidated — this iteration only adds to/extends them. `features/BACKLOG.md`
+  rewritten to include all 49 entries, ordered by priority. Active feature
+  set to 023 (first backlog item by priority), phase set to `implement`.
 - 2026-09-14 — retro for iteration 1 closed: all 22 backlog features shipped and accepted. Revised `docs/SPEC.md` with the user (three open `BUGS.md` items folded in as Core Requirements, plus a large set of new/changed requirements gathered interactively — Settings scenario-pack/persona enhancements, ribbon rework incl. Settings-in-File-menu and a new About section, mail multi-select + context menu + pop-out windows, calendar view/edit-mode split + pop-out, simulated-clock mini-calendar, a scoped-in lightweight Tasks panel, an element-level styling pass, and a new "FileVine" case-file/matter panel that explicitly reverses a prior non-goal). Outer iteration bumped to 2, phase set to `spec` per the retro routing rule (spec changed this iteration) — `/spec` (or straight to `/features`) is next.
 - 2026-09-12 — feature 020 (calendar recurring events) accepted by user; logged to CHANGELOG; backlog is now fully `done` — no active feature; phase set to `retro`
 - 2026-09-12 — feature 020 (calendar recurring events) validated: lint/typecheck/build pass; full test suite (406/406) re-run 3x, stable; confirmed via `git diff` that `/test` touched only test files/docs plus a 7-line type-signature-only fix in `recurrence.ts` (verified the function body is byte-identical, no behavior change); all 4 ACs verified by tests + code inspection plus a live end-to-end check — bundled `db.ts`/`recurrence.ts`/`calendarDates.ts` standalone with `tsx` against a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db` (5 real calendar items): the `recurrence_exceptions` migration ran cleanly, a weekly recurring item + an instance exception survived a simulated restart byte-for-byte, and occurrence expansion was independently re-checked across all 4 view types (day/workWeek/week/month) — specifically closing the one gap the Test Notes themselves flagged as unit-untested (work-week), which came back correct; real on-disk file confirmed byte-for-byte unchanged (md5) afterward; no live multi-window Electron GUI click-through attempted (no Xvfb, same non-blocking gap as every prior feature); phase set to `accept`
