@@ -84,7 +84,8 @@ describe('ScenarioMailScheduler', () => {
       fromEmail: 'morgan@example.com',
       toName: 'Trainee',
       toEmail: 'trainee@example.com',
-      timestamp: 1_000_000
+      timestamp: 1_000_000,
+      isRead: false
     })
     expect(config.getScheduledScenarioMessages()).toEqual([])
   })

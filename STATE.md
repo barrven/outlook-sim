@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 023 (Fix — sent mail created as read, not unread)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
+  tested: added 2 tests (406 → 408, all passing; re-ran full suite 3x,
+  stable) and extended 8 existing assertions in place of new scaffolding —
+  `ComposeWindow.test.tsx`'s Send/Save & Close/draft-Send/reply/reply-all/
+  forward tests now assert the right `isRead` value (AC1/AC2);
+  `personaReply.test.ts`/`scheduler.test.ts`/`scenarioMailScheduler.test.ts`
+  now assert `isRead: false` on inserted incoming mail (AC3, alongside
+  `scenarioPack.test.ts` which already did); two new `db.test.ts` tests prove
+  `createMessage` doesn't infer `isRead` from `folderId` and that an existing
+  sent message's `isRead: false` survives a close/reopen untouched (AC4, no
+  retroactive migration). lint/typecheck/build all still pass; phase set to
+  `validate`.
 - 2026-09-14 — feature 023 (fix: sent mail created as read, not unread)
   implemented: `ComposeWindow.tsx`'s single `persist()` call site (shared by
   Send/Reply/Reply All/Forward and Save & Close) now sends `isRead: folderId

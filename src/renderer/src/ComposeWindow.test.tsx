@@ -71,7 +71,8 @@ describe('ComposeWindow', () => {
         subject: 'Hello',
         body: 'Body text',
         fromName: IDENTITY.displayName,
-        fromEmail: IDENTITY.fromEmail
+        fromEmail: IDENTITY.fromEmail,
+        isRead: true
       })
     )
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
@@ -189,7 +190,7 @@ describe('ComposeWindow', () => {
 
     await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
     expect(window.api.data.messages.create).toHaveBeenCalledWith(
-      expect.objectContaining({ folderId: 'drafts', subject: 'Draft subject', toEmail: '' })
+      expect.objectContaining({ folderId: 'drafts', subject: 'Draft subject', toEmail: '', isRead: false })
     )
     expect(close).toHaveBeenCalled()
   })
@@ -229,7 +230,12 @@ describe('ComposeWindow', () => {
     await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalled())
     expect(window.api.data.messages.update).toHaveBeenCalledWith(
       'draft-1',
-      expect.objectContaining({ folderId: 'sent', subject: 'Existing draft', toEmail: 'morgan@example.com' })
+      expect.objectContaining({
+        folderId: 'sent',
+        subject: 'Existing draft',
+        toEmail: 'morgan@example.com',
+        isRead: true
+      })
     )
     expect(window.api.data.messages.create).not.toHaveBeenCalled()
     expect(close).toHaveBeenCalled()
@@ -326,7 +332,8 @@ describe('ComposeWindow', () => {
           toName: 'Priya Shah',
           subject: 'Re: Quarterly numbers',
           fromName: IDENTITY.displayName,
-          fromEmail: IDENTITY.fromEmail
+          fromEmail: IDENTITY.fromEmail,
+          isRead: true
         })
       )
       expect(close).toHaveBeenCalled()
@@ -380,7 +387,8 @@ describe('ComposeWindow', () => {
         expect.objectContaining({
           folderId: 'sent',
           toEmail: 'priya@example.com',
-          cc: [{ name: 'Sam Lee', email: 'sam@example.com' }]
+          cc: [{ name: 'Sam Lee', email: 'sam@example.com' }],
+          isRead: true
         })
       )
     })
@@ -409,7 +417,8 @@ describe('ComposeWindow', () => {
         expect.objectContaining({
           folderId: 'sent',
           toEmail: 'morgan@example.com',
-          subject: 'Fwd: Quarterly numbers'
+          subject: 'Fwd: Quarterly numbers',
+          isRead: true
         })
       )
     })

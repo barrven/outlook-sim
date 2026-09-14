@@ -64,6 +64,41 @@ describe('MailDb', () => {
     expect(db.listMessages('drafts')).toEqual([])
   })
 
+  it('does not infer isRead from folderId — the caller (e.g. ComposeWindow) decides, not the db layer', () => {
+    const sent = db.createMessage({
+      folderId: 'sent',
+      subject: 'Sent without an explicit isRead',
+      body: 'body',
+      fromName: 'Trainee',
+      fromEmail: 'trainee@example.com',
+      toName: 'Carol',
+      toEmail: 'carol@example.com',
+      timestamp: 1000
+    })
+
+    expect(sent.isRead).toBe(false)
+  })
+
+  it('does not retroactively change isRead on existing sent messages when the db is reopened (no bulk migration)', () => {
+    const sent = db.createMessage({
+      folderId: 'sent',
+      subject: 'Old sent mail from before the read-on-send fix',
+      body: 'body',
+      fromName: 'Trainee',
+      fromEmail: 'trainee@example.com',
+      toName: 'Carol',
+      toEmail: 'carol@example.com',
+      timestamp: 1000,
+      isRead: false
+    })
+    expect(sent.isRead).toBe(false)
+
+    db.close()
+    db = new MailDb(baseDir)
+
+    expect(db.getMessage(sent.id)?.isRead).toBe(false)
+  })
+
   it('updates a message read state, flag, and categories', () => {
     const message = db.createMessage({
       folderId: 'inbox',

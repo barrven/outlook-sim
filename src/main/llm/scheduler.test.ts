@@ -83,7 +83,8 @@ describe('generateUnsolicitedMail', () => {
         fromEmail: 'morgan@example.com',
         toName: 'Jordan Trainee',
         toEmail: 'jordan@example.com',
-        timestamp: 5000
+        timestamp: 5000,
+        isRead: false
       })
     }
     expect(db.listMessages('inbox')).toHaveLength(1)

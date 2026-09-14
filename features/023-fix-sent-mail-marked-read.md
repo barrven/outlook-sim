@@ -1,7 +1,7 @@
 ---
 id: 023
 title: Fix — sent mail created as read, not unread
-status: testing
+status: validating
 priority: high
 ---
 
@@ -37,7 +37,26 @@ value the renderer sends. Files touched: `src/renderer/src/ComposeWindow.tsx`.
 lint/typecheck/build pass; existing suite still 406/406 unchanged.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 2 tests (406 → 408, all passing; re-ran full suite 3x, stable) and
+extended 8 existing assertions rather than duplicating coverage:
+- **AC1/AC2 (Send/Reply/Reply All/Forward land read):** extended the existing
+  `ComposeWindow.test.tsx` assertions for Send, Save & Close, draft→Send
+  (update path), reply, reply all, and forward to assert `isRead: true` on
+  the sent/updated payload (`false` for the Save & Close/drafts case) — these
+  tests already drove the exact user flows, so adding the field locks in the
+  new behavior without new scaffolding.
+- **AC3 (incoming mail still defaults unread):** added `isRead: false` to the
+  existing insert-assertions in `personaReply.test.ts`, `scheduler.test.ts`
+  (unsolicited mail), and `scenarioMailScheduler.test.ts`; `scenarioPack.test.ts`
+  already asserted this for scenario-pack inbox seeding, unchanged.
+- **AC4 (no retroactive migration):** two new `db.test.ts` tests — one proves
+  `MailDb.createMessage` doesn't infer `isRead` from `folderId` (the decision
+  lives entirely in the caller, i.e. `ComposeWindow.tsx`, not the db layer),
+  and one proves a sent message with `isRead: false` (simulating mail sent
+  before this fix) keeps that value across a close/reopen cycle — no bulk
+  `UPDATE` runs on old rows.
+Deliberately not tested: a live multi-window Electron click-through (no
+Xvfb, same non-blocking gap as every prior feature) — deferred to `/validate`.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
