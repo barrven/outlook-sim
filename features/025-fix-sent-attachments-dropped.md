@@ -1,7 +1,7 @@
 ---
 id: 025
 title: Fix — attachments persist on the Sent Items copy
-status: validating
+status: accept
 priority: high
 ---
 
@@ -109,7 +109,66 @@ feature — no Xvfb here); if the reported bug is real and lives there
 rather than in the traced Node-side path, these tests wouldn't catch it.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 421/421, re-run 3x, stable.
+`git diff a38cbb1..3016fc1` (the `/test` stage's commit) confirms it
+touched only test files and docs (`db.test.ts`, `ComposeWindow.test.tsx`,
+`ReadingPane.test.tsx`, `STATE.md`, `features/025-*.md`,
+`features/BACKLOG.md`) — no implementation drift, consistent with
+`/implement` having made no source change for this feature.
+
+This feature is unusual: `/implement` investigated `BUGS.md` B004 and could
+not reproduce it against the current codebase (see Implementation Notes for
+the full traced path). Validation here is therefore about confirming that
+non-finding, as skeptically as the normal validate stage would confirm a
+fix — not rubber-stamping it.
+
+Acceptance criteria:
+- **AC1** (Sent Items row has the same `attachments` array as submitted) —
+  **pass**. `db.test.ts`'s new tests create a `sent`-folder message with
+  attachments directly (mirroring `ComposeWindow.persist('sent')`'s
+  payload) and assert the returned row matches exactly; also covers the
+  draft-then-update-to-sent path. Verified live, independently of `/test`'s
+  suite: bundled `db.ts` standalone with `esbuild` and ran the exact
+  `createMessage` call `ComposeWindow` makes against a scratch copy of the
+  real, in-use `~/AppData/Roaming/outlook-sim/outlook-sim.db` (a real
+  law-firm training scenario, 4 existing Sent Items) — the created row came
+  back with `attachments: [{"filename":"retainer-signed.pdf"}]` intact, Sent
+  count went 4 → 5 as expected. Real on-disk DB confirmed byte-for-byte
+  unchanged (md5, before `e9c578c7c1cd3f55e3d1fac12bd89943` / after
+  identical) — only the scratch copy was written to.
+- **AC2** (reopening the sent message in the Reading Pane shows the
+  attachments) — **pass**. `ReadingPane.tsx` renders
+  `displayedMessage.attachments` unconditionally — no folder-based branch
+  anywhere near it (confirmed by inspection); new `ReadingPane.test.tsx`
+  test explicitly sets `folderId: 'sent'` and asserts the attachment
+  button renders. The live check above additionally confirms "reopening"
+  (a plain `getMessage` re-fetch, exactly what `ReadingPane` does on
+  selection) returns the same attachments array.
+- **AC3** (draft messages with attachments unaffected — regression check)
+  — **pass**. Pre-existing draft-attachment tests (feature 009) still pass
+  unchanged; new `db.test.ts` test specifically confirms that patching a
+  draft's `subject` without including `attachments` in the patch leaves
+  its existing attachments untouched (i.e. `updateMessage`'s merge doesn't
+  require attachments to be re-sent, and doesn't null them out when
+  absent).
+- **AC4** (Reply/Reply All/Forward with attachments also persist to Sent
+  Items) — **pass**. New `ComposeWindow.test.tsx` tests cover adding an
+  attachment while replying and while forwarding, both asserting
+  `messages.create` is called with `folderId: 'sent'` and the attachment
+  intact; new `db.test.ts` test covers the resulting reply/forward-shaped
+  Sent Items row (quoted body, `Re:` subject) at the persistence layer.
+
+No live multi-window Electron GUI click-through attempted (no Xvfb, same
+non-blocking gap as every prior feature) — the standalone live-data check
+above, run independently during this validate stage rather than reusing
+`/implement`'s, is the strongest available substitute.
+
+**Open item, not a validation failure:** the user has not yet confirmed
+whether they still observe the original bug live. If they have and it's
+real, it must live outside the path traced here (most likely the real
+Electron `contextBridge`/IPC boundary, which this sandbox's Node-only
+checks structurally cannot exercise) — worth a direct live click-through
+at `/accept` before treating this as closed.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

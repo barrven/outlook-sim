@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 025 (Fix — attachments persist on the Sent Items copy)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
+  copy) validated: lint/typecheck/build pass; full test suite (421/421)
+  re-run 3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs, no implementation drift (unsurprising — `/implement` made no
+  source change). All 4 ACs verified by tests + code inspection plus a
+  fresh live check (independent of `/implement`'s): bundled `db.ts`
+  standalone with `esbuild` and ran the exact `createMessage` call
+  `ComposeWindow` makes for Send-with-attachment against a scratch copy of
+  the real, in-use `~/AppData/Roaming/outlook-sim/outlook-sim.db` — the
+  created Sent Items row came back with its attachment intact, Sent count
+  went 4→5 as expected; real on-disk DB confirmed byte-for-byte unchanged
+  (md5) afterward. No live multi-window Electron GUI click-through
+  attempted (no Xvfb, same non-blocking gap as every prior feature).
+  Flagged one open item (not a validation failure): the user hasn't yet
+  confirmed whether they still see the original bug live — if so it must
+  live outside the traced Node-side path (most likely the real
+  contextBridge/IPC boundary), worth a direct check at `/accept`. Phase set
+  to `accept`.
 - 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
   copy) tested: since `/implement` found no code defect, added regression
   coverage closing the gap that let B004 go unverified — 7 new tests
