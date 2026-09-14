@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — Fix: attachments persist on the Sent Items copy (features/025-fix-sent-attachments-dropped.md)
+Investigated the reported bug (`BUGS.md` B004: attachments dropping from
+the Sent Items copy of a message) and could not reproduce it against the
+current code — the full path (compose window → IPC → SQLite persistence →
+Reading Pane) already correctly carries attachments through for sending,
+replying, forwarding, and editing drafts. Confirmed by the user that this
+hasn't been observed recently. No behavior changed; added regression tests
+across the whole path so this can't silently regress later.
+
 ## 2026-09-14 — Fix: persona replies quote the prior thread chain (features/024-fix-persona-reply-quotes-thread.md)
 When a persona replies to a trainee's message, the reply now quotes the
 message it's replying to — "On [date], Name <email> wrote:" followed by the

@@ -1,7 +1,7 @@
 ---
 id: 025
 title: Fix — attachments persist on the Sent Items copy
-status: accept
+status: done
 priority: high
 ---
 
@@ -11,11 +11,11 @@ now retains those attachments on the Sent Items copy; reopening a sent
 message shows the same attachments it was sent with.
 
 ## Acceptance Criteria
-- [ ] Sending a message with one or more attachments results in the Sent
+- [x] Sending a message with one or more attachments results in the Sent
       Items row having the same `attachments` array as what was submitted
-- [ ] Reopening that sent message in the Reading Pane shows the attachments
-- [ ] Draft messages with attachments are unaffected (regression check)
-- [ ] Reply/Reply All/Forward with attachments on the outgoing message also
+- [x] Reopening that sent message in the Reading Pane shows the attachments
+- [x] Draft messages with attachments are unaffected (regression check)
+- [x] Reply/Reply All/Forward with attachments on the outgoing message also
       persist correctly to Sent Items
 
 ## Implementation Notes
@@ -171,4 +171,14 @@ checks structurally cannot exercise) — worth a direct live click-through
 at `/accept` before treating this as closed.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — presented the summary (description, AC-by-AC mapping,
+validation results) via `AskUserQuestion`, plus the specific open question
+this feature left unresolved: whether the user has actually seen
+attachments vanish from Sent Items recently in the live app. User answered
+**"No, haven't seen it recently"** — confirming `BUGS.md` B004 was likely a
+stale report from an earlier dev session (most plausibly mid-development of
+feature 009, the attachments UI, built the same day B004 was reported) that
+no longer applies to the current code. Given that, asked accept / request
+changes / reject; user selected **Accept**. Decision: accepted — as
+verified-not-reproducible, backed by new regression tests locking in
+correct behavior across the full path.

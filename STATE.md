@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 025 (Fix — attachments persist on the Sent Items copy)
+- **Phase:** implement
+- **Active feature:** 026 (Fix — recurring event reminders fire per occurrence)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,13 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
+  copy) accepted by user: asked directly whether the underlying bug
+  (`BUGS.md` B004) was still observed live; user confirmed no, likely a
+  stale report from feature 009's development session. Accepted as
+  verified-not-reproducible, backed by the regression tests added in
+  `/test`; logged to CHANGELOG. Active feature set to 026 (Fix — recurring
+  event reminders fire per occurrence), phase set to `implement`.
 - 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
   copy) validated: lint/typecheck/build pass; full test suite (421/421)
   re-run 3x, stable; confirmed via `git diff` that `/test` touched only test
