@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 025 (Fix — attachments persist on the Sent Items copy)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 025 (fix: attachments persist on the Sent Items
+  copy) implemented: investigated `BUGS.md` B004 across the full data path
+  (`ComposeWindow.tsx`'s `persist()` → `db:messages:create`/`update` IPC
+  passthroughs → `MailDb.createMessage`/`updateMessage` → `ReadingPane.tsx`
+  rendering) and could not reproduce it — every link already correctly
+  threads `attachments` through, confirmed via `git log` (unchanged since
+  feature 002) and a live standalone `esbuild`-bundled `db.ts` check against
+  a real `MailDb` covering all 4 ACs (fresh send, draft-then-send via
+  update, reply/forward-shaped sent message with a freshly-added
+  attachment, and an unrelated draft resave) — attachments round-tripped
+  intact in every case. No source change made; flagged the non-reproduction
+  explicitly rather than guessing at a fix. Left regression-test coverage
+  of the full path for `/test`, per the loop's normal split. Phase set to
+  `test`.
 - 2026-09-14 — feature 024 (fix: persona replies quote the prior thread
   chain) accepted by user; logged to CHANGELOG; active feature set to 025
   (Fix — attachments persist on the Sent Items copy), phase set to
