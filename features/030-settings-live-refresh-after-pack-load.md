@@ -1,7 +1,7 @@
 ---
 id: 030
 title: Settings panels refresh live after a scenario pack load
-status: accept
+status: done
 priority: medium
 ---
 
@@ -183,4 +183,8 @@ component wiring, not mocks of it) are the strongest available
 substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 515/515 re-run 3x stable, validated via fresh code
+inspection since this feature has no main-process component) along with
+the explicit AC4 design decision (unsaved edits are overwritten/discarded,
+not preserved). User said **Accept**.

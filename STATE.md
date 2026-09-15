@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 030 (Settings panels refresh live after a scenario pack load)
+- **Phase:** implement
+- **Active feature:** 031 (Settings — load personas from a JSON file)
 - **Last updated:** 2026-09-15
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) accepted by user; logged to CHANGELOG. Active feature set to
+  031 (Settings — load personas from a JSON file, next in BACKLOG.md
+  table order), phase set to `implement`.
 - 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
   pack load) validated: lint/typecheck/build pass; full test suite
   (515/515) re-run 3x, stable; confirmed via `git diff` that `/test`

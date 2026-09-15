@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Settings panels refresh live after a scenario pack load (features/030-settings-live-refresh-after-pack-load.md)
+If Settings is open (on the Personas section, or the System Prompt
+section) when a scenario pack is loaded, it now reflects the newly loaded
+data immediately, without needing to close and reopen Settings. Loading a
+pack while Settings is closed is unaffected, as before. An in-progress
+unsaved edit in an open Settings section is overwritten by the pack's
+data rather than preserved — consistent with the destructive-replace
+confirmation the trainee already agrees to when loading a pack.
+
 ## 2026-09-15 — Scenario packs include the system prompt (features/029-scenario-pack-system-prompt.md)
 Save Scenario Pack now writes the current system prompt into the pack's
 JSON alongside the existing inbox/personas/calendar/timed-messages, and
