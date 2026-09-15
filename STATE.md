@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 029 (Scenario packs include the system prompt)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  tested: added 8 tests (498 → 506, all passing; re-run 3x, stable), all
+  AC-traceable by number, plus 2 existing tests extended in place, all in
+  `scenarioPack.test.ts` — `validateScenarioPack` (+4): present/absent/
+  explicitly-empty `systemPrompt` parse correctly (absent stays
+  `undefined`, not defaulted to `''` like every other field), and a
+  non-string value is rejected with a clear error. `applyScenarioPack`
+  (+3): a pack's system prompt replaces the current one, an explicitly
+  empty one clears it, and a hand-constructed pre-029-shaped pack (key
+  deleted from the JSON) applies without throwing and leaves the current
+  system prompt untouched. `buildScenarioPack` (+1, plus the existing
+  comprehensive round-trip test extended): a configured system prompt is
+  included when building, and the round-trip test now proves it survives
+  build → real `JSON.stringify`/`parse` → apply into a completely fresh
+  store, byte-for-byte, alongside the already-covered
+  personas/inbox/calendar/timed-messages. lint/typecheck/build all pass.
+  Test Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 029 (Scenario packs include the system prompt)
   implemented: added `systemPrompt?: string` to `ScenarioPack` — genuinely
   optional (`undefined`), not defaulted to `''` like other fields, so a

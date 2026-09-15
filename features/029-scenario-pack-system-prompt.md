@@ -1,7 +1,7 @@
 ---
 id: 029
 title: Scenario packs include the system prompt
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -78,7 +78,45 @@ tests added here — full coverage is `/test`'s job next). Phase set to
 `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 8 tests, all in `scenarioPack.test.ts` (498 → 506, all passing,
+re-run 3x stable), plus 2 existing tests extended in place — all
+AC-traceable by number:
+
+- **`validateScenarioPack`** (+4, plus the existing "defaults ... to empty
+  arrays when omitted entirely" test extended) — a present `systemPrompt`
+  parses through unchanged; an explicitly empty one (`''`) is preserved as
+  empty, not conflated with "absent"; a pack with no `systemPrompt` key at
+  all parses with it `undefined` (AC3 — the extended "omitted entirely"
+  test asserts this directly, not just "no crash"); a non-string
+  `systemPrompt` is rejected with the same clear per-field error message
+  convention every other field already uses.
+- **`applyScenarioPack`** (+3) — AC2: a pack's system prompt replaces the
+  current one; a pack with an *explicitly empty* system prompt clears the
+  current one (proving AC2's "replacing whatever was configured before"
+  applies even when the new value is empty, not just non-empty). AC3: a
+  hand-constructed pre-029-shaped pack (parsed via `validateScenarioPack`
+  with the `systemPrompt` key deleted from the JSON first) applies without
+  throwing and leaves the current system prompt completely untouched.
+- **`buildScenarioPack`** (+1 dedicated test, plus the existing
+  comprehensive "round-trips through validateScenarioPack and
+  applyScenarioPack without data loss" test extended) — AC1: a configured
+  system prompt is included in the built pack. AC4: the round-trip test
+  now also sets a real system prompt before building, asserts it's on the
+  built pack, serializes through actual `JSON.stringify`/`JSON.parse` (as
+  a real save/load would), applies into a *completely fresh*
+  `MailDb`/`ConfigStore`/`SimClock`, and asserts the system prompt comes
+  back byte-for-byte identical alongside the personas/inbox/calendar/
+  timed-messages already covered there — proving the whole round trip,
+  not just isolated apply/build halves.
+
+Deliberately not covered: real Electron IPC/contextBridge serialization,
+and the actual file-system Save/Load dialogs (`scenario:savePack`/
+`scenario:pickPack` IPC handlers) — unchanged by this feature, since it's
+`applyScenarioPack`/`buildScenarioPack` (the functions those handlers
+call) that carry the new behavior, and those are exercised directly here.
+No renderer test changes needed — `SettingsView.tsx`'s Save/Load Scenario
+Pack UI doesn't inspect pack contents. Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
