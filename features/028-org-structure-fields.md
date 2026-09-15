@@ -1,7 +1,7 @@
 ---
 id: 028
 title: Trainee identity & personas — org-structure fields
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -123,7 +123,50 @@ Deliberately not covered: real Electron IPC/contextBridge serialization
 re-run 3x, stable; lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 498/498, re-run 3x, stable.
+`git diff affdca0..e59a380` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria, each checked independently of `/implement`'s and
+`/test`'s own checks:
+
+- **AC1** (Trainee Identity form has Reports To/Department, saved/loaded
+  alongside existing fields) — **pass**. Confirmed by code inspection:
+  `SettingsView.tsx`'s `handleSaveIdentity` includes both in the saved
+  `TraineeIdentity` object, and the loading `useEffect` populates both
+  from `identity.get()`. Independently re-verified live below.
+- **AC2** (Persona form has a free-text Reports To field, saved/loaded
+  alongside existing fields) — **pass**. Confirmed by inspection:
+  `PersonasSettings.tsx`'s `handleSubmit` spreads the whole form
+  (including `reportsTo`) onto the persona; it's a plain text `<input>`,
+  not a dropdown of configured personas, matching the spec's explicit
+  "may report to someone outside the configured cast."
+- **AC3** (both fields optional; persist across restarts) — **pass**.
+  `db.test.ts`/`config.test.ts`-style unit coverage plus the live check
+  below confirm persistence across a real close/reopen; an explicit blank
+  value round-trips as `''`, not omitted or coerced.
+- **AC4** (pre-feature data loads without error, defaulting to empty) —
+  **pass**, and unusually strongly confirmed: this session's own real,
+  in-use `~/.config/outlook-sim/config/identity.json` and `personas.json`
+  genuinely predate this feature (no synthetic legacy fixture needed) —
+  `identity.json` has no `reportsTo`/`department` keys at all, and none of
+  its 15 real personas have `reportsTo`. Loading them via a fresh
+  `esbuild`-bundled `config.ts` against a scratch copy did not throw, and
+  every reader defaulted the missing fields to `''` while leaving every
+  other field (names, roles, bios, etc.) intact — then a further
+  round-trip (setting real values for the trainee's identity and one
+  persona) persisted correctly while every *other* persona correctly kept
+  its `''` default (not accidentally overwritten by the map). Real on-disk
+  config directory confirmed byte-for-byte unchanged (md5) afterward —
+  only the scratch copy was written to.
+
+No live multi-window Electron GUI click-through attempted — same
+non-blocking sandbox gap noted in every prior feature (no attached
+display). The RTL-driven test coverage plus the live check against this
+session's own real production config data are the strongest available
+substitute — arguably a more convincing AC4 check than a synthetic
+fixture would have been, since it proves the real trainee's actual saved
+data (not a stand-in shaped to match the bug) survives the upgrade.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

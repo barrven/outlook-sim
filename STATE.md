@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 028 (Trainee identity & personas — org-structure fields)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) validated: lint/typecheck/build pass; full test suite
+  (498/498) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests + code inspection plus an unusually strong
+  independent live check — this session's own real, in-use
+  `~/.config/outlook-sim/config/identity.json`/`personas.json` genuinely
+  predate this feature (no synthetic fixture needed): loading them via a
+  fresh `esbuild`-bundled `config.ts` against a scratch copy didn't throw,
+  every reader defaulted the missing `reportsTo`/`department` to `''`
+  while leaving all other real data (15 personas, trainee identity)
+  intact, and a further round-trip of real org-structure values persisted
+  correctly without disturbing other personas' defaults. Real on-disk
+  config confirmed byte-for-byte unchanged (md5) afterward. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. Phase set to
+  `accept`.
 - 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
   fields) tested: added 13 tests (485 → 498, all passing; re-run 3x,
   stable), all AC-traceable by number, across 3 layers — `config.test.ts`
