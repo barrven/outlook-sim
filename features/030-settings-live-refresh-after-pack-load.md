@@ -1,7 +1,7 @@
 ---
 id: 030
 title: Settings panels refresh live after a scenario pack load
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -92,7 +92,44 @@ existing test needed updates, and no new tests added here — full
 coverage is `/test`'s job next). Phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 9 tests across 2 files (506 → 515, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`PersonasSettings.test.tsx`** (+5, unit-level on the component in
+  isolation via `rerender`) — AC1: bumping `reloadKey` refetches the
+  persona list and shows the new data, without unmounting/remounting;
+  re-rendering with the *same* `reloadKey` does not trigger an extra
+  fetch (proving the effect is keyed correctly, not just re-running on
+  every render). AC4: a `reloadKey` bump discards an in-progress unsaved
+  "+ New Persona" form (the Display Name field and its typed text are
+  gone, but the "+ New Persona" button is back — a clean close, not a
+  crash) and, separately, an in-progress unsaved *edit* form the same way
+  (asserted via `queryByDisplayValue`, and that `personas.set` was never
+  called — nothing was silently saved either). Plus a backward-
+  compatibility check: rendering with no `reloadKey` prop at all (every
+  existing call site before this feature) still fetches exactly once on
+  mount, unchanged.
+- **`SettingsView.test.tsx`** (+4, integration-level through the real
+  parent/child wiring) — AC1: loading a pack updates the visible persona
+  list in place, with the Provider section's own field still present
+  throughout (proof nothing navigated away). AC2: loading a pack updates
+  the visible System Prompt textarea the same way. AC3: unmounting
+  `SettingsView` (simulating closing it) and mounting a fresh instance
+  with different underlying data shows the fresh data, cleanly, with
+  nothing carried over from the previous instance — the actual mechanism
+  behind "loading while closed is unaffected." AC4: typing an unsaved
+  System Prompt edit, then loading a pack, shows the pack's system prompt
+  (not the unsaved draft), and confirms `systemPrompt.set` was never
+  called (the discard is silent state replacement, not an accidental
+  save).
+
+Deliberately not covered: real Electron IPC/contextBridge serialization
+(same non-blocking sandbox gap noted in every prior feature). The literal
+"scenario pack loaded via some means while Settings is closed" scenario
+isn't separately testable through the UI, since the only way to load a
+pack at all is the button inside Settings — AC3 is instead verified via
+the unmount/remount behavior that's the actual mechanism guaranteeing it
+holds. Full suite re-run 3x, stable; lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

@@ -38,7 +38,8 @@ const SCENARIO_PACK: ScenarioPack = {
   ],
   inbox: [],
   calendarItems: [],
-  timedMessages: []
+  timedMessages: [],
+  systemPrompt: 'Domain: insurance claims intake. Be terse and professional.'
 }
 
 function providerSection(): ReturnType<typeof within> {
@@ -59,6 +60,10 @@ function sessionSection(): ReturnType<typeof within> {
 
 function scenarioPackSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'Scenario Pack' }))
+}
+
+function personasSection(): ReturnType<typeof within> {
+  return within(screen.getByRole('region', { name: 'Personas' }))
 }
 
 describe('SettingsView', () => {
@@ -613,6 +618,114 @@ describe('SettingsView', () => {
       await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
       expect(confirmSpy).toHaveBeenCalledTimes(1)
       expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Settings panels refresh live after a scenario pack load (feature 030)', () => {
+    it('030 AC1: updates the visible persona list without navigating away and back', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([])
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await personasSection().findByText('No personas yet.')
+
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([
+        {
+          id: 'p1',
+          displayName: 'Morgan Rivera',
+          email: 'morgan@example.com',
+          role: 'Claims Adjuster',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: '',
+          isClient: false,
+          reportsTo: ''
+        }
+      ])
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      expect(await personasSection().findByText('Morgan Rivera')).toBeInTheDocument()
+      expect(personasSection().queryByText('No personas yet.')).not.toBeInTheDocument()
+      // Still the same open Settings view — other sections are untouched, no navigation happened.
+      expect(providerSection().getByLabelText('Provider')).toBeInTheDocument()
+    })
+
+    it('030 AC2: updates the visible System Prompt text the same way', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'Old prompt.' })
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      const textarea = systemPromptSection().getByRole('textbox')
+      expect(textarea).toHaveValue('Old prompt.')
+
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({
+        systemPrompt: SCENARIO_PACK.systemPrompt ?? ''
+      })
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      await waitFor(() => expect(textarea).toHaveValue(SCENARIO_PACK.systemPrompt))
+    })
+
+    it('030 AC3: closing and reopening Settings fetches fresh data independently — nothing leaks from a previous session', async () => {
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'First session prompt' })
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([])
+
+      const { unmount } = render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      expect(systemPromptSection().getByRole('textbox')).toHaveValue('First session prompt')
+      unmount()
+
+      // A scenario pack could have loaded while this instance didn't exist — closing
+      // Settings unmounts it entirely, so there's nothing here to have missed it.
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'Second session prompt' })
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([
+        {
+          id: 'p1',
+          displayName: 'Reopened Persona',
+          email: 'reopened@example.com',
+          role: '',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: '',
+          isClient: false,
+          reportsTo: ''
+        }
+      ])
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      expect(systemPromptSection().getByRole('textbox')).toHaveValue('Second session prompt')
+      expect(await personasSection().findByText('Reopened Persona')).toBeInTheDocument()
+    })
+
+    it('030 AC4: an in-progress unsaved System Prompt edit is overwritten (not preserved) by a pack load', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: '' })
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      const textarea = systemPromptSection().getByRole('textbox')
+      await user.type(textarea, 'unsaved draft, never saved')
+      expect(textarea).toHaveValue('unsaved draft, never saved')
+
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({
+        systemPrompt: SCENARIO_PACK.systemPrompt ?? ''
+      })
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      await waitFor(() => expect(textarea).toHaveValue(SCENARIO_PACK.systemPrompt))
+      expect(window.api.data.systemPrompt.set).not.toHaveBeenCalled()
     })
   })
 

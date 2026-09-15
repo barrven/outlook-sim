@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 030 (Settings panels refresh live after a scenario pack load)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) tested: added 9 tests (506 → 515, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 2 files —
+  `PersonasSettings.test.tsx` (+5, unit-level via `rerender`): a
+  `reloadKey` bump refetches and shows new data without unmount/remount,
+  an unchanged `reloadKey` doesn't cause an extra fetch, an in-progress
+  unsaved create *and* edit form are both discarded cleanly on a
+  `reloadKey` bump (asserted no accidental save either), and a bare
+  render with no `reloadKey` prop stays backward compatible;
+  `SettingsView.test.tsx` (+4, integration-level): loading a pack updates
+  the visible persona list and System Prompt text in place (no
+  navigation), unmounting/remounting Settings (the actual mechanism
+  behind "closed is unaffected") shows fresh data with nothing carried
+  over, and an in-progress unsaved System Prompt edit is overwritten by a
+  pack load without ever being saved. lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
   pack load) implemented: `SettingsView.tsx`'s `handleLoadScenarioPack`
   now refreshes System Prompt directly (re-fetches into local state) and

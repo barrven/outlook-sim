@@ -236,4 +236,72 @@ describe('PersonasSettings', () => {
     expect(screen.queryByText('Morgan Rivera')).not.toBeInTheDocument()
     expect(screen.getByText('Sam Lee')).toBeInTheDocument()
   })
+
+  // reloadKey (feature 030 — Settings live-refresh after a scenario pack load)
+
+  it('030 AC1: refetches the persona list when reloadKey changes, without needing to unmount/remount', async () => {
+    vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([PERSONA])
+
+    const { rerender } = render(<PersonasSettings reloadKey={0} />)
+    expect(await screen.findByText('Morgan Rivera')).toBeInTheDocument()
+
+    const otherPersona: Persona = { ...PERSONA, id: 'p2', displayName: 'Sam Lee', email: 'sam@example.com' }
+    vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([otherPersona])
+    rerender(<PersonasSettings reloadKey={1} />)
+
+    expect(await screen.findByText('Sam Lee')).toBeInTheDocument()
+    expect(screen.queryByText('Morgan Rivera')).not.toBeInTheDocument()
+    expect(window.api.data.personas.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('030: does not refetch merely on re-render when reloadKey stays the same', async () => {
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    const { rerender } = render(<PersonasSettings reloadKey={0} />)
+    await screen.findByText('Morgan Rivera')
+
+    rerender(<PersonasSettings reloadKey={0} />)
+
+    expect(window.api.data.personas.get).toHaveBeenCalledTimes(1)
+  })
+
+  it('030 AC4: discards an in-progress unsaved create form when reloadKey changes (a pack load), rather than leaving it open', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+
+    const { rerender } = render(<PersonasSettings reloadKey={0} />)
+    await screen.findByText('No personas yet.')
+    await user.click(screen.getByRole('button', { name: '+ New Persona' }))
+    await user.type(screen.getByLabelText('Display Name'), 'Unsaved Draft')
+    expect(screen.getByLabelText('Display Name')).toHaveValue('Unsaved Draft')
+
+    rerender(<PersonasSettings reloadKey={1} />)
+
+    await waitFor(() => expect(screen.queryByLabelText('Display Name')).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: '+ New Persona' })).toBeInTheDocument()
+  })
+
+  it('030 AC4: discards an in-progress unsaved edit form the same way', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    const { rerender } = render(<PersonasSettings reloadKey={0} />)
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    await user.clear(screen.getByLabelText('Display Name'))
+    await user.type(screen.getByLabelText('Display Name'), 'Unsaved Edit')
+
+    rerender(<PersonasSettings reloadKey={1} />)
+
+    await waitFor(() => expect(screen.queryByDisplayValue('Unsaved Edit')).not.toBeInTheDocument())
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+  })
+
+  it('a bare render with no reloadKey prop still fetches once on mount (backward compatible)', async () => {
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    render(<PersonasSettings />)
+
+    expect(await screen.findByText('Morgan Rivera')).toBeInTheDocument()
+    expect(window.api.data.personas.get).toHaveBeenCalledTimes(1)
+  })
 })
