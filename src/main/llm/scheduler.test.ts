@@ -16,7 +16,8 @@ const PERSONA: Persona = {
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
   extraPrompt: '',
-  isClient: false
+  isClient: false,
+  reportsTo: ''
 }
 
 function subjectBodyResponse(subject: string, body: string): Response {
@@ -40,7 +41,13 @@ describe('generateUnsolicitedMail', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings({
       provider: 'openai',
       model: 'gpt-4o',
@@ -209,7 +216,8 @@ describe('generateUnsolicitedMail', () => {
       bio: '',
       writingStyleNotes: '',
       extraPrompt: '',
-      isClient: false
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
@@ -235,7 +243,8 @@ describe('generateUnsolicitedMail', () => {
       bio: '',
       writingStyleNotes: '',
       extraPrompt: '',
-      isClient: false
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     db.createMessage({
@@ -276,7 +285,13 @@ describe('UnsolicitedMailScheduler', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings({
       provider: 'openai',
       model: 'gpt-4o',

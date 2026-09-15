@@ -29,7 +29,13 @@ describe('ConfigStore', () => {
       apiKeys: { openai: '', anthropic: '', gemini: '', xai: '' }
     })
     expect(config.getSystemPrompt()).toEqual({ systemPrompt: '' })
-    expect(config.getIdentity()).toEqual({ displayName: '', jobTitle: '', fromEmail: '' })
+    expect(config.getIdentity()).toEqual({
+      displayName: '',
+      jobTitle: '',
+      fromEmail: '',
+      reportsTo: '',
+      department: ''
+    })
     expect(config.getPersonas()).toEqual([])
     expect(config.getSchedulerState()).toEqual({ nextDueSimTime: 0 })
   })
@@ -51,11 +57,19 @@ describe('ConfigStore', () => {
   })
 
   it('round-trips trainee identity', () => {
-    config.setIdentity({ displayName: 'Trainee', jobTitle: 'Analyst', fromEmail: 'trainee@example.com' })
+    config.setIdentity({
+      displayName: 'Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'trainee@example.com',
+      reportsTo: 'Patricia Sim',
+      department: 'Litigation'
+    })
     expect(config.getIdentity()).toEqual({
       displayName: 'Trainee',
       jobTitle: 'Analyst',
-      fromEmail: 'trainee@example.com'
+      fromEmail: 'trainee@example.com',
+      reportsTo: 'Patricia Sim',
+      department: 'Litigation'
     })
   })
 
@@ -69,7 +83,8 @@ describe('ConfigStore', () => {
         bio: 'Senior partner',
         writingStyleNotes: 'Terse, direct',
         extraPrompt: '',
-        isClient: true
+        isClient: true,
+        reportsTo: ''
       }
     ])
     expect(config.getPersonas()).toHaveLength(1)
@@ -88,7 +103,13 @@ describe('ConfigStore', () => {
       apiKeys: { openai: '', anthropic: '', gemini: 'sk-gemini', xai: '' }
     })
     config.setSystemPrompt({ systemPrompt: 'Domain: insurance office.' })
-    config.setIdentity({ displayName: 'Trainee Two', jobTitle: 'Adjuster', fromEmail: 't2@example.com' })
+    config.setIdentity({
+      displayName: 'Trainee Two',
+      jobTitle: 'Adjuster',
+      fromEmail: 't2@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setPersonas([
       {
         id: 'p2',
@@ -98,7 +119,8 @@ describe('ConfigStore', () => {
         bio: '',
         writingStyleNotes: '',
         extraPrompt: 'Always mention the deadline.',
-        isClient: false
+        isClient: false,
+        reportsTo: ''
       }
     ])
     config.setSchedulerState({ nextDueSimTime: 555 })

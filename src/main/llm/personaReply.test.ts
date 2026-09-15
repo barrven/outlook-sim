@@ -17,7 +17,8 @@ const PERSONA: Persona = {
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
   extraPrompt: '',
-  isClient: false
+  isClient: false,
+  reportsTo: ''
 }
 
 const SETTINGS: Settings = {
@@ -47,7 +48,13 @@ describe('generatePersonaReply', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings(SETTINGS)
   })
 
@@ -239,7 +246,8 @@ describe('generatePersonaReply', () => {
       bio: '',
       writingStyleNotes: '',
       extraPrompt: '',
-      isClient: false
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     const message = sendMessage({ toEmail: 'alex@example.com', toName: 'Alex Chen' })
@@ -288,7 +296,8 @@ describe('generatePersonaReply', () => {
       bio: '',
       writingStyleNotes: '',
       extraPrompt: '',
-      isClient: false
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, ccPersona])
     const message = sendMessage({ cc: [{ name: 'Alex Chen', email: 'alex@example.com' }] })

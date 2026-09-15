@@ -13,7 +13,8 @@ const PERSONA: Persona = {
   bio: '',
   writingStyleNotes: '',
   extraPrompt: '',
-  isClient: true
+  isClient: true,
+  reportsTo: ''
 }
 
 // A minimal in-memory stand-in for the real IPC-backed store — same

@@ -13,7 +13,8 @@ const PERSONA: Persona = {
   bio: 'Runs the regional office.',
   writingStyleNotes: 'Terse, direct.',
   extraPrompt: 'Always mentions the quarterly deadline.',
-  isClient: false
+  isClient: false,
+  reportsTo: ''
 }
 
 describe('PersonasSettings', () => {

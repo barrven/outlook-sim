@@ -33,6 +33,8 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   const [displayName, setDisplayName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
   const [fromEmail, setFromEmail] = useState('')
+  const [reportsTo, setReportsTo] = useState('')
+  const [department, setDepartment] = useState('')
   const [identityJustSaved, setIdentityJustSaved] = useState(false)
 
   const [systemPrompt, setSystemPrompt] = useState('')
@@ -62,6 +64,9 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
       setDisplayName(identity.displayName)
       setJobTitle(identity.jobTitle)
       setFromEmail(identity.fromEmail)
+      // Identity saved before feature 028 lacks these fields (AC4: load without error, default to empty).
+      setReportsTo(identity.reportsTo ?? '')
+      setDepartment(identity.department ?? '')
       setSystemPrompt(systemPromptConfig.systemPrompt)
       setLoaded(true)
     })
@@ -85,7 +90,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   }
 
   async function handleSaveIdentity(): Promise<void> {
-    const identity: TraineeIdentity = { displayName, jobTitle, fromEmail }
+    const identity: TraineeIdentity = { displayName, jobTitle, fromEmail, reportsTo, department }
     await window.api.data.identity.set(identity)
     setIdentityJustSaved(true)
   }
@@ -279,6 +284,32 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
                 value={fromEmail}
                 onChange={(event) => {
                   setFromEmail(event.target.value)
+                  setIdentityJustSaved(false)
+                }}
+              />
+            </div>
+            <div className="settings-field-row">
+              <label htmlFor="settings-reports-to">Reports To</label>
+              <input
+                id="settings-reports-to"
+                type="text"
+                placeholder="Optional"
+                value={reportsTo}
+                onChange={(event) => {
+                  setReportsTo(event.target.value)
+                  setIdentityJustSaved(false)
+                }}
+              />
+            </div>
+            <div className="settings-field-row">
+              <label htmlFor="settings-department">Department</label>
+              <input
+                id="settings-department"
+                type="text"
+                placeholder="Optional"
+                value={department}
+                onChange={(event) => {
+                  setDepartment(event.target.value)
                   setIdentityJustSaved(false)
                 }}
               />

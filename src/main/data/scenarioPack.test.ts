@@ -255,7 +255,8 @@ describe('applyScenarioPack', () => {
         bio: '',
         writingStyleNotes: '',
         extraPrompt: '',
-        isClient: false
+        isClient: false,
+        reportsTo: ''
       }
     ])
 
@@ -403,7 +404,7 @@ describe('buildScenarioPack', () => {
   })
 
   it('includes current personas, dropping the internal id', () => {
-    config.setPersonas([{ id: 'p1', isClient: false, ...VALID_PERSONA }])
+    config.setPersonas([{ id: 'p1', isClient: false, reportsTo: '', ...VALID_PERSONA }])
 
     const pack = buildScenarioPack(db, config, clock, 'name')
 
@@ -543,7 +544,7 @@ describe('buildScenarioPack', () => {
   })
 
   it('round-trips through validateScenarioPack and applyScenarioPack without data loss', () => {
-    config.setPersonas([{ id: 'p1', isClient: false, ...VALID_PERSONA }])
+    config.setPersonas([{ id: 'p1', isClient: false, reportsTo: '', ...VALID_PERSONA }])
     db.createMessage({
       folderId: 'inbox',
       subject: 'Hello',

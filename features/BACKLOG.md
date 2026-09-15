@@ -36,7 +36,7 @@
 | 047 | FileVine tab — folder structure and client association | done | high | 047-filevine-folders-and-clients.md |
 | 048 | FileVine notes/files CRUD with Markdown content | done | high | 048-filevine-notes-markdown.md |
 | 027 | LLM error banner — Retry button and durable failure log | done | medium | 027-llm-error-retry-and-log.md |
-| 028 | Trainee identity & personas — org-structure fields | backlog | medium | 028-org-structure-fields.md |
+| 028 | Trainee identity & personas — org-structure fields | testing | medium | 028-org-structure-fields.md |
 | 029 | Scenario packs include the system prompt | backlog | medium | 029-scenario-pack-system-prompt.md |
 | 030 | Settings panels refresh live after a scenario pack load | backlog | medium | 030-settings-live-refresh-after-pack-load.md |
 | 031 | Settings — load personas from a JSON file | backlog | medium | 031-load-personas-from-json.md |

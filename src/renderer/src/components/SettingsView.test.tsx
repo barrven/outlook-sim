@@ -14,7 +14,9 @@ const SETTINGS: Settings = {
 const IDENTITY: TraineeIdentity = {
   displayName: 'Jordan Trainee',
   jobTitle: 'Analyst',
-  fromEmail: 'jordan.trainee@example.com'
+  fromEmail: 'jordan.trainee@example.com',
+  reportsTo: '',
+  department: ''
 }
 
 const SYSTEM_PROMPT: SystemPromptConfig = {
@@ -347,7 +349,9 @@ describe('SettingsView', () => {
       expect(window.api.data.identity.set).toHaveBeenCalledWith({
         displayName: 'Jordan T. Trainee',
         jobTitle: 'Senior Analyst',
-        fromEmail: 'jordan.t@example.com'
+        fromEmail: 'jordan.t@example.com',
+        reportsTo: '',
+        department: ''
       })
     })
 

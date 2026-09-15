@@ -9,6 +9,7 @@ interface PersonaForm {
   writingStyleNotes: string
   extraPrompt: string
   isClient: boolean
+  reportsTo: string
 }
 
 const EMPTY_FORM: PersonaForm = {
@@ -18,7 +19,8 @@ const EMPTY_FORM: PersonaForm = {
   bio: '',
   writingStyleNotes: '',
   extraPrompt: '',
-  isClient: false
+  isClient: false,
+  reportsTo: ''
 }
 
 function generatePersonaId(): string {
@@ -58,7 +60,9 @@ function PersonasSettings(): ReactElement {
       bio: persona.bio,
       writingStyleNotes: persona.writingStyleNotes,
       extraPrompt: persona.extraPrompt,
-      isClient: persona.isClient
+      isClient: persona.isClient,
+      // Data saved before feature 028 lacks this field (AC4: load without error, default to empty).
+      reportsTo: persona.reportsTo ?? ''
     })
     setEditingId(persona.id)
     setCreating(false)
@@ -157,6 +161,16 @@ function PersonasSettings(): ReactElement {
                     type="text"
                     value={form.role}
                     onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+                  />
+                </div>
+                <div className="settings-field-row">
+                  <label htmlFor="persona-reports-to">Reports To</label>
+                  <input
+                    id="persona-reports-to"
+                    type="text"
+                    placeholder="Optional — may be outside the configured cast"
+                    value={form.reportsTo}
+                    onChange={(event) => setForm((prev) => ({ ...prev, reportsTo: event.target.value }))}
                   />
                 </div>
                 <div className="settings-field-row">

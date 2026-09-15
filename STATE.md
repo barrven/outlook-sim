@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 028 (Trainee identity & personas — org-structure fields)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 028 (Trainee identity & personas — org-structure
+  fields) implemented: added `reportsTo`/`department` to `TraineeIdentity`
+  and `reportsTo` to `Persona` (shared types), plus form fields in
+  `SettingsView.tsx`'s Trainee Identity section and `PersonasSettings.tsx`'s
+  persona editor. AC4 (pre-feature data loads without error, defaulting to
+  empty) enforced at the data layer: `ConfigStore.getIdentity()`/
+  `getPersonas()` now merge/default missing fields on every read, not just
+  in the UI. `applyScenarioPack` defaults a loaded persona's `reportsTo` to
+  `''`, same as `isClient`. Verified live: a standalone `esbuild`-bundled
+  `config.ts` script wrote raw pre-028-shaped JSON directly to disk and
+  confirmed it loads without error, correctly defaulting; a throwaway RTL
+  smoke test drove the full UI including legacy (missing-field) identity
+  and persona objects rendering blank without error. lint/typecheck/build
+  pass; existing suite unchanged 485/485 (11 existing test files needed
+  compile touch-ups for the two now-required fields, no unrelated
+  behavior changes). Phase set to `test`.
 - 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
   failure log) accepted by user; logged to CHANGELOG. Active feature set
   to 028 (Trainee identity & personas — org-structure fields, next in

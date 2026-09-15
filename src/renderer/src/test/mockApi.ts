@@ -81,7 +81,7 @@ export function createMockApi(): Window['api'] {
         set: vi.fn().mockResolvedValue(undefined)
       },
       identity: {
-        get: vi.fn().mockResolvedValue({ displayName: '', jobTitle: '', fromEmail: '' }),
+        get: vi.fn().mockResolvedValue({ displayName: '', jobTitle: '', fromEmail: '', reportsTo: '', department: '' }),
         set: vi.fn().mockResolvedValue(undefined)
       },
       personas: {

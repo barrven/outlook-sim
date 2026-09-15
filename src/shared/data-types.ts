@@ -210,6 +210,11 @@ export interface TraineeIdentity {
   displayName: string
   jobTitle: string
   fromEmail: string
+  // Org-structure fields (feature 028) — free text, both optional (empty
+  // is valid). Data saved before this feature lacks them; readers must
+  // default to '' rather than assume presence.
+  reportsTo: string
+  department: string
 }
 
 export interface Persona {
@@ -225,6 +230,11 @@ export interface Persona {
   // etc.) — gates which personas can be assigned as a FileVine folder's
   // client.
   isClient: boolean
+  // Free text, not a reference to another configured persona — a persona
+  // may report to someone outside the configured cast entirely (feature
+  // 028). Optional in spirit (empty is valid); data saved before this
+  // feature lacks it, so readers must default to ''.
+  reportsTo: string
 }
 
 export interface PersonasConfig {

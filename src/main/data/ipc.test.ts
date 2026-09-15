@@ -366,10 +366,17 @@ describe('registerDataIpcHandlers', () => {
             bio: '',
             writingStyleNotes: '',
             extraPrompt: '',
-            isClient: true
+            isClient: true,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',
@@ -410,10 +417,17 @@ describe('registerDataIpcHandlers', () => {
             bio: '',
             writingStyleNotes: '',
             extraPrompt: '',
-            isClient: true
+            isClient: true,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',
@@ -458,10 +472,17 @@ describe('registerDataIpcHandlers', () => {
             bio: '',
             writingStyleNotes: '',
             extraPrompt: '',
-            isClient: true
+            isClient: true,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',
@@ -533,7 +554,8 @@ describe('registerDataIpcHandlers', () => {
             bio: '',
             writingStyleNotes: '',
             extraPrompt: '',
-            isClient: false
+            isClient: false,
+            reportsTo: ''
           }
         ])
         config.setSettings({
@@ -567,10 +589,17 @@ describe('registerDataIpcHandlers', () => {
             bio: '',
             writingStyleNotes: '',
             extraPrompt: '',
-            isClient: false
+            isClient: false,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',

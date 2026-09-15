@@ -13,13 +13,16 @@ const PERSONA: Persona = {
   bio: '',
   writingStyleNotes: '',
   extraPrompt: '',
-  isClient: false
+  isClient: false,
+  reportsTo: ''
 }
 
 const IDENTITY: TraineeIdentity = {
   displayName: 'Jordan Trainee',
   jobTitle: 'Analyst',
-  fromEmail: 'jordan.trainee@example.com'
+  fromEmail: 'jordan.trainee@example.com',
+  reportsTo: '',
+  department: ''
 }
 
 function mockClose(): ReturnType<typeof vi.spyOn> {

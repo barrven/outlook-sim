@@ -32,7 +32,9 @@ const DEFAULT_SYSTEM_PROMPT: SystemPromptConfig = {
 const DEFAULT_IDENTITY: TraineeIdentity = {
   displayName: '',
   jobTitle: '',
-  fromEmail: ''
+  fromEmail: '',
+  reportsTo: '',
+  department: ''
 }
 
 const DEFAULT_PERSONAS: PersonasConfig = {
@@ -105,16 +107,26 @@ export class ConfigStore {
     writeJsonFile(this.systemPromptPath, config)
   }
 
+  // Merges over `DEFAULT_IDENTITY` rather than returning the parsed file
+  // as-is — identity data saved before feature 028 (org-structure fields)
+  // lacks `reportsTo`/`department`, and this guarantees every reader gets
+  // '' for them instead of `undefined` (AC4).
   getIdentity(): TraineeIdentity {
-    return readJsonFile(this.identityPath, DEFAULT_IDENTITY)
+    return { ...DEFAULT_IDENTITY, ...readJsonFile(this.identityPath, DEFAULT_IDENTITY) }
   }
 
   setIdentity(identity: TraineeIdentity): void {
     writeJsonFile(this.identityPath, identity)
   }
 
+  // Same reasoning as `getIdentity` above, per-persona: a persona saved
+  // before feature 028 lacks `reportsTo`, and this guarantees '' instead
+  // of `undefined` for every persona, regardless of when it was saved.
   getPersonas(): Persona[] {
-    return readJsonFile(this.personasPath, DEFAULT_PERSONAS).personas
+    return readJsonFile(this.personasPath, DEFAULT_PERSONAS).personas.map((persona) => ({
+      ...persona,
+      reportsTo: persona.reportsTo ?? ''
+    }))
   }
 
   setPersonas(personas: Persona[]): void {
