@@ -1,7 +1,12 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { basename, extname } from 'path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import type { ComposeOpenOptions, PickScenarioPackResult, SaveScenarioPackResult } from '../shared/data-types'
+import type {
+  ComposeOpenOptions,
+  PickPersonasFileResult,
+  PickScenarioPackResult,
+  SaveScenarioPackResult
+} from '../shared/data-types'
 import { SimClock } from './data/clock'
 import { ConfigStore } from './data/config'
 import { MailDb } from './data/db'
@@ -11,6 +16,7 @@ import {
   broadcastUnsolicitedMailFailed,
   registerDataIpcHandlers
 } from './data/ipc'
+import { validatePersonasFile } from './data/personasFile'
 import { ReminderScheduler } from './data/reminderScheduler'
 import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
 import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
@@ -63,6 +69,24 @@ app.whenReady().then(() => {
       return { ok: false, error: `Could not read or parse file: ${(error as Error).message}` }
     }
     return validateScenarioPack(data)
+  })
+
+  ipcMain.handle('personasFile:pick', async (): Promise<PickPersonasFileResult> => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Load Personas',
+      filters: [{ name: 'Personas', extensions: ['json'] }],
+      properties: ['openFile']
+    })
+    if (canceled || filePaths.length === 0) {
+      return { ok: false, canceled: true }
+    }
+    let data: unknown
+    try {
+      data = JSON.parse(readFileSync(filePaths[0], 'utf-8'))
+    } catch (error) {
+      return { ok: false, error: `Could not read or parse file: ${(error as Error).message}` }
+    }
+    return validatePersonasFile(data)
   })
 
   ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {

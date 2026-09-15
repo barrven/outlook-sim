@@ -14,6 +14,7 @@ import type {
   NewFolder,
   NewMailMessage,
   Persona,
+  PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
   ScenarioPack,
@@ -96,6 +97,9 @@ const api = {
     applyPack: (pack: ScenarioPack, confirmed?: boolean): Promise<ApplyScenarioPackResult> =>
       ipcRenderer.invoke('scenario:applyPack', pack, confirmed),
     savePack: (): Promise<SaveScenarioPackResult> => ipcRenderer.invoke('scenario:savePack')
+  },
+  personasFile: {
+    pick: (): Promise<PickPersonasFileResult> => ipcRenderer.invoke('personasFile:pick')
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),

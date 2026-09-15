@@ -241,6 +241,34 @@ export interface PersonasConfig {
   personas: Persona[]
 }
 
+// A standalone personas-only import file (feature 031) — distinct from a
+// full scenario pack: just a bare JSON array of persona entries, no
+// name/description/inbox/calendar/timedMessages. Unlike
+// `ScenarioPackPersona` (which omits `isClient`/`reportsTo` entirely,
+// since scenario packs treat those as trainer-side data, not scenario
+// data), this feature is specifically about managing the persona cast, so
+// both are importable here — optional in the file, defaulting to
+// false/'' when absent.
+export interface PersonasFilePersona {
+  displayName: string
+  email: string
+  role: string
+  bio: string
+  writingStyleNotes: string
+  extraPrompt: string
+  isClient: boolean
+  reportsTo: string
+}
+
+export type PersonasFileValidationResult =
+  | { ok: true; personas: PersonasFilePersona[] }
+  | { ok: false; error: string }
+
+// Picking a file adds a third outcome on top of validation — the user
+// closing the file-picker dialog without choosing anything, mirroring
+// `PickScenarioPackResult`.
+export type PickPersonasFileResult = PersonasFileValidationResult | { ok: false; canceled: true }
+
 export interface ClockState {
   // Simulated time (ms epoch) as of the last start/pause/speed-change boundary.
   anchorSimTime: number

@@ -107,6 +107,9 @@ export function createMockApi(): Window['api'] {
       applyPack: vi.fn().mockResolvedValue({ ok: true }),
       savePack: vi.fn().mockResolvedValue({ ok: false, canceled: true })
     },
+    personasFile: {
+      pick: vi.fn().mockResolvedValue({ ok: false, canceled: true })
+    },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),
       test: vi.fn().mockResolvedValue({ ok: true, text: '' }),

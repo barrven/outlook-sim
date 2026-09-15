@@ -22,6 +22,7 @@ import type {
   NewMailMessage,
   Persona,
   PersonaReplyResult,
+  PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
   ScenarioPack,
@@ -105,6 +106,10 @@ export interface ScenarioApi {
   savePack: () => Promise<SaveScenarioPackResult>
 }
 
+export interface PersonasFileApi {
+  pick: () => Promise<PickPersonasFileResult>
+}
+
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
@@ -121,6 +126,7 @@ declare global {
       compose: ComposeApi
       session: SessionApi
       scenario: ScenarioApi
+      personasFile: PersonasFileApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => () => void

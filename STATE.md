@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 031 (Settings — load personas from a JSON file)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,27 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  implemented: new standalone file format (a bare JSON array of persona
+  entries, distinct from a scenario pack's wrapping object) — new
+  `PersonasFilePersona` type and `main/data/personasFile.ts`'s
+  `validatePersonasFile` (never throws, per-field error messages, mirrors
+  `scenarioPack.ts`'s conventions but self-contained rather than sharing
+  its private helpers). New `personasFile:pick` IPC handler in
+  `main/index.ts` (alongside `scenario:pickPack`/`savePack`) opens a
+  native file picker and validates the chosen file.
+  `PersonasSettings.tsx`'s new "Load Personas…" button converts validated
+  entries into full `Persona` objects and calls the existing `personas.set`
+  IPC — the same call manual create/edit already use — so persistence
+  (AC5) needed no new code and personas-only scope (AC4) is structural
+  (the validator has no `db`/`config`/`clock` reference at all). Verified
+  live: a standalone `esbuild`-bundled script confirmed valid-file parsing
+  with correct isClient/reportsTo handling and five different malformed
+  shapes each producing a specific error rather than throwing; a
+  throwaway RTL smoke test drove the full UI (load replaces the list, an
+  invalid file shows a specific error without crashing, cancel is a
+  no-op, replace-not-merge semantics). lint/typecheck/build pass; existing
+  suite unchanged 515/515. Phase set to `test`.
 - 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
   pack load) accepted by user; logged to CHANGELOG. Active feature set to
   031 (Settings — load personas from a JSON file, next in BACKLOG.md

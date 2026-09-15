@@ -40,6 +40,7 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState<PersonaForm>(EMPTY_FORM)
+  const [loadPersonasError, setLoadPersonasError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -103,6 +104,24 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
     await window.api.data.personas.set(updated)
     setPersonas(updated)
     if (editingId === id) closeEditor()
+  }
+
+  // Imports a standalone personas-only JSON file (feature 031), replacing
+  // the current list — distinct from a scenario pack load, which never
+  // touches mailbox/calendar/system prompt here since it only ever calls
+  // the existing `personas.set` (the same call the manual create/edit
+  // form already uses), nothing scenario-pack-specific.
+  async function handleLoadPersonas(): Promise<void> {
+    setLoadPersonasError(null)
+    const result = await window.api.personasFile.pick()
+    if (!result.ok) {
+      if ('error' in result) setLoadPersonasError(result.error)
+      return
+    }
+    const imported: Persona[] = result.personas.map((persona) => ({ id: generatePersonaId(), ...persona }))
+    await window.api.data.personas.set(imported)
+    setPersonas(imported)
+    closeEditor()
   }
 
   const isEditorOpen = creating || editingId !== null
@@ -236,9 +255,19 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
                 </div>
               </form>
             ) : (
-              <button type="button" className="folder-new-btn" onClick={openCreate}>
-                + New Persona
-              </button>
+              <div className="settings-view-actions">
+                <button type="button" className="folder-new-btn" onClick={openCreate}>
+                  + New Persona
+                </button>
+                <button type="button" onClick={handleLoadPersonas}>
+                  Load Personas…
+                </button>
+              </div>
+            )}
+            {loadPersonasError && (
+              <p className="settings-test-result-error" role="alert">
+                {loadPersonasError}
+              </p>
             )}
           </>
         )}
