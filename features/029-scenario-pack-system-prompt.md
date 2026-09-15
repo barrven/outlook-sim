@@ -1,7 +1,7 @@
 ---
 id: 029
 title: Scenario packs include the system prompt
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -119,7 +119,50 @@ Pack UI doesn't inspect pack contents. Full suite re-run 3x, stable;
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 506/506, re-run 3x, stable.
+`git diff 5c5b99f..2a13fb7` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria, each checked independently of `/implement`'s and
+`/test`'s own checks, using real data rather than only synthetic
+fixtures:
+
+- **AC1** (Save writes the current system prompt into the pack) —
+  **pass**. `scenarioPack.test.ts` covers this directly; independently
+  re-verified live below.
+- **AC2** (Load applies the pack's system prompt, replacing whatever was
+  configured before) — **pass**. Confirmed both by the test suite and
+  live below.
+- **AC3** (a pre-feature pack, missing the field, loads without error and
+  leaves the current system prompt unchanged) — **pass**, unusually
+  strongly confirmed: found two of the user's own real, previously-saved
+  scenario pack files on disk (`~/Downloads/scenario-pack1.json`,
+  `scenario-pack2.json`) — genuinely pre-029, with no `systemPrompt` key
+  at all (not synthetic fixtures shaped to match the bug). A fresh
+  `esbuild`-bundled script validated and applied both real files: each
+  parsed with `systemPrompt` correctly `undefined`, and applying either
+  left a freshly-set current system prompt completely untouched. Both
+  source files confirmed unmodified (md5, read-only access) afterward.
+- **AC4** (round-tripping preserves the system prompt exactly) —
+  **pass**. Live check below built a pack with a real system prompt,
+  serialized it through actual `JSON.stringify`/`parse`, and applied it
+  into a completely fresh `MailDb`/`ConfigStore`/`SimClock` — the prompt
+  came back byte-for-byte identical.
+
+Live check details: bundled `scenarioPack.ts`/`config.ts`/`db.ts`/
+`clock.ts` standalone with `esbuild`; ran the two real legacy pack files
+through `validateScenarioPack` → `applyScenarioPack` (AC3), then built a
+fresh pack with a real system prompt and confirmed it round-trips through
+build → replace-the-current-one → full JSON (de)serialize → apply-into-
+a-fresh-store (AC1/AC2/AC4) — all against scratch `MailDb`/`ConfigStore`
+instances, nothing written back to the user's real config or downloaded
+files.
+
+No live multi-window Electron GUI click-through attempted — same
+non-blocking sandbox gap noted in every prior feature (no attached
+display). The RTL/unit test coverage plus the live check against the
+user's own real, genuinely pre-feature scenario pack files are the
+strongest available substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

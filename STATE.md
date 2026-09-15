@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 029 (Scenario packs include the system prompt)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  validated: lint/typecheck/build pass; full test suite (506/506) re-run
+  3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs, no implementation drift. All 4 ACs verified by tests plus
+  an unusually strong independent live check — found two of the user's
+  own real, previously-saved scenario pack files on disk
+  (`~/Downloads/scenario-pack1.json`, `scenario-pack2.json`), genuinely
+  pre-029 (no `systemPrompt` key at all, not synthetic fixtures): both
+  validated and applied via a fresh `esbuild`-bundled script without
+  error, correctly leaving a freshly-set current system prompt untouched
+  (AC3); a real system prompt built into a fresh pack, JSON-round-tripped,
+  and applied into a completely fresh store came back byte-for-byte
+  identical (AC1/AC2/AC4). Both real downloaded files confirmed unmodified
+  (md5, read-only access) afterward. No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
 - 2026-09-15 — feature 029 (Scenario packs include the system prompt)
   tested: added 8 tests (498 → 506, all passing; re-run 3x, stable), all
   AC-traceable by number, plus 2 existing tests extended in place, all in
