@@ -1,7 +1,7 @@
 ---
 id: 048
 title: FileVine notes/files CRUD with Markdown content
-status: validating
+status: accept
 priority: high
 ---
 
@@ -139,7 +139,59 @@ noted in every prior feature). Full suite re-run 3x, stable;
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 467/467, re-run 3x, stable.
+`git diff 9572ecc..3d4c5b3` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria, each checked independently of `/implement`'s and
+`/test`'s own checks:
+
+- **AC1** (create, edit, delete a note/file with a name and Markdown body)
+  — **pass**. `db.test.ts` and `FileVineView.test.tsx` both cover the full
+  round trip at their respective layers. Independently re-verified live:
+  bundled `db.ts` standalone with `esbuild` and ran create → edit → against
+  a scratch copy of the real, in-use `~/.config/outlook-sim/outlook-sim.db`
+  — a real note was created with a name and Markdown content, then edited,
+  both correctly reflected on immediate re-fetch.
+- **AC2** (renders Markdown formatted — headings, lists, bold/italic,
+  links — not as raw text) — **pass**. `FileVineView.test.tsx` proves a
+  selected note's `#`/`**` source renders as real `<h1>`/`<strong>`
+  elements and that the literal source text is absent. Went further here
+  than `/test`'s own coverage: a fresh throwaway jsdom check (written, run,
+  deleted — not part of this diff) fed `renderMarkdown` a heading, a
+  two-item list, italic, bold, and a link, and asserted `<h1>`/`<h2>`,
+  both `<li>`s, `<em>`, `<strong>`, and a real `<a href>` all came back as
+  actual DOM elements with the right text/attributes, plus that
+  `dangerouslySetInnerHTML`'s sanitization isn't a no-op — a raw
+  `<script>alert(1)</script>` embedded in note content is stripped
+  entirely, not merely escaped-and-displayed.
+- **AC3** (edit mode exposes raw Markdown source, distinct from the
+  rendered view) — **pass**. `FileVineView.test.tsx` asserts the edit
+  form's textarea holds the exact raw source (not rendered HTML) and that
+  `.filevine-note-rendered` is absent from the DOM entirely while a note is
+  mid-edit — confirmed by code inspection too: the rendered block's render
+  condition (`selectedNote && editingNoteId !== selectedNote.id`)
+  structurally cannot coexist with the edit form for the same note.
+- **AC4** (notes persist across restarts, associated with their folder) —
+  **pass**. `db.test.ts` covers a close/reopen cycle at the unit level; the
+  live check above independently confirms the same against the real
+  on-disk `outlook-sim.db` — a note's content and `folderId` came back
+  identical after a full `MailDb` close/reopen.
+- **AC5** (deleting a folder removes its notes — explicit, not
+  undefined) — **pass**. `db.test.ts` covers both a direct case and a
+  regression mirroring 047's own cascade-delete FK-ordering bug for a
+  folder with a nested child. The live check above independently
+  reproduced this against the real on-disk data: created a folder with a
+  nested child, a note in each, deleted the root — both notes gone,
+  pre-existing unrelated FileVine folders in the real data (3 of them)
+  left untouched. Real on-disk `outlook-sim.db` confirmed byte-for-byte
+  unchanged (md5) afterward — only the scratch copy was written to.
+
+No live multi-window Electron GUI click-through attempted — same
+non-blocking sandbox gap noted in every prior feature (no attached
+display). The RTL-driven `FileVineView.test.tsx` coverage plus the two
+independent live data-layer checks above are the strongest available
+substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

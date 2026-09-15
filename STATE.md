@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 048 (FileVine notes/files CRUD with Markdown content)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) validated: lint/typecheck/build pass; full test suite
+  (467/467) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 5 ACs
+  verified by tests + code inspection plus fresh independent live checks —
+  a throwaway jsdom check fed `renderMarkdown` headings, a list, italic,
+  bold, and a link, confirming real DOM elements come back (not raw
+  source) and that a raw `<script>` tag is actually stripped, not just
+  displayed-as-text; a standalone `esbuild`-bundled `db.ts` script drove
+  note create/edit/close-reopen-persist/cascade-delete (including a
+  nested child folder's note) against a scratch copy of the real, in-use
+  `~/.config/outlook-sim/outlook-sim.db` — all correct, and the real
+  on-disk DB confirmed byte-for-byte unchanged (md5) afterward. No live
+  multi-window Electron GUI click-through attempted — this session has no
+  attached display; same non-blocking gap as every prior feature. Phase
+  set to `accept`.
 - 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
   content) tested: added 13 tests (454 → 467, all passing; re-run 3x,
   stable), all AC-traceable by number, across 3 layers — `db.test.ts` (+6,
