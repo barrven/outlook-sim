@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 048 (FileVine notes/files CRUD with Markdown content)
+- **Phase:** implement
+- **Active feature:** 027 (LLM error banner — Retry button and durable failure log)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) accepted by user; logged to CHANGELOG. All high-priority
+  backlog items (023-026, 047, 048) are now done. Active feature set to
+  027 (LLM error banner — Retry button and durable failure log, the first
+  remaining medium-priority item), phase set to `implement`.
 - 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
   content) validated: lint/typecheck/build pass; full test suite
   (467/467) re-run 3x, stable; confirmed via `git diff` that `/test`

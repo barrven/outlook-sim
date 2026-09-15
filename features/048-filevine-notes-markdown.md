@@ -1,7 +1,7 @@
 ---
 id: 048
 title: FileVine notes/files CRUD with Markdown content
-status: accept
+status: done
 priority: high
 ---
 
@@ -194,4 +194,9 @@ independent live data-layer checks above are the strongest available
 substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 467/467 re-run 3x stable, independent live checks
+of Markdown rendering/sanitization and DB persistence/cascade-delete
+against a scratch copy of the real on-disk data) along with the new
+`marked`/`dompurify` dependencies added for this feature. User said
+**Accept**.

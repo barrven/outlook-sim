@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — FileVine notes/files CRUD with Markdown content (features/048-filevine-notes-markdown.md)
+Within a FileVine folder, trainees can now create, edit, and delete notes
+— each with a name and a Markdown body. Notes display formatted (real
+headings, lists, bold/italic, links) by default; an explicit Edit mode
+exposes the raw Markdown source, distinct from the rendered view. Deleting
+a folder deletes its notes too, and everything persists across restarts.
+Feeding FileVine content into persona LLM context remains a separate,
+not-yet-built feature (049).
+
 ## 2026-09-14 — FileVine tab — folder structure and client association (features/047-filevine-folders-and-clients.md)
 A new "FileVine" ribbon tab (between Home and View) opens a case-file
 management UI in the center/right content area, while the mail folder pane
