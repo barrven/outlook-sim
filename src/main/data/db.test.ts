@@ -906,4 +906,83 @@ describe('MailDb', () => {
     expect(db.getFileVineFolder('missing')).toBeNull()
     expect(db.updateFileVineFolder('missing', { name: 'x' })).toBeNull()
   })
+
+  // FileVine notes (feature 048)
+
+  it('048 AC1: creates, edits, and deletes a note within a folder', () => {
+    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const created = db.createFileVineNote({ folderId: folder.id, name: 'Intake summary', content: '# Hello' })
+    expect(created.folderId).toBe(folder.id)
+    expect(db.listFileVineNotes(folder.id).map((n) => n.id)).toEqual([created.id])
+
+    const edited = db.updateFileVineNote(created.id, { name: 'Intake summary (revised)', content: '# Hi there' })
+    expect(edited).toEqual({
+      id: created.id,
+      folderId: folder.id,
+      name: 'Intake summary (revised)',
+      content: '# Hi there'
+    })
+    expect(db.getFileVineNote(created.id)?.content).toBe('# Hi there')
+
+    db.deleteFileVineNote(created.id)
+    expect(db.listFileVineNotes(folder.id)).toEqual([])
+  })
+
+  it('048 AC1: scopes listFileVineNotes to the given folder', () => {
+    const folderA = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const folderB = db.createFileVineFolder({ name: 'Unrelated matter' })
+    const noteA = db.createFileVineNote({ folderId: folderA.id, name: 'A note', content: '' })
+    db.createFileVineNote({ folderId: folderB.id, name: 'B note', content: '' })
+
+    expect(db.listFileVineNotes(folderA.id).map((n) => n.id)).toEqual([noteA.id])
+  })
+
+  it('048 AC4: notes persist across a close/reopen cycle, associated with their folder', () => {
+    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const note = db.createFileVineNote({ folderId: folder.id, name: 'Call log', content: '- called client' })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getFileVineNote(note.id)).toEqual({
+      id: note.id,
+      folderId: folder.id,
+      name: 'Call log',
+      content: '- called client'
+    })
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('048 AC5: deleting a folder also deletes its notes', () => {
+    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const note = db.createFileVineNote({ folderId: folder.id, name: 'Intake summary', content: '' })
+    const unrelatedFolder = db.createFileVineFolder({ name: 'Unrelated matter' })
+    const unrelatedNote = db.createFileVineNote({ folderId: unrelatedFolder.id, name: 'Unrelated note', content: '' })
+
+    db.deleteFileVineFolder(folder.id)
+
+    expect(db.getFileVineNote(note.id)).toBeNull()
+    expect(db.getFileVineNote(unrelatedNote.id)).not.toBeNull()
+  })
+
+  it('048 AC5 (regression): deleting a folder with a nested child cascades notes in both, without a foreign-key error', () => {
+    // Mirrors 047's own folder-cascade FK-ordering bug: notes must be
+    // deleted before the folders that reference them, for every folder
+    // about to be deleted (not just the one passed in).
+    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
+    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
+    const rootNote = db.createFileVineNote({ folderId: root.id, name: 'Root note', content: '' })
+    const childNote = db.createFileVineNote({ folderId: child.id, name: 'Child note', content: '' })
+
+    expect(() => db.deleteFileVineFolder(root.id)).not.toThrow()
+
+    expect(db.getFileVineNote(rootNote.id)).toBeNull()
+    expect(db.getFileVineNote(childNote.id)).toBeNull()
+  })
+
+  it('returns null when getting or updating a FileVine note that does not exist', () => {
+    expect(db.getFileVineNote('missing')).toBeNull()
+    expect(db.updateFileVineNote('missing', { name: 'x' })).toBeNull()
+  })
 })

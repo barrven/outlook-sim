@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FileVineView from './FileVineView'
-import type { FileVineFolder, Persona } from '../../../shared/data-types'
+import type { FileVineFolder, FileVineNote, Persona } from '../../../shared/data-types'
 
 const PERSONA: Persona = {
   id: 'p1',
@@ -42,6 +42,27 @@ function installFakeStore(initial: FileVineFolder[] = [], personas: Persona[] = 
     return Promise.resolve()
   })
   vi.mocked(window.api.data.personas.get).mockResolvedValue(personas)
+}
+
+// Same in-memory approach as `installFakeStore`, for `fileVineNotes`.
+function installFakeNoteStore(initial: FileVineNote[] = []): void {
+  let notes = initial
+  vi.mocked(window.api.data.fileVineNotes.list).mockImplementation((folderId: string) =>
+    Promise.resolve(notes.filter((note) => note.folderId === folderId))
+  )
+  vi.mocked(window.api.data.fileVineNotes.create).mockImplementation((note) => {
+    const created: FileVineNote = { id: `note-${notes.length + 1}`, ...note }
+    notes = [...notes, created]
+    return Promise.resolve(created)
+  })
+  vi.mocked(window.api.data.fileVineNotes.update).mockImplementation((id, patch) => {
+    notes = notes.map((note) => (note.id === id ? { ...note, ...patch } : note))
+    return Promise.resolve(notes.find((note) => note.id === id) ?? null)
+  })
+  vi.mocked(window.api.data.fileVineNotes.delete).mockImplementation((id) => {
+    notes = notes.filter((note) => note.id !== id)
+    return Promise.resolve()
+  })
 }
 
 describe('FileVineView', () => {
@@ -223,5 +244,130 @@ describe('FileVineView', () => {
 
     expect(window.api.data.fileVineFolders.update).toHaveBeenCalledWith('root-1', { clientPersonaId: 'p2' })
     expect(await screen.findByText(/Client: Alex Chen \(Paralegal\)/)).toBeInTheDocument()
+  })
+
+  it('048 AC1: shows an empty notes state, and creates a note via "+ New note"', async () => {
+    const user = userEvent.setup()
+    installFakeStore([{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }])
+    installFakeNoteStore([])
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+
+    expect(await screen.findByText('No notes yet.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '+ New note' }))
+    await user.type(screen.getByLabelText('Note name'), 'Intake summary')
+    await user.type(screen.getByLabelText('Note content'), '# Hello\n\nSome **bold** text.')
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByRole('button', { name: 'Intake summary' })).toBeInTheDocument()
+    expect(window.api.data.fileVineNotes.create).toHaveBeenCalledWith({
+      folderId: 'root-1',
+      name: 'Intake summary',
+      content: '# Hello\n\nSome **bold** text.'
+    })
+    expect(screen.queryByText('No notes yet.')).not.toBeInTheDocument()
+  })
+
+  it('048 AC1: does not create a note when submitting a blank name', async () => {
+    const user = userEvent.setup()
+    installFakeStore([{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }])
+    installFakeNoteStore([])
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+
+    await user.click(screen.getByRole('button', { name: '+ New note' }))
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(window.api.data.fileVineNotes.create).not.toHaveBeenCalled()
+    expect(screen.getByText('No notes yet.')).toBeInTheDocument()
+  })
+
+  it('048 AC2: renders a selected note\'s Markdown formatted, not as raw source text', async () => {
+    const user = userEvent.setup()
+    installFakeStore([{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }])
+    installFakeNoteStore([
+      { id: 'note-1', folderId: 'root-1', name: 'Intake summary', content: '# Hello\n\nSome **bold** text.' }
+    ])
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Intake summary' }))
+
+    const rendered = await waitFor(() => {
+      const el = document.querySelector('.filevine-note-rendered')
+      if (!el?.querySelector('h1')) throw new Error('not rendered yet')
+      return el
+    })
+    expect(rendered.querySelector('h1')?.textContent).toBe('Hello')
+    expect(rendered.querySelector('strong')?.textContent).toBe('bold')
+    // Formatted, not raw: the literal Markdown source shouldn't appear as text.
+    expect(screen.queryByText('# Hello')).not.toBeInTheDocument()
+    expect(screen.queryByText(/\*\*bold\*\*/)).not.toBeInTheDocument()
+  })
+
+  it('048 AC3: edit mode exposes the raw Markdown source in a form distinct from the rendered view', async () => {
+    const user = userEvent.setup()
+    installFakeStore([{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }])
+    installFakeNoteStore([
+      { id: 'note-1', folderId: 'root-1', name: 'Intake summary', content: '# Hello\n\nSome **bold** text.' }
+    ])
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+    await user.click(await screen.findByRole('button', { name: 'Intake summary' }))
+    await waitFor(() => expect(document.querySelector('.filevine-note-rendered h1')).not.toBeNull())
+
+    await user.click(screen.getByRole('button', { name: 'Edit Intake summary' }))
+
+    // The raw source, not the rendered HTML, is what's editable.
+    expect(screen.getByLabelText('Edit content for Intake summary')).toHaveValue('# Hello\n\nSome **bold** text.')
+    // The rendered view is hidden while this note is mid-edit — a distinct mode, not an overlay on top of it.
+    expect(document.querySelector('.filevine-note-rendered')).toBeNull()
+
+    const nameField = screen.getByLabelText('Edit name for Intake summary')
+    await user.clear(nameField)
+    await user.type(nameField, 'Intake summary (revised)')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(window.api.data.fileVineNotes.update).toHaveBeenCalledWith('note-1', {
+      name: 'Intake summary (revised)',
+      content: '# Hello\n\nSome **bold** text.'
+    })
+    expect(await screen.findByRole('button', { name: 'Intake summary (revised)' })).toBeInTheDocument()
+    // Back to the rendered view after saving.
+    await waitFor(() => expect(document.querySelector('.filevine-note-rendered h1')).not.toBeNull())
+  })
+
+  it('048 AC1: deletes a note', async () => {
+    const user = userEvent.setup()
+    installFakeStore([{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }])
+    installFakeNoteStore([{ id: 'note-1', folderId: 'root-1', name: 'Intake summary', content: '' }])
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+    await screen.findByRole('button', { name: 'Intake summary' })
+
+    await user.click(screen.getByRole('button', { name: 'Delete Intake summary' }))
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Intake summary' })).not.toBeInTheDocument())
+    expect(window.api.data.fileVineNotes.delete).toHaveBeenCalledWith('note-1')
+    expect(screen.getByText('No notes yet.')).toBeInTheDocument()
+  })
+
+  it('048: switching to a different folder shows that folder\'s own notes, not the previous folder\'s', async () => {
+    const user = userEvent.setup()
+    installFakeStore([
+      { id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null },
+      { id: 'root-2', name: 'Doe v. Acme', parentId: null, clientPersonaId: null }
+    ])
+    installFakeNoteStore([{ id: 'note-1', folderId: 'root-1', name: 'Intake summary', content: '' }])
+    render(<FileVineView />)
+
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+    await screen.findByRole('button', { name: 'Intake summary' })
+
+    await user.click(screen.getByRole('button', { name: 'Doe v. Acme' }))
+
+    expect(await screen.findByText('No notes yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Intake summary' })).not.toBeInTheDocument()
   })
 })

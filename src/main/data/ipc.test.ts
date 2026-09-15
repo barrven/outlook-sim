@@ -6,6 +6,7 @@ import type {
   CalendarItem,
   ClockState,
   FileVineFolder,
+  FileVineNote,
   FiredReminder,
   Folder,
   LlmGenerateResult,
@@ -169,6 +170,37 @@ describe('registerDataIpcHandlers', () => {
 
     handlers.get('db:fileVineFolders:delete')!(fakeEvent, root.id)
     expect(handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).toEqual([])
+  })
+
+  it('048: creates, lists (scoped by folder), updates, and deletes a FileVine note through the IPC channels', () => {
+    const folder = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
+    const otherFolder = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
+      name: 'Unrelated matter'
+    }) as FileVineFolder
+    handlers.get('db:fileVineNotes:create')!(fakeEvent, {
+      folderId: otherFolder.id,
+      name: 'Unrelated note',
+      content: ''
+    })
+
+    const note = handlers.get('db:fileVineNotes:create')!(fakeEvent, {
+      folderId: folder.id,
+      name: 'Intake summary',
+      content: '# Hello'
+    }) as FileVineNote
+
+    expect((handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).map((n) => n.id)).toEqual(
+      [note.id]
+    )
+    expect(handlers.get('db:fileVineNotes:get')!(fakeEvent, note.id)).toMatchObject({ name: 'Intake summary' })
+
+    const updated = handlers.get('db:fileVineNotes:update')!(fakeEvent, note.id, {
+      content: '# Updated'
+    }) as FileVineNote
+    expect(updated.content).toBe('# Updated')
+
+    handlers.get('db:fileVineNotes:delete')!(fakeEvent, note.id)
+    expect(handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).toEqual([])
   })
 
   it('broadcasts a messages-changed event to every open window on create, update, and delete', () => {

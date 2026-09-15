@@ -1,7 +1,7 @@
 ---
 id: 048
 title: FileVine notes/files CRUD with Markdown content
-status: testing
+status: validating
 priority: high
 ---
 
@@ -92,7 +92,51 @@ tests added here — full coverage is `/test`'s job next). Phase set to
 `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 13 tests across 3 layers (454 → 467, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`db.test.ts`** (+6, real `MailDb`, no mocking) — AC1: create/edit/
+  delete a note; `listFileVineNotes` scoped to its own folder (a note in
+  an unrelated folder isn't returned). AC4: a note (name, content,
+  `folderId`) survives a close/reopen cycle unchanged. AC5: deleting a
+  folder deletes its own notes but leaves an unrelated folder's notes
+  intact; a regression test mirroring 047's own cascade-delete FK-ordering
+  bug — a folder *and* its nested child both had notes, deleting the root
+  must not throw `FOREIGN KEY constraint failed` and must clear both
+  folders' notes. Plus a not-found regression (`getFileVineNote`/
+  `updateFileVineNote` on a missing id).
+- **`ipc.test.ts`** (+1) — the exhaustive channel-list test now includes
+  all 5 `db:fileVineNotes:*` channels (done during `/implement`); a new
+  test drives create (into one folder, plus an unrelated note in a second
+  folder) → list (scoped to the first folder only) → get → update → delete
+  through the actual registered IPC handlers, not `MailDb` directly.
+- **`FileVineView.test.tsx`** (+6, in-memory fake note store mirroring the
+  existing fake folder store) — AC1: empty "No notes yet." state; create a
+  note via "+ New note" (name + Markdown-source textarea), asserting the
+  exact `create` call args and that the empty state clears; submitting a
+  blank name is a no-op; delete a note, back to the empty state. AC2: a
+  selected note's Markdown renders as real `<h1>`/`<strong>` DOM elements
+  — explicitly asserts the literal `# Hello` / `**bold**` source text does
+  *not* appear anywhere, so a regression to raw-text rendering would fail
+  this rather than just missing an assertion. AC3: clicking "Edit" shows
+  the raw Markdown source in a textarea (not the rendered HTML) and hides
+  the rendered view entirely while mid-edit, proving edit mode is a
+  distinct UI state rather than an overlay on top of the rendered view;
+  saving returns to the rendered view. Plus one UI-level regression for the
+  `/implement`-stage `selectFolder()` fix: switching to a different folder
+  shows that folder's own notes (or its own empty state), not the
+  previously-selected folder's notes lingering on screen.
+
+Deliberately not covered: AC5's data-layer cascade is proven in
+`db.test.ts`; no separate UI-level "delete folder clears its notes from
+the screen" test was added since `FileVineView`'s folder-delete handler
+already resets `selectedFolderId` (and, via `selectFolder`, the note
+state) regardless of feature 048 — that path is exercised by 047's own
+folder-delete test, and re-deriving it here would just be testing the
+same `selectFolder` reset twice under a different label. Real Electron
+IPC/contextBridge serialization untested (same non-blocking sandbox gap
+noted in every prior feature). Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

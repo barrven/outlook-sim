@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 048 (FileVine notes/files CRUD with Markdown content)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) tested: added 13 tests (454 → 467, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 3 layers — `db.test.ts` (+6,
+  real `MailDb`): create/edit/delete, folder-scoped listing, close/reopen
+  persistence, and a regression test mirroring 047's own cascade-delete
+  FK-ordering bug for a folder-with-nested-child's notes; `ipc.test.ts`
+  (+1, incl. the exhaustive channel-list update done during `/implement`):
+  full CRUD (scoped listing across two folders) through the actual
+  registered handlers; `FileVineView.test.tsx` (+6): empty state, create
+  (incl. blank-name no-op) and delete, a Markdown-rendering test that
+  explicitly asserts the raw `# `/`**` source text does *not* appear
+  anywhere (not just that the rendered tags do), a distinct-edit-mode test
+  proving the rendered view is hidden while a note is mid-edit, and a
+  UI-level regression for the `/implement`-stage `selectFolder()` state-
+  reset fix (switching folders shows the new folder's own notes, not the
+  previous folder's). lint/typecheck/build all pass. Test Notes filled in;
+  phase set to `validate`.
 - 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
   content) implemented: new `FileVineNote { id, folderId, name, content }`
   (Markdown source) plus a `filevine_notes` SQLite table and full CRUD on
