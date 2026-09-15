@@ -1,7 +1,7 @@
 ---
 id: 029
 title: Scenario packs include the system prompt
-status: accept
+status: done
 priority: medium
 ---
 
@@ -165,4 +165,9 @@ user's own real, genuinely pre-feature scenario pack files are the
 strongest available substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 506/506 re-run 3x stable, and an unusually strong
+AC3 check using two of the user's own real, previously-saved scenario pack
+files that genuinely predate this feature) along with the design decision
+to make the new field genuinely optional (undefined) rather than defaulted
+to empty. User said **Accept**.

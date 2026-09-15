@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Scenario packs include the system prompt (features/029-scenario-pack-system-prompt.md)
+Save Scenario Pack now writes the current system prompt into the pack's
+JSON alongside the existing inbox/personas/calendar/timed-messages, and
+Load Scenario Pack applies it, replacing whatever was configured before —
+the same way loading already replaces personas/calendar/inbox. A pack
+saved before this feature still loads fine and leaves the current system
+prompt untouched, rather than clearing it.
+
 ## 2026-09-15 — Trainee identity & personas — org-structure fields (features/028-org-structure-fields.md)
 Trainee Identity in Settings gains "Reports To" and "Department" fields;
 the Persona create/edit form gains a free-text "Reports To" field (a
