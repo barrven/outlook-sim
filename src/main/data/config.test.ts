@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -131,6 +131,128 @@ describe('ConfigStore', () => {
     expect(reopened.getIdentity().displayName).toBe('Trainee Two')
     expect(reopened.getPersonas()).toEqual(config.getPersonas())
     expect(reopened.getSchedulerState()).toEqual({ nextDueSimTime: 555 })
+  })
+
+  // Org-structure fields (feature 028)
+
+  it('028 AC1/AC3: identity reportsTo/department persist across a close/reopen cycle', () => {
+    config.setIdentity({
+      displayName: 'Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'trainee@example.com',
+      reportsTo: 'Patricia Sim',
+      department: 'Litigation'
+    })
+
+    const reopened = new ConfigStore(baseDir)
+    expect(reopened.getIdentity()).toEqual({
+      displayName: 'Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'trainee@example.com',
+      reportsTo: 'Patricia Sim',
+      department: 'Litigation'
+    })
+  })
+
+  it('028 AC2/AC3: persona reportsTo persists across a close/reopen cycle', () => {
+    config.setPersonas([
+      {
+        id: 'p1',
+        displayName: 'Carlos Torres',
+        email: 'c.torres@email.test',
+        role: '',
+        bio: '',
+        writingStyleNotes: '',
+        extraPrompt: '',
+        isClient: true,
+        reportsTo: 'Michael Ferrante'
+      }
+    ])
+
+    const reopened = new ConfigStore(baseDir)
+    expect(reopened.getPersonas()[0].reportsTo).toBe('Michael Ferrante')
+  })
+
+  it('028 AC3: both new fields are optional — empty is valid and round-trips as empty', () => {
+    config.setIdentity({
+      displayName: 'Trainee',
+      jobTitle: '',
+      fromEmail: 'trainee@example.com',
+      reportsTo: '',
+      department: ''
+    })
+    config.setPersonas([
+      {
+        id: 'p1',
+        displayName: 'Carol',
+        email: 'carol@example.com',
+        role: '',
+        bio: '',
+        writingStyleNotes: '',
+        extraPrompt: '',
+        isClient: false,
+        reportsTo: ''
+      }
+    ])
+
+    expect(config.getIdentity().reportsTo).toBe('')
+    expect(config.getIdentity().department).toBe('')
+    expect(config.getPersonas()[0].reportsTo).toBe('')
+  })
+
+  it('028 AC4: identity.json saved before this feature (missing reportsTo/department) loads without error, defaulting to empty', () => {
+    writeFileSync(
+      join(baseDir, 'config', 'identity.json'),
+      JSON.stringify({ displayName: 'Legacy Trainee', jobTitle: 'Analyst', fromEmail: 'legacy@example.com' })
+    )
+
+    const reopened = new ConfigStore(baseDir)
+
+    expect(() => reopened.getIdentity()).not.toThrow()
+    expect(reopened.getIdentity()).toEqual({
+      displayName: 'Legacy Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'legacy@example.com',
+      reportsTo: '',
+      department: ''
+    })
+  })
+
+  it('028 AC4: personas.json saved before this feature (missing reportsTo) loads without error, defaulting to empty', () => {
+    writeFileSync(
+      join(baseDir, 'config', 'personas.json'),
+      JSON.stringify({
+        personas: [
+          {
+            id: 'legacy-1',
+            displayName: 'Legacy Persona',
+            email: 'legacy@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false
+          }
+        ]
+      })
+    )
+
+    const reopened = new ConfigStore(baseDir)
+
+    expect(() => reopened.getPersonas()).not.toThrow()
+    expect(reopened.getPersonas()).toEqual([
+      {
+        id: 'legacy-1',
+        displayName: 'Legacy Persona',
+        email: 'legacy@example.com',
+        role: 'Manager',
+        bio: '',
+        writingStyleNotes: '',
+        extraPrompt: '',
+        isClient: false,
+        reportsTo: ''
+      }
+    ])
   })
 
   // LLM failure log (feature 027)

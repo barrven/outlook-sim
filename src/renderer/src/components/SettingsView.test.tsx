@@ -15,8 +15,8 @@ const IDENTITY: TraineeIdentity = {
   displayName: 'Jordan Trainee',
   jobTitle: 'Analyst',
   fromEmail: 'jordan.trainee@example.com',
-  reportsTo: '',
-  department: ''
+  reportsTo: 'Patricia Sim',
+  department: 'Litigation'
 }
 
 const SYSTEM_PROMPT: SystemPromptConfig = {
@@ -325,6 +325,74 @@ describe('SettingsView', () => {
       expect(screen.getByLabelText('From Email')).toHaveValue('jordan.trainee@example.com')
     })
 
+    it('028 AC1: prefills Reports To and Department from saved identity', async () => {
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<SettingsView />)
+
+      expect(await screen.findByLabelText('Reports To')).toHaveValue('Patricia Sim')
+      expect(screen.getByLabelText('Department')).toHaveValue('Litigation')
+    })
+
+    it('028 AC1/AC3: lets the user edit and save Reports To and Department, alongside the existing identity fields', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<SettingsView />)
+
+      const reportsToInput = await screen.findByLabelText('Reports To')
+      await user.clear(reportsToInput)
+      await user.type(reportsToInput, 'Salvatore Grillo')
+
+      const departmentInput = screen.getByLabelText('Department')
+      await user.clear(departmentInput)
+      await user.type(departmentInput, 'Accident Benefits')
+
+      await user.click(identitySection().getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(window.api.data.identity.set).toHaveBeenCalled())
+      expect(window.api.data.identity.set).toHaveBeenCalledWith({
+        displayName: 'Jordan Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'jordan.trainee@example.com',
+        reportsTo: 'Salvatore Grillo',
+        department: 'Accident Benefits'
+      })
+    })
+
+    it('028 AC3: Reports To and Department are optional — blank is valid and saves as empty', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.identity.get).mockResolvedValue({
+        displayName: 'Jordan Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'jordan.trainee@example.com',
+        reportsTo: '',
+        department: ''
+      })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Display Name')
+      await user.click(identitySection().getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(window.api.data.identity.set).toHaveBeenCalled())
+      expect(window.api.data.identity.set).toHaveBeenCalledWith(
+        expect.objectContaining({ reportsTo: '', department: '' })
+      )
+    })
+
+    it('028 AC4: identity missing reportsTo/department (pre-feature data) loads without error, fields render blank', async () => {
+      vi.mocked(window.api.data.identity.get).mockResolvedValue({
+        displayName: 'Legacy Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'legacy@example.com'
+      } as TraineeIdentity)
+
+      render(<SettingsView />)
+
+      expect(await screen.findByLabelText('Reports To')).toHaveValue('')
+      expect(screen.getByLabelText('Department')).toHaveValue('')
+    })
+
     it('lets the user edit and save their identity', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
@@ -350,8 +418,8 @@ describe('SettingsView', () => {
         displayName: 'Jordan T. Trainee',
         jobTitle: 'Senior Analyst',
         fromEmail: 'jordan.t@example.com',
-        reportsTo: '',
-        department: ''
+        reportsTo: 'Patricia Sim',
+        department: 'Litigation'
       })
     })
 

@@ -1,7 +1,7 @@
 ---
 id: 028
 title: Trainee identity & personas — org-structure fields
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -88,7 +88,39 @@ tests added here — full coverage is `/test`'s job next). Phase set to
 `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 13 tests across 3 layers (485 → 498, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`config.test.ts`** (+6, real `ConfigStore`, no mocking) — AC1/AC3:
+  identity `reportsTo`/`department` survive a close/reopen cycle. AC2/AC3:
+  persona `reportsTo` survives a close/reopen cycle. AC3: both fields are
+  optional — an explicit empty string round-trips as empty (not coerced
+  to something else). AC4: a raw `identity.json` written directly to disk
+  in the pre-028 shape (missing `reportsTo`/`department` entirely) loads
+  without throwing and defaults both to `''`; same for a raw
+  `personas.json` entry missing `reportsTo`.
+- **`SettingsView.test.tsx`** (+4, plus 2 existing assertions updated for
+  the now-non-empty `IDENTITY` fixture) — AC1: Reports To/Department
+  prefill from saved identity. AC1/AC3: editing and saving both fields
+  persists them alongside the existing three (asserts the exact
+  `identity.set` payload). AC3: leaving both blank on save persists them
+  as `''`, not omitted or some other sentinel. AC4: an identity object
+  missing the two fields entirely (simulating pre-028 data returned by
+  the API) renders both inputs blank rather than crashing or showing
+  `undefined`.
+- **`PersonasSettings.test.tsx`** (+5, plus 1 existing assertion extended
+  for the now-non-empty `PERSONA` fixture's `reportsTo`) — AC2: creating a
+  persona with a Reports To value persists it; leaving it blank on create
+  persists `''` (optional, AC3). AC2: the existing Edit-prefill test now
+  also asserts Reports To prefills from the persona being edited; a new
+  test edits it and confirms the save payload reflects only that change,
+  same pattern the existing Role-edit test already used. AC4: a persona
+  object missing `reportsTo` entirely opens for edit with a blank field
+  instead of crashing.
+
+Deliberately not covered: real Electron IPC/contextBridge serialization
+(same non-blocking sandbox gap noted in every prior feature). Full suite
+re-run 3x, stable; lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

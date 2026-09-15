@@ -14,7 +14,7 @@ const PERSONA: Persona = {
   writingStyleNotes: 'Terse, direct.',
   extraPrompt: 'Always mentions the quarterly deadline.',
   isClient: false,
-  reportsTo: ''
+  reportsTo: 'Michael Ferrante'
 }
 
 describe('PersonasSettings', () => {
@@ -104,6 +104,79 @@ describe('PersonasSettings', () => {
     expect(await screen.findByText('c.torres@email.test · Client')).toBeInTheDocument()
   })
 
+  it('028 AC2: creates a persona with a Reports To value', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: '+ New Persona' }))
+    await user.type(screen.getByLabelText('Display Name'), 'Carlos Torres')
+    await user.type(screen.getByLabelText('Email'), 'c.torres@email.test')
+    await user.type(screen.getByLabelText('Reports To'), 'Michael Ferrante')
+
+    await user.click(screen.getByRole('button', { name: 'Add Persona' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    const [savedPersonas] = vi.mocked(window.api.data.personas.set).mock.calls[0]
+    expect(savedPersonas[0]).toMatchObject({ displayName: 'Carlos Torres', reportsTo: 'Michael Ferrante' })
+  })
+
+  it('028 AC3: Reports To is optional — creating a persona with it left blank saves as empty', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: '+ New Persona' }))
+    await user.type(screen.getByLabelText('Display Name'), 'Wei Chen')
+    await user.type(screen.getByLabelText('Email'), 'w.chen@email.test')
+    // Reports To deliberately left blank to prove it's optional.
+
+    await user.click(screen.getByRole('button', { name: 'Add Persona' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    const [savedPersonas] = vi.mocked(window.api.data.personas.set).mock.calls[0]
+    expect(savedPersonas[0]).toMatchObject({ displayName: 'Wei Chen', reportsTo: '' })
+  })
+
+  it('028 AC4: a persona missing reportsTo entirely (pre-feature data) opens for edit without error, field blank', async () => {
+    const user = userEvent.setup()
+    const legacyPersona = {
+      id: 'p1',
+      displayName: 'Legacy Persona',
+      email: 'legacy@example.com',
+      role: '',
+      bio: '',
+      writingStyleNotes: '',
+      extraPrompt: '',
+      isClient: false
+    } as Persona
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([legacyPersona])
+
+    render(<PersonasSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+
+    expect(screen.getByLabelText('Reports To')).toHaveValue('')
+  })
+
+  it('028 AC2: editing Reports To and saving persists the change in place', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    render(<PersonasSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+
+    const reportsToInput = screen.getByLabelText('Reports To')
+    await user.clear(reportsToInput)
+    await user.type(reportsToInput, 'Bianca Crocetti')
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    expect(window.api.data.personas.set).toHaveBeenCalledWith([{ ...PERSONA, reportsTo: 'Bianca Crocetti' }])
+  })
+
   it('Edit prefills the form with the existing persona, and Save persists the edit in place', async () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
@@ -119,6 +192,7 @@ describe('PersonasSettings', () => {
     expect(screen.getByLabelText('Writing Style')).toHaveValue('Terse, direct.')
     expect(screen.getByLabelText('Extra Prompt')).toHaveValue('Always mentions the quarterly deadline.')
     expect(screen.getByLabelText('Client')).not.toBeChecked()
+    expect(screen.getByLabelText('Reports To')).toHaveValue('Michael Ferrante')
 
     const roleInput = screen.getByLabelText('Role')
     await user.clear(roleInput)

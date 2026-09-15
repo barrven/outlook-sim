@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 028 (Trainee identity & personas — org-structure fields)
-- **Last updated:** 2026-09-14
+- **Last updated:** 2026-09-15
 
 ## Phases
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) tested: added 13 tests (485 → 498, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 3 layers — `config.test.ts`
+  (+6, real `ConfigStore`): identity/persona org-fields persistence across
+  close/reopen, both fields round-tripping as empty when left blank, and
+  raw pre-028-shaped `identity.json`/`personas.json` written directly to
+  disk loading without error and defaulting to `''`; `SettingsView.test.tsx`
+  (+4): Reports To/Department prefill and save alongside existing identity
+  fields, blank-is-valid, and a legacy identity object missing both fields
+  rendering blank rather than crashing; `PersonasSettings.test.tsx` (+5):
+  create/edit persisting Reports To, blank-is-valid on create, and a
+  legacy persona missing `reportsTo` entirely opening for edit without
+  error. lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-14 — feature 028 (Trainee identity & personas — org-structure
   fields) implemented: added `reportsTo`/`department` to `TraineeIdentity`
   and `reportsTo` to `Persona` (shared types), plus form fields in
