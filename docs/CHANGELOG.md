@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Trainee identity & personas — org-structure fields (features/028-org-structure-fields.md)
+Trainee Identity in Settings gains "Reports To" and "Department" fields;
+the Persona create/edit form gains a free-text "Reports To" field (a
+persona may report to someone outside the configured cast entirely).
+Both are optional and persist across restarts, and existing identity/
+persona data saved before this feature loads unaffected, with the new
+fields simply blank until filled in.
+
 ## 2026-09-14 — LLM error banner — Retry button and durable failure log (features/027-llm-error-retry-and-log.md)
 When a persona-reply, unsolicited-mail, or Test Connection LLM call fails,
 its failure message now includes a Retry button (alongside dismiss) that

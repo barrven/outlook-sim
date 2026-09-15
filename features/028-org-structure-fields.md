@@ -1,7 +1,7 @@
 ---
 id: 028
 title: Trainee identity & personas — org-structure fields
-status: accept
+status: done
 priority: medium
 ---
 
@@ -169,4 +169,10 @@ fixture would have been, since it proves the real trainee's actual saved
 data (not a stand-in shaped to match the bug) survives the upgrade.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 498/498 re-run 3x stable, and an unusually strong
+AC4 check against this session's own real pre-existing config data —
+15 real personas and the real trainee identity, genuinely missing the new
+fields, loaded and defaulted correctly with no synthetic fixture needed)
+along with the implementation choice to enforce the "defaults to empty"
+guarantee at the data layer. User said **Accept**.

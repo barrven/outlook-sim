@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 028 (Trainee identity & personas — org-structure fields)
+- **Phase:** implement
+- **Active feature:** 029 (Scenario packs include the system prompt)
 - **Last updated:** 2026-09-15
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) accepted by user; logged to CHANGELOG. Active feature set to
+  029 (Scenario packs include the system prompt, next in BACKLOG.md table
+  order), phase set to `implement`.
 - 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
   fields) validated: lint/typecheck/build pass; full test suite
   (498/498) re-run 3x, stable; confirmed via `git diff` that `/test`
