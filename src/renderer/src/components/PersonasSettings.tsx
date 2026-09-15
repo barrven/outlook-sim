@@ -27,7 +27,14 @@ function generatePersonaId(): string {
   return `persona-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-function PersonasSettings(): ReactElement {
+interface PersonasSettingsProps {
+  // Bumped by the parent after a scenario pack load (feature 030) to
+  // trigger a refetch — undefined/unchanging means "just the initial
+  // mount fetch," so existing callers with no prop at all still work.
+  reloadKey?: number
+}
+
+function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [loaded, setLoaded] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -40,11 +47,20 @@ function PersonasSettings(): ReactElement {
       if (cancelled) return
       setPersonas(list)
       setLoaded(true)
+      // A scenario pack load (the only thing that bumps `reloadKey`) can
+      // invalidate an in-progress unsaved create/edit form — the persona
+      // being edited may no longer exist, or the "new persona" form no
+      // longer matches what's about to be shown. Discard it rather than
+      // leave it dangling; the user already confirmed a destructive
+      // replace to get here (AC4). A no-op on the initial mount, since
+      // nothing is open yet.
+      setCreating(false)
+      setEditingId(null)
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   function openCreate(): void {
     setForm(EMPTY_FORM)

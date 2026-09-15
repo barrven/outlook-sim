@@ -48,6 +48,11 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   const [savePackStatus, setSavePackStatus] = useState<string | null>(null)
   const [savePackError, setSavePackError] = useState<string | null>(null)
 
+  // Bumped after a scenario pack load to trigger PersonasSettings' own
+  // refetch (feature 030) — it owns its persona list/editor state and
+  // isn't otherwise told when the underlying data changed.
+  const [personasReloadKey, setPersonasReloadKey] = useState(0)
+
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -114,6 +119,19 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
     setFreePlayStatus('Free-play started — mailbox and calendar are now fresh and empty.')
   }
 
+  // Refreshes the Settings sections that a scenario pack load can change
+  // underneath an already-open Settings window (feature 030) — System
+  // Prompt directly, Personas via a reload-key bump since it's a separate
+  // component owning its own fetch/editor state. If Settings is closed
+  // when a pack loads, this never runs and the data is simply correct
+  // next time Settings opens, as before (AC3).
+  async function refreshAfterScenarioPackLoad(): Promise<void> {
+    const systemPromptConfig = await window.api.data.systemPrompt.get()
+    setSystemPrompt(systemPromptConfig.systemPrompt)
+    setSystemPromptJustSaved(false)
+    setPersonasReloadKey((key) => key + 1)
+  }
+
   async function handleLoadScenarioPack(): Promise<void> {
     setScenarioStatus(null)
     setScenarioError(null)
@@ -130,6 +148,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
       if (!confirmed) return
       await window.api.scenario.applyPack(picked.pack, true)
     }
+    await refreshAfterScenarioPackLoad()
     onScenarioPackLoaded?.()
     setScenarioStatus(`Scenario pack "${picked.pack.name}" loaded.`)
   }
@@ -346,7 +365,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
           </div>
         </section>
 
-        <PersonasSettings />
+        <PersonasSettings reloadKey={personasReloadKey} />
 
         <section className="settings-section" aria-label="Session">
           <h2 className="settings-section-header">Session</h2>

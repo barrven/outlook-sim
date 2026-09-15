@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 030 (Settings panels refresh live after a scenario pack load)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) implemented: `SettingsView.tsx`'s `handleLoadScenarioPack`
+  now refreshes System Prompt directly (re-fetches into local state) and
+  bumps a new `personasReloadKey` counter passed to `PersonasSettings` as
+  a prop — its own mount-only fetch effect now depends on that key,
+  mirroring the same version-counter pattern `App.tsx` already uses for
+  `messagesVersion`. AC3 (Settings closed ⇒ unaffected) needs no code
+  since `SettingsView` already fully unmounts when closed. AC4 (unsaved-
+  edit handling): chosen behavior is overwrite/discard, not preserve —
+  documented explicitly, consistent with the destructive-replace
+  confirmation dialog the user already agreed to and every other
+  destructive action in this app already just overwriting. Verified live:
+  a throwaway RTL smoke test drove the full flow (System Prompt text and
+  persona list both updating in place with Settings open, no navigation;
+  an in-progress unsaved "+ New Persona" form gone, not dangling, after a
+  pack load). lint/typecheck/build pass; existing suite unchanged 506/506
+  (no existing tests needed touch-ups). Phase set to `test`.
 - 2026-09-15 — feature 029 (Scenario packs include the system prompt)
   accepted by user; logged to CHANGELOG. Active feature set to 030
   (Settings panels refresh live after a scenario pack load, next in
