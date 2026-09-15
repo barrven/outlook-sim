@@ -1,7 +1,7 @@
 ---
 id: 027
 title: LLM error banner — Retry button and durable failure log
-status: accept
+status: done
 priority: medium
 ---
 
@@ -256,4 +256,10 @@ display). The RTL-driven test coverage plus the independent live
 data-layer check above are the strongest available substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 485/485 re-run 3x stable, independent live check
+of the durable failure log against a scratch copy of the real config
+data) along with the notable implementation choice (moving
+`PersonaReplyResult`/`GenerateUnsolicitedMailResult` to shared types) and
+the one cosmetic, non-blocking nit flagged in validation (an import-order
+oddity in `App.tsx`). User said **Accept**.

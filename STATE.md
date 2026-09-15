@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 027 (LLM error banner — Retry button and durable failure log)
+- **Phase:** implement
+- **Active feature:** 028 (Trainee identity & personas — org-structure fields)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) accepted by user; logged to CHANGELOG. Active feature set
+  to 028 (Trainee identity & personas — org-structure fields, next in
+  BACKLOG.md table order), phase set to `implement`.
 - 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
   failure log) validated: lint/typecheck/build pass; full test suite
   (485/485) re-run 3x, stable; confirmed via `git diff` that `/test`

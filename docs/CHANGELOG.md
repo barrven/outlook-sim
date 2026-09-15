@@ -7,6 +7,19 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — LLM error banner — Retry button and durable failure log (features/027-llm-error-retry-and-log.md)
+When a persona-reply, unsolicited-mail, or Test Connection LLM call fails,
+its failure message now includes a Retry button (alongside dismiss) that
+re-attempts the exact same call — the same message for a persona reply,
+the currently-displayed settings for Test Connection. A repeat failure
+updates the existing message rather than piling up duplicates, and a
+successful retry clears it and completes whatever the original call was
+meant to do (e.g. the persona's reply gets inserted). Every LLM failure,
+across all three surfaces, is now also appended to a durable local log
+under the app's config directory, independent of whether its on-screen
+message was ever seen or dismissed — useful for spotting a pattern of
+repeated failures later.
+
 ## 2026-09-14 — FileVine notes/files CRUD with Markdown content (features/048-filevine-notes-markdown.md)
 Within a FileVine folder, trainees can now create, edit, and delete notes
 — each with a name and a Markdown body. Notes display formatted (real
