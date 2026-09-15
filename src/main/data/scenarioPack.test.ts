@@ -539,7 +539,8 @@ describe('buildScenarioPack', () => {
       personas: [],
       inbox: [],
       calendarItems: [],
-      timedMessages: []
+      timedMessages: [],
+      systemPrompt: ''
     })
   })
 

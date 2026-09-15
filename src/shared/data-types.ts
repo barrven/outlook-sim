@@ -314,6 +314,11 @@ export interface ScenarioPack {
   // Incoming messages delivered later, once simulated time reaches each
   // one's offset from load time (usually positive offsetMinutes).
   timedMessages: ScenarioPackMessage[]
+  // Optional (feature 029) — genuinely absent (not '') for a pack saved
+  // before this feature, so applying it can distinguish "no system prompt
+  // in this pack, leave the current one alone" from "this pack explicitly
+  // clears the system prompt to empty."
+  systemPrompt?: string
 }
 
 export type ScenarioPackValidationResult =

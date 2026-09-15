@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 029 (Scenario packs include the system prompt)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  implemented: added `systemPrompt?: string` to `ScenarioPack` — genuinely
+  optional (`undefined`), not defaulted to `''` like other fields, so a
+  pre-029 pack (key absent) is distinguishable from a pack that explicitly
+  clears the system prompt (key present, empty string). `validateScenarioPack`
+  parses it only when present; `applyScenarioPack` only touches the
+  current system prompt when the pack carried one (AC2+AC3 in one guard);
+  `buildScenarioPack` always includes the current system prompt (AC1) —
+  doesn't conflict with the function's existing "never reads
+  Settings/API keys" guarantee since the system prompt lives in its own
+  config file. No renderer changes needed (Save/Load Scenario Pack is
+  main-process-opaque from the UI's perspective; live-refreshing the
+  System Prompt textarea after a load is separate future feature 030).
+  Verified live: a standalone `esbuild`-bundled script drove all 4 ACs
+  directly, including a hand-constructed pre-029-shaped pack (key deleted
+  entirely) leaving the current system prompt completely untouched when
+  applied. lint/typecheck/build pass; existing suite unchanged 498/498
+  (one exact-shape test assertion needed a content touch-up). Phase set
+  to `test`.
 - 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
   fields) accepted by user; logged to CHANGELOG. Active feature set to
   029 (Scenario packs include the system prompt, next in BACKLOG.md table

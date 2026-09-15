@@ -117,7 +117,12 @@ export function validateScenarioPack(data: unknown): ScenarioPackValidationResul
     const timedMessages = requireArray(root.timedMessages, 'timedMessages').map((value, index) =>
       parseMessage(value, `timedMessages[${index}]`)
     )
-    return { ok: true, pack: { name, description, personas, inbox, calendarItems, timedMessages } }
+    // Absent (not defaulted to '') so a pre-029 pack missing this field is
+    // distinguishable from one that explicitly clears the system prompt —
+    // `applyScenarioPack` only touches the current system prompt when this
+    // is present.
+    const systemPrompt = root.systemPrompt === undefined ? undefined : requireString(root.systemPrompt, 'systemPrompt')
+    return { ok: true, pack: { name, description, personas, inbox, calendarItems, timedMessages, systemPrompt } }
   } catch (error) {
     if (error instanceof PackValidationError) return { ok: false, error: error.message }
     return { ok: false, error: `Could not parse scenario pack: ${(error as Error).message}` }
@@ -143,6 +148,13 @@ export function applyScenarioPack(db: MailDb, config: ConfigStore, clock: SimClo
   config.setPersonas(
     pack.personas.map((persona) => ({ id: generateId(), ...persona, isClient: false, reportsTo: '' }))
   )
+
+  // A pre-029 pack has no `systemPrompt` key at all (parsed as `undefined`,
+  // never '') — leave the current system prompt untouched in that case,
+  // rather than clearing it, per AC3.
+  if (pack.systemPrompt !== undefined) {
+    config.setSystemPrompt({ systemPrompt: pack.systemPrompt })
+  }
 
   const now = clock.now()
 
@@ -241,5 +253,7 @@ export function buildScenarioPack(
     offsetMinutes: (message.dueSimTime - now) / 60_000
   }))
 
-  return { name, description, personas, inbox, calendarItems, timedMessages }
+  const { systemPrompt } = config.getSystemPrompt()
+
+  return { name, description, personas, inbox, calendarItems, timedMessages, systemPrompt }
 }
