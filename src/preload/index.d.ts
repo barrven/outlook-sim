@@ -10,6 +10,7 @@ import type {
   FileVineNotePatch,
   FiredReminder,
   Folder,
+  GenerateUnsolicitedMailResult,
   LlmGenerateInput,
   LlmGenerateResult,
   MailMessage,
@@ -20,6 +21,7 @@ import type {
   NewFolder,
   NewMailMessage,
   Persona,
+  PersonaReplyResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
   ScenarioPack,
@@ -106,7 +108,8 @@ export interface ScenarioApi {
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
-  personaReply: (sentMessageId: string) => Promise<void>
+  personaReply: (sentMessageId: string) => Promise<PersonaReplyResult>
+  retryUnsolicitedMail: () => Promise<GenerateUnsolicitedMailResult>
 }
 
 export {}
@@ -120,7 +123,7 @@ declare global {
       scenario: ScenarioApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
-      onPersonaReplyFailed: (callback: (error: string) => void) => () => void
+      onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
       onReminderFired: (callback: (reminder: FiredReminder) => void) => () => void
     }

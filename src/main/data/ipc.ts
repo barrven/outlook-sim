@@ -21,6 +21,7 @@ import type {
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
 import { generatePersonaReply } from '../llm/personaReply'
+import { attemptUnsolicitedMail } from '../llm/scheduler'
 import { applyScenarioPack } from './scenarioPack'
 import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
@@ -32,9 +33,9 @@ export function broadcastMessagesChanged(): void {
   }
 }
 
-function broadcastPersonaReplyFailed(error: string): void {
+function broadcastPersonaReplyFailed(sentMessageId: string, error: string): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('llm:persona-reply-failed', error)
+    win.webContents.send('llm:persona-reply-failed', sentMessageId, error)
   }
 }
 
@@ -118,14 +119,33 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   ipcMain.handle('clock:setSpeed', (_event, speed: number) => clock.setSpeed(speed))
 
   ipcMain.handle('llm:generate', (_event, input: LlmGenerateInput) => generateText(config.getSettings(), input))
-  ipcMain.handle('llm:test', (_event, settings: Settings) =>
-    generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
-  )
+  ipcMain.handle('llm:test', async (_event, settings: Settings) => {
+    const result = await generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
+    if (!result.ok) {
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'testConnection', error: result.error })
+    }
+    return result
+  })
   ipcMain.handle('llm:personaReply', async (_event, sentMessageId: string) => {
     const result = await generatePersonaReply(db, config, clock, sentMessageId)
     if (!result.ok) {
-      broadcastPersonaReplyFailed(result.error)
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'personaReply', error: result.error })
+      broadcastPersonaReplyFailed(sentMessageId, result.error)
     } else if (result.replied) {
+      broadcastMessagesChanged()
+    }
+    return result
+  })
+  // A manual Retry (feature 027) for a failed unsolicited-mail attempt —
+  // distinct from the scheduler's own tick(), which also calls
+  // attemptUnsolicitedMail but is gated by simulated due-time bookkeeping
+  // this retry deliberately bypasses (a retry is an explicit, immediate
+  // request, not a scheduled one).
+  ipcMain.handle('llm:retryUnsolicitedMail', async () => {
+    const result = await attemptUnsolicitedMail(db, config, clock)
+    if (!result.ok) {
+      broadcastUnsolicitedMailFailed(result.error)
+    } else if (result.sent) {
       broadcastMessagesChanged()
     }
     return result

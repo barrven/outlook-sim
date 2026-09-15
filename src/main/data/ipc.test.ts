@@ -101,6 +101,7 @@ describe('registerDataIpcHandlers', () => {
         'llm:generate',
         'llm:test',
         'llm:personaReply',
+        'llm:retryUnsolicitedMail',
         'session:startFreePlay',
         'scenario:applyPack'
       ].sort()
@@ -408,6 +409,7 @@ describe('registerDataIpcHandlers', () => {
 
         expect(fakeWindow.webContents.send).toHaveBeenCalledWith(
           'llm:persona-reply-failed',
+          sent.id,
           'Network error: fetch failed'
         )
         expect(fakeWindow.webContents.send).not.toHaveBeenCalledWith('data:messages-changed')

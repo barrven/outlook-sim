@@ -52,6 +52,13 @@ body {
   font-size: 12px;
 }
 
+.llm-error-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 .llm-error-banner button {
   background: none;
   border: none;
@@ -464,6 +471,9 @@ body {
 
 .settings-test-result-ok,
 .settings-test-result-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 8px 0 0;
   font-size: 12px;
 }
@@ -474,6 +484,14 @@ body {
 
 .settings-test-result-error {
   color: #d13438;
+}
+
+.settings-test-result-error button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .persona-list {

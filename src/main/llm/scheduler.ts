@@ -1,4 +1,4 @@
-import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
+import type { GenerateUnsolicitedMailResult, Persona, TraineeIdentity } from '../../shared/data-types'
 import { generateText } from './client'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
@@ -13,11 +13,6 @@ const MAX_INTERVAL_SIM_MS = 3 * 60 * 60 * 1000
 const CHECK_INTERVAL_REAL_MS = 10_000
 const RECENT_MESSAGE_LIMIT = 5
 const UPCOMING_CALENDAR_LIMIT = 10
-
-export type GenerateUnsolicitedMailResult =
-  | { ok: true; sent: true; message: MailMessage }
-  | { ok: true; sent: false }
-  | { ok: false; error: string }
 
 function randomIntervalMs(): number {
   return MIN_INTERVAL_SIM_MS + Math.random() * (MAX_INTERVAL_SIM_MS - MIN_INTERVAL_SIM_MS)
@@ -137,6 +132,24 @@ export async function generateUnsolicitedMail(
 }
 
 /**
+ * Wraps `generateUnsolicitedMail` with the durable failure-log append
+ * (feature 027) — used both by the scheduler's own tick and by a manual
+ * Retry from the UI, so a failure is logged exactly once regardless of
+ * which caller triggered the attempt.
+ */
+export async function attemptUnsolicitedMail(
+  db: MailDb,
+  config: ConfigStore,
+  clock: SimClock
+): Promise<GenerateUnsolicitedMailResult> {
+  const result = await generateUnsolicitedMail(db, config, clock)
+  if (!result.ok) {
+    config.appendLlmFailureLog({ timestamp: Date.now(), source: 'unsolicitedMail', error: result.error })
+  }
+  return result
+}
+
+/**
  * Polls (in real time, every CHECK_INTERVAL_REAL_MS) whether the simulated
  * clock has reached the next due simulated time and, if so and the clock is
  * currently running, generates one unsolicited message. Due time is
@@ -188,7 +201,7 @@ export class UnsolicitedMailScheduler {
 
       this.config.setSchedulerState({ nextDueSimTime: now + randomIntervalMs() })
 
-      const result = await generateUnsolicitedMail(this.db, this.config, this.clock)
+      const result = await attemptUnsolicitedMail(this.db, this.config, this.clock)
       if (result.ok && result.sent) {
         this.onGenerated?.()
       } else if (!result.ok) {

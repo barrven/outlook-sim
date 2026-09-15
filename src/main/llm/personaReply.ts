@@ -1,4 +1,4 @@
-import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
+import type { MailMessage, Persona, PersonaReplyResult, TraineeIdentity } from '../../shared/data-types'
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
 import type { SimClock } from '../data/clock'
@@ -6,11 +6,6 @@ import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
 
 const NO_REPLY_MARKER = 'NO_REPLY'
-
-export type PersonaReplyResult =
-  | { ok: true; replied: true; message: MailMessage }
-  | { ok: true; replied: false }
-  | { ok: false; error: string }
 
 function normalizeSubject(subject: string): string {
   let current = subject.trim()

@@ -224,12 +224,22 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
               </button>
             </div>
             {testResult && (
-              <p
+              <div
                 className={testResult.ok ? 'settings-test-result-ok' : 'settings-test-result-error'}
-                role="status"
+                role={testResult.ok ? 'status' : 'alert'}
               >
-                {testResult.ok ? `Success: ${testResult.text}` : testResult.error}
-              </p>
+                <span>{testResult.ok ? `Success: ${testResult.text}` : testResult.error}</span>
+                {!testResult.ok && (
+                  <>
+                    <button type="button" onClick={handleTestConnection} disabled={testing}>
+                      {testing ? 'Retrying…' : 'Retry'}
+                    </button>
+                    <button type="button" aria-label="Dismiss test result" onClick={() => setTestResult(null)}>
+                      &times;
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </section>

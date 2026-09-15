@@ -460,7 +460,7 @@ describe('App shell', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 
     const [onPersonaReplyFailed] = vi.mocked(window.api.onPersonaReplyFailed).mock.calls[0]
-    onPersonaReplyFailed('openai API error (401): Incorrect API key provided.')
+    onPersonaReplyFailed('sent-1', 'openai API error (401): Incorrect API key provided.')
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Persona reply failed: openai API error (401): Incorrect API key provided.'

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 027 (LLM error banner — Retry button and durable failure log)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,36 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) implemented: persona-reply failures now carry their
+  `sentMessageId` through the `llm:persona-reply-failed` broadcast so
+  Retry can re-issue the exact same `llm.personaReply` call; unsolicited-
+  mail Retry goes through a new `llm:retryUnsolicitedMail` IPC handler
+  (no caller-supplied input exists to replay there, so Retry just
+  re-attempts generation via the same `attemptUnsolicitedMail` wrapper the
+  scheduler's own tick() now uses). `App.tsx`'s single-slot background-
+  failure state widened to a discriminated union so Retry knows which call
+  to reissue while keeping the existing non-stacking behavior (AC2).
+  Retry clears the banner based on the IPC call's own resolved result
+  (`result.ok`), not a broadcast, since `data:messages-changed` doesn't
+  fire when a persona legitimately declines to reply. Settings' Test
+  Connection reuses its own existing retry-equivalent
+  (`handleTestConnection`) and gained a Dismiss button. New durable
+  `ConfigStore.appendLlmFailureLog`/`getLlmFailureLog`
+  (`config/llm-failure-log.json`) records every failure at the point it
+  happens, independent of whether its banner is later shown/dismissed — no
+  in-app viewer built, not an AC bullet. `PersonaReplyResult`/
+  `GenerateUnsolicitedMailResult` moved from `main/llm/*.ts` to
+  `shared/data-types.ts` so the renderer/preload can type them. Verified
+  live: a standalone `esbuild`-bundled script confirmed the failure log
+  persists across restart and `attemptUnsolicitedMail` logs exactly once
+  per real failure (zero for a no-personas no-op); two throwaway RTL smoke
+  tests drove the full Retry flow for both the App-level banner (same
+  `sentMessageId` replayed, clears on success, second failure updates
+  rather than stacks) and Settings' Test Connection (Retry + new Dismiss).
+  lint/typecheck/build pass; existing suite unchanged 467/467 (only
+  `ipc.test.ts`/`App.test.tsx` needed compile touch-ups for the new
+  channel and the two-argument failure callback). Phase set to `test`.
 - 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
   content) accepted by user; logged to CHANGELOG. All high-priority
   backlog items (023-026, 047, 048) are now done. Active feature set to

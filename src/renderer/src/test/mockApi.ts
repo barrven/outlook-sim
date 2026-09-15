@@ -110,7 +110,8 @@ export function createMockApi(): Window['api'] {
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),
       test: vi.fn().mockResolvedValue({ ok: true, text: '' }),
-      personaReply: vi.fn().mockResolvedValue(undefined)
+      personaReply: vi.fn().mockResolvedValue({ ok: true, replied: false }),
+      retryUnsolicitedMail: vi.fn().mockResolvedValue({ ok: true, sent: false })
     },
     onMessagesChanged: vi.fn().mockReturnValue(() => {}),
     onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),

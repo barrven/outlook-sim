@@ -174,6 +174,34 @@ export interface LlmGenerateInput {
 
 export type LlmGenerateResult = { ok: true; text: string } | { ok: false; error: string }
 
+// Persona-reply generation's result (feature 015), lifted to shared so the
+// renderer can inspect it directly for the Retry flow (feature 027) rather
+// than only reacting to the llm:persona-reply-failed broadcast.
+export type PersonaReplyResult =
+  | { ok: true; replied: true; message: MailMessage }
+  | { ok: true; replied: false }
+  | { ok: false; error: string }
+
+// Unsolicited-mail generation's result (feature 016), lifted to shared for
+// the same reason (feature 027's Retry flow needs the resolved value, not
+// just the failure broadcast).
+export type GenerateUnsolicitedMailResult =
+  | { ok: true; sent: true; message: MailMessage }
+  | { ok: true; sent: false }
+  | { ok: false; error: string }
+
+// Every LLM call failure (feature 027) — persona replies, unsolicited mail,
+// and Settings' Test Connection — gets appended here regardless of whether
+// its UI banner/message was dismissed, so a trainer can inspect a durable
+// history of failures for troubleshooting.
+export type LlmFailureSource = 'personaReply' | 'unsolicitedMail' | 'testConnection'
+
+export interface LlmFailureLogEntry {
+  timestamp: number
+  source: LlmFailureSource
+  error: string
+}
+
 export interface SystemPromptConfig {
   systemPrompt: string
 }

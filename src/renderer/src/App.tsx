@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import type { FiredReminder, Folder, MailMessage } from '../../shared/data-types'
+
+// A single-slot failure so a second failure (of either kind) replaces the
+// banner rather than stacking a duplicate one (feature 027 AC2) — `kind`
+// carries what Retry needs to re-attempt the same call: `personaReply`
+// keeps the `sentMessageId` it was called with, `unsolicitedMail` has no
+// caller-supplied input to replay (the scheduler picks its own persona and
+// context each attempt), so Retry there just re-attempts generation fresh.
+type LlmBackgroundFailure =
+  | { kind: 'personaReply'; sentMessageId: string; error: string }
+  | { kind: 'unsolicitedMail'; error: string }
 import type { ModuleId } from './types'
 import RibbonBar from './components/RibbonBar'
 import NavSwitcher from './components/NavSwitcher'
@@ -18,7 +28,8 @@ function App(): ReactElement {
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
   const [messagesVersion, setMessagesVersion] = useState(0)
-  const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
+  const [llmBackgroundFailure, setLlmBackgroundFailure] = useState<LlmBackgroundFailure | null>(null)
+  const [retryingLlmFailure, setRetryingLlmFailure] = useState(false)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
   const [firedReminders, setFiredReminders] = useState<FiredReminder[]>([])
   const [showFileVine, setShowFileVine] = useState(false)
@@ -45,16 +56,35 @@ function App(): ReactElement {
   }, [])
 
   useEffect(() => {
-    return window.api.onPersonaReplyFailed((error) => {
-      setLlmBackgroundError(`Persona reply failed: ${error}`)
+    return window.api.onPersonaReplyFailed((sentMessageId, error) => {
+      setLlmBackgroundFailure({ kind: 'personaReply', sentMessageId, error })
     })
   }, [])
 
   useEffect(() => {
     return window.api.onUnsolicitedMailFailed((error) => {
-      setLlmBackgroundError(`Unsolicited mail generation failed: ${error}`)
+      setLlmBackgroundFailure({ kind: 'unsolicitedMail', error })
     })
   }, [])
+
+  // Re-attempts the exact same failed call: personaReply with the same
+  // sentMessageId (so it's genuinely "the same call, same inputs" per
+  // AC2), unsolicitedMail via the same manual-retry channel the scheduler's
+  // own tick() also uses. A second failure re-broadcasts through the same
+  // listeners above, replacing this banner's contents rather than adding a
+  // new one (AC2); success is read directly off the resolved result rather
+  // than inferred from a broadcast, since `data:messages-changed` doesn't
+  // fire when a persona legitimately declines to reply.
+  async function handleRetryLlmFailure(): Promise<void> {
+    if (!llmBackgroundFailure) return
+    setRetryingLlmFailure(true)
+    const result =
+      llmBackgroundFailure.kind === 'personaReply'
+        ? await window.api.llm.personaReply(llmBackgroundFailure.sentMessageId)
+        : await window.api.llm.retryUnsolicitedMail()
+    setRetryingLlmFailure(false)
+    if (result.ok) setLlmBackgroundFailure(null)
+  }
 
   useEffect(() => {
     return window.api.onReminderFired((reminder) => {
@@ -152,12 +182,21 @@ function App(): ReactElement {
 
   return (
     <div className="app-shell">
-      {llmBackgroundError && (
+      {llmBackgroundFailure && (
         <div className="llm-error-banner" role="alert">
-          <span>{llmBackgroundError}</span>
-          <button type="button" aria-label="Dismiss" onClick={() => setLlmBackgroundError(null)}>
-            &times;
-          </button>
+          <span>
+            {llmBackgroundFailure.kind === 'personaReply'
+              ? `Persona reply failed: ${llmBackgroundFailure.error}`
+              : `Unsolicited mail generation failed: ${llmBackgroundFailure.error}`}
+          </span>
+          <span className="llm-error-banner-actions">
+            <button type="button" onClick={handleRetryLlmFailure} disabled={retryingLlmFailure}>
+              {retryingLlmFailure ? 'Retrying…' : 'Retry'}
+            </button>
+            <button type="button" aria-label="Dismiss" onClick={() => setLlmBackgroundFailure(null)}>
+              &times;
+            </button>
+          </span>
         </div>
       )}
       {firedReminders.map((reminder) => (
