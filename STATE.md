@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 027 (LLM error banner — Retry button and durable failure log)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) validated: lint/typecheck/build pass; full test suite
+  (485/485) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests + code inspection plus an independent live check —
+  bundled `config.ts` standalone with `esbuild` and ran it against a
+  scratch copy of the real, in-use `~/.config/outlook-sim/config/`
+  directory (15 real personas carried over): two appended failure-log
+  entries survived a close/reopen cycle in order, and the real config
+  directory was confirmed byte-for-byte unchanged (md5) afterward. Flagged
+  one cosmetic, non-blocking nit (a type declaration sitting between two
+  import statements in `App.tsx`). No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
 - 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
   failure log) tested: added 18 tests (467 → 485, all passing; re-run 3x,
   stable), all AC-traceable by number, across 5 layers — `config.test.ts`

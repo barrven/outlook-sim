@@ -1,7 +1,7 @@
 ---
 id: 027
 title: LLM error banner — Retry button and durable failure log
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -191,7 +191,69 @@ noted in every prior feature). Full suite re-run 3x, stable;
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 485/485, re-run 3x, stable.
+`git diff c9d52c7..bb52071` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria, each checked independently of `/implement`'s and
+`/test`'s own checks:
+
+- **AC1** (failure banner for persona-reply, unsolicited-mail, and Test
+  Connection shows Retry alongside dismiss) — **pass**. `App.tsx` renders
+  one banner (`llmBackgroundFailure`) with both a Retry and a Dismiss
+  button for both persona-reply and unsolicited-mail failures (confirmed
+  by direct code inspection of the render block, matching
+  `App.test.tsx`'s assertions); `SettingsView.tsx`'s Test Connection error
+  display now has both a Retry and a new "Dismiss test result" button,
+  absent on success.
+- **AC2** ("same call, same inputs"; a second failure updates rather than
+  stacks) — **pass**. By inspection: `handleRetryLlmFailure` re-invokes
+  `window.api.llm.personaReply(llmBackgroundFailure.sentMessageId)` — the
+  literal id from the original failure, not a fresh lookup — or
+  `retryUnsolicitedMail()` (no caller input exists there to replay, so
+  "same call" is re-attempting generation, the only sensible reading).
+  Non-stacking is structural, not just tested: `llmBackgroundFailure` is a
+  single nullable value, not an array, so a second failure of either kind
+  necessarily replaces it. `ipc.test.ts`'s new test drives this through
+  the real registered handlers (fail, then retry with the identical
+  `sentMessageId`, succeed) rather than mocks.
+- **AC3** (a successful Retry clears the banner and completes the
+  original action) — **pass**. `handleRetryLlmFailure` clears the banner
+  based on the IPC call's own resolved `result.ok`, not a broadcast —
+  correctly, since `data:messages-changed` never fires when a persona
+  legitimately declines to reply, which would otherwise leave a
+  successful-but-silent retry's banner stuck. "Completes the original
+  action" is inherent: the same `llm:personaReply`/`llm:retryUnsolicitedMail`
+  handlers that inserted a message on the first successful attempt do the
+  same on a retry — `ipc.test.ts`'s new test asserts a message actually
+  lands in `inbox` after the retry succeeds, not just that the banner
+  disappears.
+- **AC4** (every LLM failure appended to a durable log surviving restart,
+  independent of dismissal) — **pass**. All three failure points
+  (`llm:personaReply`, `llm:test`, `attemptUnsolicitedMail` — used by both
+  the scheduler's own tick and the manual retry handler) append via
+  `config.appendLlmFailureLog` at the moment of failure, before any
+  broadcast/UI involvement, so dismissing (or never showing) the banner
+  has no bearing on it. Independently re-verified live: bundled `config.ts`
+  standalone with `esbuild` and ran it against a scratch copy of the real,
+  in-use `~/.config/outlook-sim/config/` directory (15 real personas
+  carried over, confirming this wasn't a fresh/empty environment) — two
+  appended entries, in order, survived a close/reopen cycle, and the real
+  on-disk config directory was confirmed byte-for-byte unchanged (md5)
+  afterward, with no `llm-failure-log.json` created there (only the
+  scratch copy was written to).
+
+Minor, non-blocking observation: in `App.tsx`, the new `LlmBackgroundFailure`
+type declaration sits between two import statements (a `type ModuleId`
+import follows it) rather than after all imports — harmless since imports
+hoist regardless of position, and lint/typecheck both pass, but slightly
+unconventional placement worth a cosmetic tidy-up if this file is touched
+again.
+
+No live multi-window Electron GUI click-through attempted — same
+non-blocking sandbox gap noted in every prior feature (no attached
+display). The RTL-driven test coverage plus the independent live
+data-layer check above are the strongest available substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
