@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 030 (Settings panels refresh live after a scenario pack load)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) validated: lint/typecheck/build pass; full test suite
+  (515/515) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests plus fresh code inspection (no main-process component
+  to independently re-run for this purely renderer-side feature) —
+  confirmed `PersonasSettings`'s fetch effect is keyed on `reloadKey`,
+  `SettingsView`'s `refreshAfterScenarioPackLoad` re-fetches the system
+  prompt directly rather than trusting the pack's in-memory value, and
+  `App.tsx`'s ternary rendering genuinely unmounts `SettingsView` when
+  closed. No live multi-window Electron GUI click-through attempted — no
+  attached display; same non-blocking gap as every prior feature. Phase
+  set to `accept`.
 - 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
   pack load) tested: added 9 tests (506 → 515, all passing; re-run 3x,
   stable), all AC-traceable by number, across 2 files —

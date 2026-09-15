@@ -1,7 +1,7 @@
 ---
 id: 030
 title: Settings panels refresh live after a scenario pack load
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -132,7 +132,55 @@ the unmount/remount behavior that's the actual mechanism guaranteeing it
 holds. Full suite re-run 3x, stable; lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 515/515, re-run 3x, stable.
+`git diff 6c7eaf7..de0637c` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+This is a purely renderer-side UI-wiring feature with no main-process or
+data-layer component, so — unlike prior features — there's no standalone
+`esbuild`-bundled script to independently re-run; the equivalent
+"skeptical, don't just re-trust the test suite" check here is direct code
+inspection of the actual wiring, done fresh rather than assuming the Test
+Notes' description is accurate:
+
+- **AC1** (Personas section updates live) — **pass**. Confirmed by
+  reading `PersonasSettings.tsx`'s fetch effect: `useEffect(() => {...},
+  [reloadKey])` refetches and calls `setPersonas`/`setLoaded` whenever
+  `reloadKey` changes, and `SettingsView.tsx` passes
+  `reloadKey={personasReloadKey}`, bumped by `refreshAfterScenarioPackLoad`
+  only after a pack is actually applied.
+- **AC2** (System Prompt section updates live) — **pass**. Confirmed:
+  `refreshAfterScenarioPackLoad` directly awaits
+  `window.api.data.systemPrompt.get()` and calls `setSystemPrompt` with
+  the result — no intermediate caching or stale-closure risk, since it
+  re-fetches rather than trusting the just-applied pack's in-memory
+  value (correctly reflects whatever `applyScenarioPack` actually
+  persisted, including feature 029's "absent key ⇒ unchanged" case).
+- **AC3** (closed ⇒ unaffected) — **pass**. Confirmed in `App.tsx`:
+  `{showSettings ? <SettingsView ... /> : ...}` is a ternary, not a
+  CSS-hidden element — `SettingsView` (and `PersonasSettings` inside it)
+  is fully unmounted while Settings is closed, so there is no live
+  component instance for a pack load to (or fail to) notify; reopening
+  always mounts fresh and fetches current data via the ordinary
+  mount-effect, unchanged from before this feature.
+- **AC4** (unsaved-edit handling, called out explicitly) — **pass**, and
+  the chosen behavior (overwrite/discard) is exactly what's implemented:
+  `refreshAfterScenarioPackLoad` reassigns `systemPrompt` state directly
+  (no merge/preserve logic), and `PersonasSettings`'s reload effect
+  unconditionally calls `setCreating(false)`/`setEditingId(null)`
+  alongside the fresh fetch. Both are backed by `/test`'s coverage
+  proving *specifically* that nothing gets silently auto-saved in the
+  process (`personas.set`/`systemPrompt.set` are asserted never called
+  during a discard) — the in-progress edit is dropped, not persisted
+  behind the user's back either.
+
+No live Electron GUI click-through attempted — same non-blocking sandbox
+gap noted in every prior feature (no attached display). Given this
+feature has no main-process component to independently re-verify outside
+the test framework, the code-inspection check above plus the existing
+integration-level RTL coverage (which exercises the real parent/child
+component wiring, not mocks of it) are the strongest available
+substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
