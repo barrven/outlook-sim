@@ -136,7 +136,10 @@ function generateId(): string {
  */
 export function applyScenarioPack(db: MailDb, config: ConfigStore, clock: SimClock, pack: ScenarioPack): void {
   db.resetMailboxAndCalendar()
-  config.setPersonas(pack.personas.map((persona) => ({ id: generateId(), ...persona })))
+  // Scenario packs don't carry client/staff status (that's a trainer-side
+  // concern, not scenario data) — loaded personas start un-marked and the
+  // trainer flags clients manually in Settings, same as a fresh persona.
+  config.setPersonas(pack.personas.map((persona) => ({ id: generateId(), ...persona, isClient: false })))
 
   const now = clock.now()
 

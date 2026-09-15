@@ -12,7 +12,8 @@ const PERSONA: Persona = {
   role: 'Manager',
   bio: 'Runs the regional office.',
   writingStyleNotes: 'Terse, direct.',
-  extraPrompt: 'Always mentions the quarterly deadline.'
+  extraPrompt: 'Always mentions the quarterly deadline.',
+  isClient: false
 }
 
 describe('PersonasSettings', () => {
@@ -83,6 +84,25 @@ describe('PersonasSettings', () => {
     expect(screen.queryByRole('button', { name: 'Add Persona' })).not.toBeInTheDocument()
   })
 
+  it('creates a persona marked as a client', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: '+ New Persona' }))
+    await user.type(screen.getByLabelText('Display Name'), 'Carlos Torres')
+    await user.type(screen.getByLabelText('Email'), 'c.torres@email.test')
+    await user.click(screen.getByLabelText('Client'))
+
+    await user.click(screen.getByRole('button', { name: 'Add Persona' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    const [savedPersonas] = vi.mocked(window.api.data.personas.set).mock.calls[0]
+    expect(savedPersonas[0]).toMatchObject({ displayName: 'Carlos Torres', isClient: true })
+    expect(await screen.findByText('c.torres@email.test · Client')).toBeInTheDocument()
+  })
+
   it('Edit prefills the form with the existing persona, and Save persists the edit in place', async () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
@@ -97,6 +117,7 @@ describe('PersonasSettings', () => {
     expect(screen.getByLabelText('Bio')).toHaveValue('Runs the regional office.')
     expect(screen.getByLabelText('Writing Style')).toHaveValue('Terse, direct.')
     expect(screen.getByLabelText('Extra Prompt')).toHaveValue('Always mentions the quarterly deadline.')
+    expect(screen.getByLabelText('Client')).not.toBeChecked()
 
     const roleInput = screen.getByLabelText('Role')
     await user.clear(roleInput)

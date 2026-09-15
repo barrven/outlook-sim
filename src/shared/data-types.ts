@@ -177,6 +177,11 @@ export interface Persona {
   bio: string
   writingStyleNotes: string
   extraPrompt: string
+  // Whether this persona represents a client of the firm, as opposed to
+  // firm staff or another external contact (adjuster, opposing counsel,
+  // etc.) — gates which personas can be assigned as a FileVine folder's
+  // client.
+  isClient: boolean
 }
 
 export interface PersonasConfig {

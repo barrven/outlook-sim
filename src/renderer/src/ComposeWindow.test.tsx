@@ -12,7 +12,8 @@ const PERSONA: Persona = {
   role: 'Manager',
   bio: '',
   writingStyleNotes: '',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false
 }
 
 const IDENTITY: TraineeIdentity = {

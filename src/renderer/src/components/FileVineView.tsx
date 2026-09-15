@@ -235,6 +235,14 @@ function FileVineView(): ReactElement {
   const selectedClientPersona = selectedFolder
     ? personas.find((persona) => persona.id === selectedFolder.clientPersonaId)
     : undefined
+  // Only clients are assignable here — firm staff and other external
+  // contacts (adjusters, opposing counsel, etc.) aren't valid folder
+  // "clients". If a folder's existing association points at a persona
+  // that's no longer marked as a client, keep showing it selected rather
+  // than silently dropping the selection out from under the dropdown.
+  const clientOptions = personas.filter(
+    (persona) => persona.isClient || persona.id === selectedFolder?.clientPersonaId
+  )
 
   const treeItemProps = {
     selectedFolderId,
@@ -306,7 +314,7 @@ function FileVineView(): ReactElement {
                   onChange={(event) => handleClientChange(selectedFolder.id, event.target.value)}
                 >
                   <option value="">No client</option>
-                  {personas.map((persona) => (
+                  {clientOptions.map((persona) => (
                     <option key={persona.id} value={persona.id}>
                       {persona.displayName}
                     </option>

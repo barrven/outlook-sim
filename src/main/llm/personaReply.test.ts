@@ -16,7 +16,8 @@ const PERSONA: Persona = {
   role: 'Office Manager',
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false
 }
 
 const SETTINGS: Settings = {
@@ -237,7 +238,8 @@ describe('generatePersonaReply', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false
     }
     config.setPersonas([PERSONA, otherPersona])
     const message = sendMessage({ toEmail: 'alex@example.com', toName: 'Alex Chen' })
@@ -285,7 +287,8 @@ describe('generatePersonaReply', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false
     }
     config.setPersonas([PERSONA, ccPersona])
     const message = sendMessage({ cc: [{ name: 'Alex Chen', email: 'alex@example.com' }] })

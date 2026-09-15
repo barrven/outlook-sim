@@ -15,7 +15,8 @@ const PERSONA: Persona = {
   role: 'Office Manager',
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false
 }
 
 function subjectBodyResponse(subject: string, body: string): Response {
@@ -207,7 +208,8 @@ describe('generateUnsolicitedMail', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false
     }
     config.setPersonas([PERSONA, otherPersona])
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
@@ -232,7 +234,8 @@ describe('generateUnsolicitedMail', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false
     }
     config.setPersonas([PERSONA, otherPersona])
     db.createMessage({

@@ -8,6 +8,7 @@ interface PersonaForm {
   bio: string
   writingStyleNotes: string
   extraPrompt: string
+  isClient: boolean
 }
 
 const EMPTY_FORM: PersonaForm = {
@@ -16,7 +17,8 @@ const EMPTY_FORM: PersonaForm = {
   role: '',
   bio: '',
   writingStyleNotes: '',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false
 }
 
 function generatePersonaId(): string {
@@ -55,7 +57,8 @@ function PersonasSettings(): ReactElement {
       role: persona.role,
       bio: persona.bio,
       writingStyleNotes: persona.writingStyleNotes,
-      extraPrompt: persona.extraPrompt
+      extraPrompt: persona.extraPrompt,
+      isClient: persona.isClient
     })
     setEditingId(persona.id)
     setCreating(false)
@@ -99,6 +102,7 @@ function PersonasSettings(): ReactElement {
                       <span className="persona-list-item-meta">
                         {persona.email}
                         {persona.role ? ` · ${persona.role}` : ''}
+                        {persona.isClient ? ' · Client' : ''}
                       </span>
                     </div>
                     <span className="persona-list-item-actions">
@@ -153,6 +157,15 @@ function PersonasSettings(): ReactElement {
                     type="text"
                     value={form.role}
                     onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+                  />
+                </div>
+                <div className="settings-field-row">
+                  <label htmlFor="persona-is-client">Client</label>
+                  <input
+                    id="persona-is-client"
+                    type="checkbox"
+                    checked={form.isClient}
+                    onChange={(event) => setForm((prev) => ({ ...prev, isClient: event.target.checked }))}
                   />
                 </div>
                 <div className="settings-field-row">

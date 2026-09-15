@@ -299,7 +299,8 @@ describe('registerDataIpcHandlers', () => {
             role: 'Manager',
             bio: '',
             writingStyleNotes: '',
-            extraPrompt: ''
+            extraPrompt: '',
+            isClient: true
           }
         ])
         config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
@@ -342,7 +343,8 @@ describe('registerDataIpcHandlers', () => {
             role: 'Manager',
             bio: '',
             writingStyleNotes: '',
-            extraPrompt: ''
+            extraPrompt: '',
+            isClient: true
           }
         ])
         config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })

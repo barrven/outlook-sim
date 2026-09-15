@@ -68,7 +68,8 @@ describe('ConfigStore', () => {
         role: 'Partner',
         bio: 'Senior partner',
         writingStyleNotes: 'Terse, direct',
-        extraPrompt: ''
+        extraPrompt: '',
+        isClient: true
       }
     ])
     expect(config.getPersonas()).toHaveLength(1)
@@ -96,7 +97,8 @@ describe('ConfigStore', () => {
         role: 'Manager',
         bio: '',
         writingStyleNotes: '',
-        extraPrompt: 'Always mention the deadline.'
+        extraPrompt: 'Always mention the deadline.',
+        isClient: false
       }
     ])
     config.setSchedulerState({ nextDueSimTime: 555 })

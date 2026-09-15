@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 047 (FileVine tab — folder structure and client association)
+- **Phase:** implement
+- **Active feature:** 048 (FileVine notes/files CRUD with Markdown content)
 - **Last updated:** 2026-09-14
 
 ## Phases
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 047 (FileVine tab — folder structure and client
+  association) accepted by user, with one change requested before sign-off:
+  the FileVine client dropdown was listing all personas (including Grollo
+  Law staff), so a folder could be assigned an employee as its "client".
+  Added a structured `isClient` boolean to `Persona` (a "Client" checkbox in
+  Settings > Personas), filtered `FileVineView`'s client `<select>` to
+  `isClient` personas (preserving an already-assigned persona in the
+  dropdown even if later unmarked), and defaulted scenario-pack-loaded
+  personas to `isClient: false`. Re-verified lint/typecheck/build/full
+  suite (454/454, +3 tests) after the change, outside the normal
+  `/test`/`/validate` stages since it was requested at this gate. Logged to
+  CHANGELOG. Active feature set to 048 (FileVine notes/files CRUD with
+  Markdown content), phase set to `implement`.
 - 2026-09-14 — feature 047 (FileVine tab — folder structure and client
   association) validated: lint/typecheck/build pass; full test suite
   (451/451) re-run 3x, stable; confirmed via `git diff` that `/test`

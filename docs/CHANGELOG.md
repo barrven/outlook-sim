@@ -7,6 +7,18 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-14 — FileVine tab — folder structure and client association (features/047-filevine-folders-and-clients.md)
+A new "FileVine" ribbon tab (between Home and View) opens a case-file
+management UI in the center/right content area, while the mail folder pane
+stays visible on the left. Trainees can build a nested folder tree
+(create/rename/delete, file-system-style) and associate any folder with a
+persona as its "client" — the client dropdown only offers personas flagged
+as clients (Settings > Personas now has a "Client" checkbox), so firm staff
+can't be assigned as a folder's client. Folder structure and client
+associations persist across restarts. Notes/files CRUD and feeding
+FileVine content into persona LLM context are separate, not-yet-built
+features (048/049).
+
 ## 2026-09-14 — Fix: recurring event reminders fire per occurrence (features/026-fix-recurring-reminder-per-occurrence.md)
 A recurring event or deadline's reminder now fires for every occurrence
 that reaches its reminder time — the 2nd, 3rd, and so on — instead of only

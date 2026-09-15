@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FileVineView from './FileVineView'
 import type { FileVineFolder, Persona } from '../../../shared/data-types'
@@ -12,7 +12,8 @@ const PERSONA: Persona = {
   role: 'Office Manager',
   bio: '',
   writingStyleNotes: '',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: true
 }
 
 // A minimal in-memory stand-in for the real IPC-backed store — same
@@ -162,6 +163,35 @@ describe('FileVineView', () => {
 
     expect(window.api.data.fileVineFolders.update).toHaveBeenCalledWith('root-1', { clientPersonaId: 'p1' })
     expect(await screen.findByText(/Client: Morgan Rivera \(Office Manager\)/)).toBeInTheDocument()
+  })
+
+  it('excludes non-client personas (firm staff) from the client dropdown', async () => {
+    const user = userEvent.setup()
+    const staffPersona: Persona = { ...PERSONA, id: 'p2', displayName: 'Patricia Sim', isClient: false }
+    installFakeStore(
+      [{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }],
+      [PERSONA, staffPersona]
+    )
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+
+    const select = screen.getByLabelText('Client')
+    expect(within(select).getByRole('option', { name: 'Morgan Rivera' })).toBeInTheDocument()
+    expect(within(select).queryByRole('option', { name: 'Patricia Sim' })).not.toBeInTheDocument()
+  })
+
+  it('keeps a folder\'s existing client selected in the dropdown even if that persona is no longer marked as a client', async () => {
+    const user = userEvent.setup()
+    const formerClient: Persona = { ...PERSONA, isClient: false }
+    installFakeStore(
+      [{ id: 'root-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: 'p1' }],
+      [formerClient]
+    )
+    render(<FileVineView />)
+    await user.click(await screen.findByRole('button', { name: 'Smith v. Jones' }))
+
+    expect(await screen.findByLabelText('Client')).toHaveValue('p1')
+    expect(screen.getByText(/Client: Morgan Rivera/)).toBeInTheDocument()
   })
 
   it('047 AC4: shows the folder\'s existing client pre-selected, and allows un-associating it', async () => {

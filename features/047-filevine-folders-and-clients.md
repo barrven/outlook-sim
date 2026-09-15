@@ -1,7 +1,7 @@
 ---
 id: 047
 title: FileVine tab — folder structure and client association
-status: accept
+status: done
 priority: high
 ---
 
@@ -227,4 +227,18 @@ reason. The standalone live-data check plus the RTL-driven `App.test.tsx`/
 just not a real OS window) is the strongest available substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-14 — User requested one change before accepting: the FileVine
+client dropdown was listing every persona (including Grollo Law staff),
+letting a folder be assigned an employee as its "client" — it should only
+offer actual clients. Implemented before this gate: added a structured
+`isClient` boolean to `Persona` (previously nothing distinguished
+clients from staff/other contacts beyond free-text `role`), a "Client"
+checkbox in Settings > Personas, and filtered `FileVineView`'s client
+`<select>` to `isClient` personas (while still showing an already-assigned
+persona even if later unmarked, so existing associations don't silently
+vanish from the dropdown). Scenario-pack-loaded personas default to
+`isClient: false` since packs don't carry that distinction. Re-verified
+lint/typecheck/build and the full suite (454/454, +3 new tests) after the
+change, independently of the `/test`/`/validate` stages which ran before
+this request. User then reviewed the AC table and this fix and said
+**Accept**.
