@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
-import type { FileVineFolder, Persona } from '../../../shared/data-types'
+import type { FileVineFolder, FileVineNote, Persona } from '../../../shared/data-types'
+import { renderMarkdown } from '../markdown'
 
 // A folder can be created either at the root (`parentId: null`) or nested
 // under another folder — this tracks which, while `null` (not `undefined`)
@@ -165,6 +166,13 @@ function FileVineView(): ReactElement {
   const [createTarget, setCreateTarget] = useState<CreateTarget>(undefined)
   const [newFolderName, setNewFolderName] = useState('')
 
+  const [notes, setNotes] = useState<FileVineNote[]>([])
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
+  const [isCreatingNote, setIsCreatingNote] = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [noteNameInput, setNoteNameInput] = useState('')
+  const [noteContentInput, setNoteContentInput] = useState('')
+
   async function refreshFolders(): Promise<void> {
     const list = await window.api.data.fileVineFolders.list()
     setFolders(list)
@@ -182,6 +190,35 @@ function FileVineView(): ReactElement {
       cancelled = true
     }
   }, [])
+
+  async function refreshNotes(folderId: string): Promise<void> {
+    const list = await window.api.data.fileVineNotes.list(folderId)
+    setNotes(list)
+  }
+
+  // No folder selected means the notes section isn't rendered at all, so
+  // stale notes from a previously-selected folder sitting unused in state
+  // is harmless — avoids an extra setState call here for no visible effect.
+  useEffect(() => {
+    let cancelled = false
+    if (selectedFolderId) {
+      window.api.data.fileVineNotes.list(selectedFolderId).then((list) => {
+        if (!cancelled) setNotes(list)
+      })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [selectedFolderId])
+
+  // Switching folders leaves any other folder's note selection/editor state
+  // behind — it belongs to a folder that's no longer showing.
+  function selectFolder(id: string | null): void {
+    setSelectedFolderId(id)
+    setSelectedNoteId(null)
+    setIsCreatingNote(false)
+    setEditingNoteId(null)
+  }
 
   function startCreate(parentId: string | null): void {
     setCreateTarget({ parentId })
@@ -221,13 +258,57 @@ function FileVineView(): ReactElement {
 
   async function handleDelete(folder: FileVineFolder): Promise<void> {
     await window.api.data.fileVineFolders.delete(folder.id)
-    if (folder.id === selectedFolderId) setSelectedFolderId(null)
+    if (folder.id === selectedFolderId) selectFolder(null)
     await refreshFolders()
   }
 
   async function handleClientChange(id: string, personaId: string): Promise<void> {
     await window.api.data.fileVineFolders.update(id, { clientPersonaId: personaId || null })
     await refreshFolders()
+  }
+
+  function startCreateNote(): void {
+    setIsCreatingNote(true)
+    setEditingNoteId(null)
+    setNoteNameInput('')
+    setNoteContentInput('')
+  }
+
+  function cancelNoteEditor(): void {
+    setIsCreatingNote(false)
+    setEditingNoteId(null)
+  }
+
+  async function submitCreateNote(): Promise<void> {
+    const name = noteNameInput.trim()
+    cancelNoteEditor()
+    if (!name || !selectedFolderId) return
+    await window.api.data.fileVineNotes.create({ folderId: selectedFolderId, name, content: noteContentInput })
+    await refreshNotes(selectedFolderId)
+  }
+
+  function startEditNote(note: FileVineNote): void {
+    setIsCreatingNote(false)
+    setEditingNoteId(note.id)
+    setSelectedNoteId(note.id)
+    setNoteNameInput(note.name)
+    setNoteContentInput(note.content)
+  }
+
+  async function submitEditNote(): Promise<void> {
+    const name = noteNameInput.trim()
+    const id = editingNoteId
+    cancelNoteEditor()
+    if (!name || !id || !selectedFolderId) return
+    await window.api.data.fileVineNotes.update(id, { name, content: noteContentInput })
+    await refreshNotes(selectedFolderId)
+  }
+
+  async function handleDeleteNote(note: FileVineNote): Promise<void> {
+    await window.api.data.fileVineNotes.delete(note.id)
+    if (note.id === selectedNoteId) setSelectedNoteId(null)
+    if (note.id === editingNoteId) cancelNoteEditor()
+    if (selectedFolderId) await refreshNotes(selectedFolderId)
   }
 
   const tree = buildTree(folders)
@@ -243,6 +324,7 @@ function FileVineView(): ReactElement {
   const clientOptions = personas.filter(
     (persona) => persona.isClient || persona.id === selectedFolder?.clientPersonaId
   )
+  const selectedNote = notes.find((note) => note.id === selectedNoteId) ?? null
 
   const treeItemProps = {
     selectedFolderId,
@@ -250,7 +332,7 @@ function FileVineView(): ReactElement {
     renameValue,
     createTarget,
     newFolderName,
-    onSelect: setSelectedFolderId,
+    onSelect: selectFolder,
     onStartRename: startRename,
     onRenameValueChange: setRenameValue,
     onSubmitRename: submitRename,
@@ -327,6 +409,128 @@ function FileVineView(): ReactElement {
                   {selectedClientPersona.role ? ` (${selectedClientPersona.role})` : ''}
                 </div>
               )}
+
+              <div className="filevine-notes-section">
+                <div className="filevine-notes-header">
+                  <h3 className="filevine-notes-title">Notes</h3>
+                  {!isCreatingNote && (
+                    <button type="button" className="filevine-new-note-btn" onClick={startCreateNote}>
+                      + New note
+                    </button>
+                  )}
+                </div>
+
+                {isCreatingNote && (
+                  <form
+                    className="filevine-note-editor"
+                    onSubmit={(event: FormEvent) => {
+                      event.preventDefault()
+                      submitCreateNote()
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      aria-label="Note name"
+                      placeholder="Note name"
+                      value={noteNameInput}
+                      onChange={(event) => setNoteNameInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') cancelNoteEditor()
+                      }}
+                    />
+                    <textarea
+                      aria-label="Note content"
+                      className="filevine-note-textarea"
+                      placeholder="Markdown content"
+                      value={noteContentInput}
+                      onChange={(event) => setNoteContentInput(event.target.value)}
+                    />
+                    <div className="filevine-note-editor-actions">
+                      <button type="submit">Create</button>
+                      <button type="button" onClick={cancelNoteEditor}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {notes.length === 0 && !isCreatingNote ? (
+                  <div className="filevine-notes-empty">No notes yet.</div>
+                ) : (
+                  <ul className="filevine-notes-list">
+                    {notes.map((note) => (
+                      <li key={note.id} className="filevine-notes-list-item">
+                        {editingNoteId === note.id ? (
+                          <form
+                            className="filevine-note-editor"
+                            onSubmit={(event: FormEvent) => {
+                              event.preventDefault()
+                              submitEditNote()
+                            }}
+                          >
+                            <input
+                              autoFocus
+                              aria-label={`Edit name for ${note.name}`}
+                              value={noteNameInput}
+                              onChange={(event) => setNoteNameInput(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Escape') cancelNoteEditor()
+                              }}
+                            />
+                            <textarea
+                              aria-label={`Edit content for ${note.name}`}
+                              className="filevine-note-textarea"
+                              value={noteContentInput}
+                              onChange={(event) => setNoteContentInput(event.target.value)}
+                            />
+                            <div className="filevine-note-editor-actions">
+                              <button type="submit">Save</button>
+                              <button type="button" onClick={cancelNoteEditor}>
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="filevine-notes-list-row">
+                            <button
+                              type="button"
+                              className={`filevine-note-name${note.id === selectedNoteId ? ' selected' : ''}`}
+                              onClick={() => setSelectedNoteId(note.id)}
+                            >
+                              {note.name}
+                            </button>
+                            <span className="filevine-note-actions">
+                              <button
+                                type="button"
+                                className="filevine-tree-action-btn"
+                                aria-label={`Edit ${note.name}`}
+                                onClick={() => startEditNote(note)}
+                              >
+                                ✎
+                              </button>
+                              <button
+                                type="button"
+                                className="filevine-tree-action-btn"
+                                aria-label={`Delete ${note.name}`}
+                                onClick={() => handleDeleteNote(note)}
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {selectedNote && editingNoteId !== selectedNote.id && (
+                  <div
+                    className="filevine-note-rendered"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(selectedNote.content) }}
+                  />
+                )}
+              </div>
             </>
           ) : (
             <div className="filevine-detail-empty">Select a folder to view its details.</div>

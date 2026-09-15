@@ -3,11 +3,13 @@ import type {
   ApplyScenarioPackResult,
   CalendarItemPatch,
   FileVineFolderPatch,
+  FileVineNotePatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -88,6 +90,14 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     db.updateFileVineFolder(id, patch)
   )
   ipcMain.handle('db:fileVineFolders:delete', (_event, id: string) => db.deleteFileVineFolder(id))
+
+  ipcMain.handle('db:fileVineNotes:list', (_event, folderId: string) => db.listFileVineNotes(folderId))
+  ipcMain.handle('db:fileVineNotes:get', (_event, id: string) => db.getFileVineNote(id))
+  ipcMain.handle('db:fileVineNotes:create', (_event, note: NewFileVineNote) => db.createFileVineNote(note))
+  ipcMain.handle('db:fileVineNotes:update', (_event, id: string, patch: FileVineNotePatch) =>
+    db.updateFileVineNote(id, patch)
+  )
+  ipcMain.handle('db:fileVineNotes:delete', (_event, id: string) => db.deleteFileVineNote(id))
 
   ipcMain.handle('config:settings:get', () => config.getSettings())
   ipcMain.handle('config:settings:set', (_event, settings: Settings) => config.setSettings(settings))

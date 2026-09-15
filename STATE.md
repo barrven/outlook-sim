@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 048 (FileVine notes/files CRUD with Markdown content)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,31 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) implemented: new `FileVineNote { id, folderId, name, content }`
+  (Markdown source) plus a `filevine_notes` SQLite table and full CRUD on
+  `MailDb`, mirroring 047's `filevine_folders` conventions; `047`'s
+  `deleteFileVineFolder` cascade now also deletes each deleted folder's
+  notes (AC5), same FK-ordering fix pattern as 047 itself. Added `marked` +
+  `dompurify` (new deps — no Markdown library existed yet) behind a small
+  `renderer/src/markdown.ts` wrapper for sanitized-HTML rendering, the
+  app's first `dangerouslySetInnerHTML` use. Extended `FileVineView.tsx`'s
+  detail pane with a Notes section: create/edit inline forms (name +
+  Markdown-source textarea) following the folder tree's existing
+  conventions, a rendered (not raw) view when a note is selected, and a
+  structurally distinct edit mode (AC1-3). A first attempt at resetting
+  note-selection state via a `useEffect` on folder-change tripped
+  `react-hooks/set-state-in-effect`; fixed by moving the reset into an
+  explicit `selectFolder()` handler used everywhere `selectedFolderId`
+  changes, leaving the effect to only fetch. Verified live: a standalone
+  `esbuild`-bundled `db.ts` script drove full note CRUD, close/reopen
+  persistence, and cascade-delete (including a nested descendant folder's
+  notes) against a real `MailDb`; a throwaway RTL smoke test (written, run,
+  deleted) drove the full UI flow including confirming real rendered
+  `<h1>`/`<strong>` tags appear, not literal Markdown source. lint/
+  typecheck/build pass; existing suite unchanged 454/454 (only
+  `ipc.test.ts`'s exhaustive channel-list test needed a content
+  touch-up for the 5 new channels). Phase set to `test`.
 - 2026-09-14 — feature 047 (FileVine tab — folder structure and client
   association) accepted by user, with one change requested before sign-off:
   the FileVine client dropdown was listing all personas (including Grollo

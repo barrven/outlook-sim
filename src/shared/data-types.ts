@@ -131,6 +131,21 @@ export type NewFileVineFolder = Omit<FileVineFolder, 'id' | 'parentId' | 'client
 
 export type FileVineFolderPatch = Partial<Omit<FileVineFolder, 'id'>>
 
+// A note/file entry within a FileVine folder (feature 048). `content` is
+// Markdown source, rendered formatted in the view UI and edited as raw
+// source in edit mode — this type only stores the source, not any rendered
+// form.
+export interface FileVineNote {
+  id: string
+  folderId: string
+  name: string
+  content: string
+}
+
+export type NewFileVineNote = Omit<FileVineNote, 'id'>
+
+export type FileVineNotePatch = Partial<Omit<FileVineNote, 'id' | 'folderId'>>
+
 // Broadcast when the reminder scheduler fires a specific occurrence's
 // reminder. Deliberately not `CalendarItem` itself: `id` here is unique per
 // *occurrence* firing (`seriesId:originalStartTime`), not per series, so two

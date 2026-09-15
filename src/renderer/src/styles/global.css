@@ -1381,3 +1381,145 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+.filevine-notes-section {
+  margin-top: 20px;
+  max-width: 640px;
+}
+
+.filevine-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.filevine-notes-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.filevine-new-note-btn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.filevine-new-note-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.filevine-notes-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.filevine-notes-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.filevine-notes-list-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.filevine-notes-list-item:last-child {
+  border-bottom: none;
+}
+
+.filevine-notes-list-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 6px;
+}
+
+.filevine-note-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  padding: 3px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.filevine-note-name:hover {
+  background: #eaeaea;
+}
+
+.filevine-note-name.selected {
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  padding: 2px 5px;
+}
+
+.filevine-note-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.filevine-note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.filevine-note-editor input {
+  padding: 5px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+}
+
+.filevine-note-textarea {
+  min-height: 140px;
+  padding: 6px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  resize: vertical;
+}
+
+.filevine-note-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.filevine-note-rendered {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.filevine-note-rendered :first-child {
+  margin-top: 0;
+}
+
+.filevine-note-rendered :last-child {
+  margin-bottom: 0;
+}

@@ -4,11 +4,13 @@ import type {
   CalendarItemPatch,
   ComposeOpenOptions,
   FileVineFolderPatch,
+  FileVineNotePatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -50,6 +52,13 @@ const api = {
       update: (id: string, patch: FileVineFolderPatch) =>
         ipcRenderer.invoke('db:fileVineFolders:update', id, patch),
       delete: (id: string) => ipcRenderer.invoke('db:fileVineFolders:delete', id)
+    },
+    fileVineNotes: {
+      list: (folderId: string) => ipcRenderer.invoke('db:fileVineNotes:list', folderId),
+      get: (id: string) => ipcRenderer.invoke('db:fileVineNotes:get', id),
+      create: (note: NewFileVineNote) => ipcRenderer.invoke('db:fileVineNotes:create', note),
+      update: (id: string, patch: FileVineNotePatch) => ipcRenderer.invoke('db:fileVineNotes:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('db:fileVineNotes:delete', id)
     },
     settings: {
       get: () => ipcRenderer.invoke('config:settings:get'),

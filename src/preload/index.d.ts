@@ -6,6 +6,8 @@ import type {
   ComposeOpenOptions,
   FileVineFolder,
   FileVineFolderPatch,
+  FileVineNote,
+  FileVineNotePatch,
   FiredReminder,
   Folder,
   LlmGenerateInput,
@@ -14,6 +16,7 @@ import type {
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   Persona,
@@ -52,6 +55,13 @@ export interface DataApi {
     get: (id: string) => Promise<FileVineFolder | null>
     create: (folder: NewFileVineFolder) => Promise<FileVineFolder>
     update: (id: string, patch: FileVineFolderPatch) => Promise<FileVineFolder | null>
+    delete: (id: string) => Promise<void>
+  }
+  fileVineNotes: {
+    list: (folderId: string) => Promise<FileVineNote[]>
+    get: (id: string) => Promise<FileVineNote | null>
+    create: (note: NewFileVineNote) => Promise<FileVineNote>
+    update: (id: string, patch: FileVineNotePatch) => Promise<FileVineNote | null>
     delete: (id: string) => Promise<void>
   }
   settings: {
