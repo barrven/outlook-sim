@@ -1,7 +1,7 @@
 ---
 id: 027
 title: LLM error banner — Retry button and durable failure log
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -131,7 +131,64 @@ tests added here — full coverage is `/test`'s job next). Phase set to
 `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 18 tests across 5 layers (467 → 485, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`config.test.ts`** (+3) — AC4: the failure log starts empty; entries
+  append in order without overwriting earlier ones (three different
+  sources in one log); the log survives a close/reopen cycle.
+- **`scheduler.test.ts`** (+3, plus one assertion added to an existing
+  test) — AC4: the existing "calls onFailed..." test now also asserts the
+  scheduler's own `tick()` produces exactly one durable log entry per
+  real failure, proving `attemptUnsolicitedMail` is genuinely wired into
+  the normal scheduled path, not just the new manual-retry one. A new
+  `attemptUnsolicitedMail` describe block covers: a real failure logs one
+  entry; a success logs nothing; the no-personas-configured no-op (`{ ok:
+  true, sent: false }`) logs nothing either, since that's explicitly not a
+  failure.
+- **`ipc.test.ts`** (+6) — AC4: `llm:personaReply`'s existing failure test
+  now also asserts a log entry with `source: 'personaReply'`; a new
+  `llm:test` test covers a failure logging `source: 'testConnection'` and
+  a subsequent success adding nothing more (still length 1). AC2/AC3: a
+  new test drives the actual Retry mechanics through the real registered
+  handlers — call `llm:personaReply` with a `sentMessageId`, get a
+  failure, call it again with the *same* id, get a success this time,
+  and assert both the success broadcast (`data:messages-changed`) and
+  that a message was actually inserted (AC3's "completes the original
+  action"), while confirming the failure log keeps the first attempt's
+  entry (a later success doesn't retroactively erase history). AC1/AC3: a
+  new `llm:retryUnsolicitedMail` describe block covers a failure
+  (broadcasts + logs) and a success (broadcasts `data:messages-changed`,
+  inserts a message, logs nothing).
+- **`App.test.tsx`** (+4) — AC1: a persona-reply failure banner shows both
+  a Retry and a Dismiss button. AC2: clicking Retry calls
+  `window.api.llm.personaReply` with the exact `sentMessageId` from the
+  original failure (not just "some" id) — the concrete proof of "same
+  call, same inputs". AC2: a second failure via Retry (simulating the
+  main-process handler's own re-broadcast, since `llm.personaReply` is
+  mocked at the IPC boundary in these tests) leaves exactly one
+  `role="alert"` element on screen with the *new* error text — proving
+  update-in-place, not stacking. AC3: a successful Retry clears the
+  banner. AC1/AC2/AC3: the same three behaviors (Retry button present,
+  calls `retryUnsolicitedMail`, clears on success) covered for the
+  unsolicited-mail banner in one combined test, since its Retry path has
+  no "same input" to separately verify (there's nothing to replay).
+- **`SettingsView.test.tsx`** (+4) — AC1: Retry and a new "Dismiss test
+  result" button appear on failure and are both absent on success. AC2:
+  Retry re-calls `llm.test` with the exact currently-displayed
+  provider/model/key (asserted via `toHaveBeenNthCalledWith`, proving it's
+  the same call the original Test Connection click made, not a
+  differently-shaped one). AC2: a second Retry failure replaces the
+  displayed error text rather than appending to it. AC1: Dismiss clears
+  the error without touching any form field (the Model field's value is
+  asserted unchanged), distinguishing it from the pre-existing
+  "clears on field change" behavior.
+
+Deliberately not covered: no in-app log-viewer tests, since none was
+built (not an AC bullet — see Implementation Notes). Real Electron
+IPC/contextBridge serialization untested (same non-blocking sandbox gap
+noted in every prior feature). Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

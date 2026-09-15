@@ -488,6 +488,78 @@ describe('App shell', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('027 AC1/AC2: a persona-reply failure banner offers Retry, which re-calls personaReply with the same sentMessageId', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.llm.personaReply).mockResolvedValue({ ok: false, error: 'still failing' })
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onPersonaReplyFailed] = vi.mocked(window.api.onPersonaReplyFailed).mock.calls[0]
+    onPersonaReplyFailed('sent-42', 'bad key')
+    const banner = await screen.findByRole('alert')
+
+    expect(within(banner).getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(within(banner).getByRole('button', { name: 'Dismiss' })).toBeInTheDocument()
+
+    await user.click(within(banner).getByRole('button', { name: 'Retry' }))
+
+    expect(window.api.llm.personaReply).toHaveBeenCalledWith('sent-42')
+  })
+
+  it('027 AC3: a successful Retry clears the persona-reply failure banner', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onPersonaReplyFailed] = vi.mocked(window.api.onPersonaReplyFailed).mock.calls[0]
+    onPersonaReplyFailed('sent-42', 'bad key')
+    await screen.findByRole('alert')
+
+    vi.mocked(window.api.llm.personaReply).mockResolvedValue({ ok: true, replied: false })
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('027 AC2: a second failure on Retry updates the existing banner instead of stacking a duplicate one', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onPersonaReplyFailed] = vi.mocked(window.api.onPersonaReplyFailed).mock.calls[0]
+    onPersonaReplyFailed('sent-1', 'first error')
+    await screen.findByRole('alert')
+
+    // A real Retry re-invokes the same IPC channel, whose main-process handler
+    // re-broadcasts on a repeat failure — simulate that here since llm.personaReply
+    // itself is mocked at the IPC boundary in these tests.
+    vi.mocked(window.api.llm.personaReply).mockImplementation(async () => {
+      onPersonaReplyFailed('sent-1', 'second error')
+      return { ok: false, error: 'second error' }
+    })
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+    expect(screen.getByRole('alert')).toHaveTextContent('Persona reply failed: second error')
+  })
+
+  it('027 AC1/AC2/AC3: an unsolicited-mail failure banner offers Retry, which calls retryUnsolicitedMail and clears on success', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    const [onUnsolicitedMailFailed] = vi.mocked(window.api.onUnsolicitedMailFailed).mock.calls[0]
+    onUnsolicitedMailFailed('Network error: fetch failed')
+    const banner = await screen.findByRole('alert')
+    expect(within(banner).getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+
+    vi.mocked(window.api.llm.retryUnsolicitedMail).mockResolvedValue({ ok: true, sent: false })
+    await user.click(within(banner).getByRole('button', { name: 'Retry' }))
+
+    expect(window.api.llm.retryUnsolicitedMail).toHaveBeenCalled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('shows a dismissible banner when a calendar reminder fires', async () => {
     const user = userEvent.setup()
     render(<App />)

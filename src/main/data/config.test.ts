@@ -110,4 +110,29 @@ describe('ConfigStore', () => {
     expect(reopened.getPersonas()).toEqual(config.getPersonas())
     expect(reopened.getSchedulerState()).toEqual({ nextDueSimTime: 555 })
   })
+
+  // LLM failure log (feature 027)
+
+  it('027 AC4: starts with an empty failure log', () => {
+    expect(config.getLlmFailureLog()).toEqual([])
+  })
+
+  it('027 AC4: appends failure log entries in order, without overwriting earlier ones', () => {
+    config.appendLlmFailureLog({ timestamp: 1000, source: 'personaReply', error: 'first' })
+    config.appendLlmFailureLog({ timestamp: 2000, source: 'testConnection', error: 'second' })
+    config.appendLlmFailureLog({ timestamp: 3000, source: 'unsolicitedMail', error: 'third' })
+
+    expect(config.getLlmFailureLog()).toEqual([
+      { timestamp: 1000, source: 'personaReply', error: 'first' },
+      { timestamp: 2000, source: 'testConnection', error: 'second' },
+      { timestamp: 3000, source: 'unsolicitedMail', error: 'third' }
+    ])
+  })
+
+  it('027 AC4: the failure log survives a close/reopen cycle', () => {
+    config.appendLlmFailureLog({ timestamp: 1000, source: 'personaReply', error: 'boom' })
+
+    const reopened = new ConfigStore(baseDir)
+    expect(reopened.getLlmFailureLog()).toEqual([{ timestamp: 1000, source: 'personaReply', error: 'boom' }])
+  })
 })

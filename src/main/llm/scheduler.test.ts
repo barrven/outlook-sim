@@ -6,7 +6,7 @@ import type { Persona } from '../../shared/data-types'
 import { ConfigStore } from '../data/config'
 import { MailDb } from '../data/db'
 import { SimClock } from '../data/clock'
-import { generateUnsolicitedMail, UnsolicitedMailScheduler } from './scheduler'
+import { attemptUnsolicitedMail, generateUnsolicitedMail, UnsolicitedMailScheduler } from './scheduler'
 
 const PERSONA: Persona = {
   id: 'p1',
@@ -351,6 +351,12 @@ describe('UnsolicitedMailScheduler', () => {
     await scheduler.tick()
 
     expect(onFailed).toHaveBeenCalledWith('Network error: fetch failed')
+    // 027 AC4: the scheduler's own tick() goes through attemptUnsolicitedMail,
+    // so a failure is logged durably even though nothing in this test ever
+    // showed or dismissed a UI banner.
+    expect(config.getLlmFailureLog()).toEqual([
+      { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+    ])
     const newState = config.getSchedulerState()
     expect(newState.nextDueSimTime).toBeGreaterThan(200)
 
@@ -441,5 +447,64 @@ describe('UnsolicitedMailScheduler', () => {
     clock.pause()
     await scheduler.tick()
     expect(onGenerated).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('attemptUnsolicitedMail (feature 027)', () => {
+  let baseDir: string
+  let db: MailDb
+  let config: ConfigStore
+  let clock: SimClock
+
+  beforeEach(() => {
+    baseDir = mkdtempSync(join(tmpdir(), 'outlook-sim-scheduler-'))
+    db = new MailDb(baseDir)
+    config = new ConfigStore(baseDir)
+    clock = new SimClock(baseDir)
+  })
+
+  afterEach(() => {
+    db.close()
+    rmSync(baseDir, { recursive: true, force: true })
+    vi.restoreAllMocks()
+  })
+
+  it('AC4: appends a failure-log entry on a real failure', async () => {
+    config.setPersonas([PERSONA])
+    config.setSettings({
+      provider: 'openai',
+      model: 'gpt-4o',
+      apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+    })
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+    expect(config.getLlmFailureLog()).toEqual([
+      { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+    ])
+  })
+
+  it('does not log anything on success', async () => {
+    config.setPersonas([PERSONA])
+    config.setSettings({
+      provider: 'openai',
+      model: 'gpt-4o',
+      apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+    })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toMatchObject({ ok: true, sent: true })
+    expect(config.getLlmFailureLog()).toEqual([])
+  })
+
+  it('does not log anything for the no-personas-configured no-op (not a failure)', async () => {
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toEqual({ ok: true, sent: false })
+    expect(config.getLlmFailureLog()).toEqual([])
   })
 })

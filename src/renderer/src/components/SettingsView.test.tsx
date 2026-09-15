@@ -222,6 +222,80 @@ describe('SettingsView', () => {
       ).toBeInTheDocument()
     })
 
+    it('027 AC1: shows Retry and Dismiss on failure, but neither on success', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      expect(providerSection().getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+      expect(providerSection().getByRole('button', { name: 'Dismiss test result' })).toBeInTheDocument()
+
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: true, text: 'pong' })
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+      await providerSection().findByText('Success: pong')
+
+      expect(providerSection().queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+      expect(providerSection().queryByRole('button', { name: 'Dismiss test result' })).not.toBeInTheDocument()
+    })
+
+    it('027 AC2: Retry re-calls llm.test with the currently displayed settings, same as the original call', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+
+      expect(window.api.llm.test).toHaveBeenCalledTimes(2)
+      expect(window.api.llm.test).toHaveBeenNthCalledWith(2, {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: SETTINGS.apiKeys
+      })
+    })
+
+    it('027 AC2: a second failure on Retry updates the same error message rather than adding another', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'first error' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('first error')
+
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'second error' })
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+
+      expect(await providerSection().findByText('second error')).toBeInTheDocument()
+      expect(providerSection().queryByText('first error')).not.toBeInTheDocument()
+    })
+
+    it('027 AC1: Dismiss clears the error without changing any field', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      await user.click(providerSection().getByRole('button', { name: 'Dismiss test result' }))
+
+      expect(providerSection().queryByText('bad key')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Model')).toHaveValue('gpt-4o')
+    })
+
     it('clears a stale test result when the provider, model, or key changes', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)

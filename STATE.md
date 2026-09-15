@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 027 (LLM error banner — Retry button and durable failure log)
 - **Last updated:** 2026-09-14
 
@@ -18,6 +18,29 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) tested: added 18 tests (467 → 485, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 5 layers — `config.test.ts`
+  (+3): failure-log round-trip, ordered multi-source appends, close/reopen
+  persistence; `scheduler.test.ts` (+3, plus a log assertion added to an
+  existing test): the scheduler's own tick() logs exactly once per real
+  failure, a dedicated `attemptUnsolicitedMail` block covers a real
+  failure logging, a success logging nothing, and the no-personas no-op
+  logging nothing either; `ipc.test.ts` (+6): personaReply/test failure
+  logging, and a concrete Retry-mechanics test that calls
+  `llm:personaReply` with the same `sentMessageId` twice (fail then
+  succeed), proving both the success broadcast and that the failure log
+  keeps the first attempt's entry; a new `llm:retryUnsolicitedMail`
+  describe block covers both outcomes; `App.test.tsx` (+4): Retry calls
+  `llm.personaReply` with the exact original `sentMessageId`, a second
+  Retry failure updates the same single `role="alert"` banner rather than
+  stacking, a successful Retry clears it, and the unsolicited-mail
+  banner's Retry/clear path; `SettingsView.test.tsx` (+4): Retry/Dismiss
+  visibility, Retry re-calling `llm.test` with the exact currently-
+  displayed settings, a second failure replacing the displayed message,
+  and Dismiss clearing the error without touching any form field.
+  lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
   failure log) implemented: persona-reply failures now carry their
   `sentMessageId` through the `llm:persona-reply-failed` broadcast so

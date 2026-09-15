@@ -314,6 +314,34 @@ describe('registerDataIpcHandlers', () => {
       expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>)['x-api-key']).toBe('sk-unsaved')
     })
 
+    it('027 AC4: llm:test logs a failure durably, but logs nothing on success', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+      const failingSettings: Settings = {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: { openai: 'sk-bad', anthropic: '', gemini: '', xai: '' }
+      }
+
+      const result = (await handlers.get('llm:test')!(fakeEvent, failingSettings)) as LlmGenerateResult
+
+      expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+      expect(config.getLlmFailureLog()).toEqual([
+        { timestamp: expect.any(Number), source: 'testConnection', error: 'Network error: fetch failed' }
+      ])
+
+      vi.restoreAllMocks()
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve({ choices: [{ message: { content: 'pong' } }] })
+      } as Response)
+      await handlers.get('llm:test')!(fakeEvent, failingSettings)
+
+      // Still just the one entry from the earlier failure — success adds nothing.
+      expect(config.getLlmFailureLog()).toHaveLength(1)
+    })
+
     it('llm:generate resolves with an error result instead of rejecting on failure', async () => {
       config.setSettings({
         provider: 'openai',
@@ -414,6 +442,62 @@ describe('registerDataIpcHandlers', () => {
         )
         expect(fakeWindow.webContents.send).not.toHaveBeenCalledWith('data:messages-changed')
         expect(db.listMessages('inbox')).toEqual([])
+        // 027 AC4: logged durably, independent of any UI banner.
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'personaReply', error: 'Network error: fetch failed' }
+        ])
+      })
+
+      it('027 AC2/AC3: Retry (re-calling with the same sentMessageId) can succeed after a prior failure, completing the original action', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: true
+          }
+        ])
+        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        const sent = db.createMessage({
+          folderId: 'sent',
+          subject: 'Hi',
+          body: 'Hello',
+          fromName: 'Jordan',
+          fromEmail: 'jordan@example.com',
+          toName: 'Morgan Rivera',
+          toEmail: 'morgan@example.com',
+          timestamp: 1
+        })
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('fetch failed'))
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const firstResult = await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+        expect(firstResult).toEqual({ ok: false, error: 'Network error: fetch failed' })
+
+        // Retry: the exact same call, same sentMessageId — this time it succeeds.
+        fetchSpy.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'Hi there!' } }] })
+        } as Response)
+        const secondResult = await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+
+        expect(secondResult).toMatchObject({ ok: true, replied: true })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toHaveLength(1)
+        // The failure log keeps the first attempt's entry — logging doesn't get retroactively erased by a later success.
+        expect(config.getLlmFailureLog()).toHaveLength(1)
       })
 
       it('does nothing (no broadcast, no message) when the recipient is not a persona', async () => {
@@ -435,6 +519,78 @@ describe('registerDataIpcHandlers', () => {
 
         expect(fetchSpy).not.toHaveBeenCalled()
         expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('llm:retryUnsolicitedMail', () => {
+      it('027: on failure, broadcasts llm:unsolicited-mail-failed and logs it durably', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false
+          }
+        ])
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const result = await handlers.get('llm:retryUnsolicitedMail')!(fakeEvent)
+
+        expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith(
+          'llm:unsolicited-mail-failed',
+          'Network error: fetch failed'
+        )
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+        ])
+      })
+
+      it('027 AC3: on success, broadcasts data:messages-changed and completes the original action (a message is inserted)', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false
+          }
+        ])
+        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'Subject: Hi\n\nBody text' } }] })
+        } as Response)
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const result = await handlers.get('llm:retryUnsolicitedMail')!(fakeEvent)
+
+        expect(result).toMatchObject({ ok: true, sent: true })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toHaveLength(1)
+        expect(config.getLlmFailureLog()).toEqual([])
       })
     })
   })
