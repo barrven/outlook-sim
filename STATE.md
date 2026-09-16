@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 043 (Calendar item view-mode and single-open swap)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  validated: lint/typecheck/build pass; full test suite (608/608) re-run
+  3x, stable; confirmed via `git diff` (d84187d..7c578b0) that `/test`
+  touched only test/doc files, no implementation drift. All 4 ACs
+  re-verified directly against current source: AC1 the view branch renders
+  only `<span>`s, structurally nothing to edit; AC2 `startEdit()` flips the
+  same panel's mode in place, chooser now correctly gated behind `panelMode
+  === 'edit'`; AC3 `openView()` unconditionally resets state on every
+  click and `openOccurrence` is a single value, so two panels open at once
+  is structurally impossible; AC4 the create branch is byte-for-byte
+  unchanged. One flagged-not-blocking item for `/retro`: Cancel returning
+  to view (vs. a full close) was a judgment call beyond the literal AC
+  text, documented and tested but worth confirming matches intended UX. No
+  live multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
 - 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
   tested: `CalendarView.test.tsx` net +4 (604 → 608, all passing; re-run 3x,
   stable). Several existing "click an item" tests genuinely asserted the

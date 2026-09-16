@@ -1,7 +1,7 @@
 ---
 id: 043
 title: Calendar item view-mode and single-open swap
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -90,7 +90,47 @@ single in-window panel, nothing new there) and any visual/CSS assertion
 beyond class names already implicit in existing conventions.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (608/608) re-run 3x, stable.
+Confirmed via `git diff` (d84187d..7c578b0) that `/test` touched only
+`STATE.md`/`features/*`/the test file — no implementation drift.
+
+All 4 ACs re-verified directly against current source, not just tests:
+- AC1: `CalendarItemView` (the read-only branch, `panelMode === 'view'`)
+  renders every field as a plain `<span>` — no `<input>`/`<textarea>`/
+  `<select>` anywhere in that component, so there is structurally nothing
+  for a stray click to edit. Also confirmed by test (zero `textbox`/
+  `checkbox` roles present).
+- AC2: `startEdit()` flips `panelMode` to `'edit'` on the *same*
+  `openOccurrence` (no new state, no remount of a different item) — for a
+  non-recurring occurrence it also sets `editScope: 'series'` directly, for
+  a recurring one it leaves `editScope: null` so the existing this-event/
+  whole-series chooser (itself unchanged) renders next, now correctly
+  gated behind `panelMode === 'edit'` so it can't appear while still
+  viewing.
+- AC3: `openView()` is the only place `openOccurrence` is set from a click,
+  and it unconditionally resets `panelMode`/`editScope` to view/null on
+  every call — since `openOccurrence` is a single value (not a set/array),
+  clicking a second item structurally replaces the first; there is no code
+  path that could hold two open at once. Confirmed by test asserting
+  exactly one `dialog` role exists after switching.
+- AC4: `showCreateForm` is checked first in the render ternary,
+  unconditionally, before any `openOccurrence` branch — this code path is
+  byte-for-byte unchanged from before the feature. Confirmed by the
+  existing (unmodified, still-passing) create-flow test coverage.
+
+One design decision made beyond the literal AC text, flagged for
+`/retro`'s awareness: Cancel (from the edit form, or from the this-event/
+series chooser) returns to the read-only view rather than closing the
+panel outright, on the reasoning that Cancel undoes the edit attempt, not
+the fact that you were looking at the item. Explicit Close (from the view
+panel) or a successful save/delete still fully close it. This is
+documented in Implementation Notes and covered by tests, but the AC itself
+doesn't specify either behavior, so if the intended UX was actually
+"Cancel always closes," that would need a follow-up.
+
+No live multi-window Electron GUI click-through attempted — no attached
+display; same non-blocking gap as every prior feature. All checks pass, no
+gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

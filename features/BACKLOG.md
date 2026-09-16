@@ -44,7 +44,7 @@
 | 039 | Message list multi-select | done | medium | 039-message-list-multiselect.md |
 | 040 | Message list right-click context menu | done | medium | 040-message-list-context-menu.md |
 | 041 | Double-click message opens a pop-out reading window | done | medium | 041-message-popout-window.md |
-| 043 | Calendar item view-mode and single-open swap | validating | medium | 043-calendar-view-edit-mode.md |
+| 043 | Calendar item view-mode and single-open swap | accept | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | backlog | medium | 046-tasks-panel.md |
 | 049 | FileVine content feeds persona LLM context | backlog | medium | 049-filevine-llm-context.md |
 | 033 | Ribbon — hide Send/Receive and Folder tabs | backlog | low | 033-hide-unused-ribbon-tabs.md |
