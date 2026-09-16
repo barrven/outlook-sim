@@ -1136,6 +1136,25 @@ body {
   gap: 8px;
 }
 
+.calendar-event-view {
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--nav-rail-bg);
+}
+
+.calendar-event-view-label {
+  flex: 0 0 90px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.calendar-event-view-value {
+  flex: 1 1 auto;
+  font-size: 13px;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .calendar-recurrence-scope-chooser {
   border-top: 1px solid var(--border);
   padding: 16px 20px;

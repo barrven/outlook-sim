@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 043 (Calendar item view-mode and single-open swap)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,33 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  implemented: `CalendarView.tsx` gained a `panelMode: 'view' | 'edit'`
+  alongside its existing `openOccurrence`/`editScope` state. Clicking any
+  item (`openView`, renamed from `openEdit`) always (re)opens fresh in
+  read-only view mode — a new sibling `CalendarItemView` component
+  rendering fields as plain text, no inputs — so clicking a different item
+  while one is open naturally replaces the single open panel (AC1, AC3).
+  Its "Edit" button (`startEdit`) flips to edit mode: a non-recurring item
+  skips straight to the existing form (matching prior skip-the-chooser
+  behavior), a recurring one shows the pre-existing this-event/whole-series
+  chooser first, now gated on `panelMode === 'edit'` so it doesn't show
+  while still viewing (AC2). Design decision beyond the literal AC text:
+  Cancel from the edit form or the scope chooser now returns to view mode
+  rather than closing outright, since Cancel undoes the edit attempt, not
+  the fact that you were looking at the item; a full close still happens
+  from the view panel's own Close button and after any successful
+  save/delete. Create-flow (`showCreateForm`) untouched, still opens the
+  editable form directly first in the render ternary (AC4). Verified live:
+  a throwaway 6-case RTL suite drove all 4 ACs directly (view has no
+  inputs, Edit reaches the form for a plain item, Edit shows the chooser
+  for a recurring item, Cancel returns to view not full-close, switching
+  items swaps the single open panel, create still opens directly editable).
+  lint/typecheck/build all pass. Existing `CalendarView.test.tsx` now has
+  11 failing assertions (was 34/34) because they click an item and expect
+  the edit form immediately — expected fallout of the intentional
+  click-opens-view-first behavior change, left for `/test` to update rather
+  than papered over here. Phase set to `test`.
 - 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
   window) accepted by user; logged to CHANGELOG. Active feature set to
   043 (Calendar item view-mode and single-open swap, next in BACKLOG.md
