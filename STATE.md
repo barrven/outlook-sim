@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 049 (FileVine content feeds persona LLM context)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  implemented: new `main/llm/fileVineContext.ts`'s
+  `buildFileVineContextPrompt(db, personaId)` finds every FileVine folder
+  with `clientPersonaId === personaId`, formats each folder's notes (name
+  + content, truncated at 4000 chars per note as the "reasonable summary"
+  for anything very large) into a prompt section, and returns `null` for
+  no-folder personas so the existing `filter(Boolean)` prompt assembly
+  omits it entirely (AC2, structural). Wired into both `personaReply.ts`
+  (feature 015) and `scheduler.ts` (feature 016)'s `buildSystemPrompt`
+  functions, right alongside `persona.bio`/`extraPrompt`. AC4 (no stale
+  caching) needed no code — the helper always re-reads fresh from `db`,
+  same as every other context source these builders already assemble.
+  Verified live: a standalone `esbuild`-bundled script (real `MailDb`/
+  `ConfigStore`, stubbed `fetch`) confirmed the LLM-bound system prompt
+  includes specific note content + folder name for an associated persona,
+  omits the section entirely for one with no folder, and reflects a note
+  edit on the very next call with the old content gone. AC3 (a live LLM
+  response actually referencing the content) needs a real provider/API
+  key — flagged for the user's own manual confirmation, same category as
+  every prior feature's no-attached-display GUI gap. lint/typecheck/build
+  pass; existing `personaReply.test.ts`/`scheduler.test.ts` unchanged,
+  39/39. Phase set to `test`.
 - 2026-09-16 — feature 046 (Tasks side panel) accepted by user; logged to
   CHANGELOG. Active feature set to 049 (FileVine content feeds persona LLM
   context, next in BACKLOG.md table order — 033-045 excluding 043/046 are
