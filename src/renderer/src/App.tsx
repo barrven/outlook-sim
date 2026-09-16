@@ -266,6 +266,7 @@ function App(): ReactElement {
         onSelectFileVineTab={handleSelectFileVineTab}
         onSelectViewTab={handleSelectViewTab}
         onToggleTasksPanel={handleToggleTasksPanel}
+        onOpenSettings={() => setShowSettings(true)}
         onNewEmail={() => window.api.compose.open()}
         onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
         onNewEvent={() => setShowNewEventForm(true)}
@@ -283,9 +284,6 @@ function App(): ReactElement {
             <CalendarFolderPane />
           )}
           <NavSwitcher activeModule={activeModule} onSelectModule={handleSelectModule} />
-          <button type="button" className="settings-nav-button" onClick={() => setShowSettings(true)}>
-            Settings
-          </button>
         </div>
         {showSettings ? (
           <SettingsView

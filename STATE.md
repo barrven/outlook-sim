@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 034 (Move Settings into the File menu)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 034 (Move Settings into the File menu) implemented:
+  `RibbonBar.tsx`'s File tab is now a clickable dropdown (`role="menu"`)
+  with a Settings entry, mirroring `MessageContextMenu`'s click-outside/
+  Escape pattern; the nav rail's Settings button is removed, `App.tsx`
+  wires the same `setShowSettings(true)` through the new `onOpenSettings`
+  prop instead. `RibbonBar.test.tsx` and `App.test.tsx` have known,
+  expected failures (missing required prop / relocated Settings trigger)
+  left for `/test` to fix for real, per this repo's established
+  convention. Phase set to `test`.
 - 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
   accepted by user (selected "Accept (Recommended)" against the validation
   summary and diff, no changes requested); logged to CHANGELOG. Active

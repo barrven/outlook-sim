@@ -1,12 +1,15 @@
-import type { ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import type { ModuleId } from '../types'
 import OfficeClock from './OfficeClock'
 
-const TABS = ['File', 'Home', 'FileVine', 'View']
-// Home, FileVine, and View are real, clickable tabs — File stays a
-// disabled placeholder (no wired-up content yet). Send/Receive and Folder
-// were placeholders too, but never wired to anything and are now hidden
-// entirely rather than shown as permanently-disabled tabs (feature 033).
+// File is rendered separately, before this list — it opens a dropdown menu
+// rather than switching the active tab (feature 034), so it doesn't fit the
+// uniform tab-button rendering below.
+const TABS = ['Home', 'FileVine', 'View']
+// Home, FileVine, and View are real, clickable tabs. Send/Receive and
+// Folder were disabled placeholders too, but never wired to anything and
+// are now hidden entirely rather than shown as permanently-disabled tabs
+// (feature 033).
 type ClickableTab = 'Home' | 'FileVine' | 'View'
 
 const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']
@@ -33,6 +36,7 @@ interface RibbonBarProps {
   onSelectFileVineTab: () => void
   onSelectViewTab: () => void
   onToggleTasksPanel: () => void
+  onOpenSettings: () => void
   onNewEmail?: () => void
   onDelete?: () => void
   onNewEvent?: () => void
@@ -47,10 +51,31 @@ function RibbonBar({
   onSelectFileVineTab,
   onSelectViewTab,
   onToggleTasksPanel,
+  onOpenSettings,
   onNewEmail,
   onDelete,
   onNewEvent
 }: RibbonBarProps): ReactElement {
+  const [fileMenuOpen, setFileMenuOpen] = useState(false)
+  const fileMenuRef = useRef<HTMLDivElement>(null)
+
+  // Mirrors MessageContextMenu's click-outside/Escape-to-close pattern.
+  useEffect(() => {
+    if (!fileMenuOpen) return
+    function handlePointerDown(event: MouseEvent): void {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) setFileMenuOpen(false)
+    }
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') setFileMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [fileMenuOpen])
+
   const actions = viewTabActive ? VIEW_ACTIONS : activeModule === 'mail' ? MAIL_ACTIONS : CALENDAR_ACTIONS
   const actionHandlers: Partial<Record<string, () => void>> = {
     'New Email': onNewEmail,
@@ -69,6 +94,31 @@ function RibbonBar({
     <div className="ribbon">
       <div className="ribbon-tabs">
         <div className="ribbon-tabs-list" role="tablist" aria-label="Ribbon tabs">
+          <div className="ribbon-tab-file" ref={fileMenuRef}>
+            <button
+              type="button"
+              className="ribbon-tab"
+              aria-haspopup="menu"
+              aria-expanded={fileMenuOpen}
+              onClick={() => setFileMenuOpen((open) => !open)}
+            >
+              File
+            </button>
+            {fileMenuOpen && (
+              <div className="file-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setFileMenuOpen(false)
+                    onOpenSettings()
+                  }}
+                >
+                  Settings
+                </button>
+              </div>
+            )}
+          </div>
           {TABS.map((tab) => {
             const handler = tabHandlers[tab as ClickableTab]
             return (
