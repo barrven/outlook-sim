@@ -123,6 +123,38 @@ describe('generatePersonas', () => {
     expect(result).toEqual({ ok: true, personas: CAST })
   })
 
+  // Providers sometimes add commentary after the closing fence (e.g. "Hope
+  // this helps!"), which broke the old fence regex anchored to end-of-string.
+  it('AC2: strips a markdown code fence followed by trailing commentary', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse('```json\n' + JSON.stringify(CAST) + '\n```\nHope this helps!')
+    )
+
+    const result = await generatePersonas(config, 'a small law firm')
+
+    expect(result).toEqual({ ok: true, personas: CAST })
+  })
+
+  // Providers sometimes add leading commentary before the opening fence.
+  it('AC2: strips a markdown code fence preceded by leading commentary', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse('Sure, here you go:\n```json\n' + JSON.stringify(CAST) + '\n```')
+    )
+
+    const result = await generatePersonas(config, 'a small law firm')
+
+    expect(result).toEqual({ ok: true, personas: CAST })
+  })
+
+  // A fence without the "json" language tag must still be stripped.
+  it('AC2: strips a markdown code fence with no json language tag', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse('```\n' + JSON.stringify(CAST) + '\n```'))
+
+    const result = await generatePersonas(config, 'a small law firm')
+
+    expect(result).toEqual({ ok: true, personas: CAST })
+  })
+
   // AC4: a network/API-level failure comes back as a clear error, not a throw.
   it('AC4: a network error surfaces as a clear error result rather than throwing', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('boom'))

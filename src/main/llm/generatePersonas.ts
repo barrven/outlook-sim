@@ -24,11 +24,20 @@ function buildSystemPrompt(systemPrompt: string): string {
 
 // Providers sometimes wrap JSON output in a markdown code fence despite
 // being told not to; stripping it here keeps parsing lenient without
-// weakening the "respond with ONLY JSON" instruction itself.
+// weakening the "respond with ONLY JSON" instruction itself. The fence is
+// searched for anywhere in the response (not anchored to the whole trimmed
+// string) since providers also sometimes add leading/trailing commentary
+// around the fence.
 function stripCodeFence(text: string): string {
   const trimmed = text.trim()
-  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
-  return match ? match[1] : trimmed
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  if (fenced) {
+    return fenced[1]
+  }
+  // No closing fence (e.g. a truncated response) — still strip a leading
+  // opening fence so JSON.parse sees the payload rather than the backticks.
+  const openingOnly = trimmed.match(/^```(?:json)?\s*([\s\S]*)$/i)
+  return openingOnly ? openingOnly[1] : trimmed
 }
 
 /**
