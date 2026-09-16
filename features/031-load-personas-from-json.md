@@ -1,7 +1,7 @@
 ---
 id: 031
 title: Settings — load personas from a JSON file
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -139,7 +139,50 @@ sandbox gap noted in every prior feature). Full suite re-run 3x, stable;
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 536/536, re-run 3x, stable.
+`git diff 840b737..e51934a` (the `/test` stage's commit) confirms it
+touched only test files and docs — no implementation drift.
+
+Acceptance criteria, each checked independently of `/implement`'s and
+`/test`'s own checks:
+
+- **AC1** (button opens a native file picker) — **pass** by inspection:
+  `PersonasSettings.tsx` has a "Load Personas…" button calling
+  `handleLoadPersonas`, which invokes `window.api.personasFile.pick()`;
+  `main/index.ts` registers `personasFile:pick` with a real
+  `dialog.showOpenDialog(mainWindow, {...})` call, mirroring
+  `scenario:pickPack`'s already-established pattern exactly.
+- **AC2** (valid file replaces the current list) — **pass**. Independently
+  re-verified live below with real, not synthetic, data.
+- **AC3** (invalid file: specific error, no crash) — **pass**. Re-verified
+  live below by corrupting real persona data.
+- **AC4** (personas-only scope) — **pass**, structural: re-confirmed
+  `validatePersonasFile`'s source file has no import from `./db`,
+  `./config`, or `./clock` at all — there is no reference through which it
+  could touch mailbox, calendar, or system prompt, even by accident.
+- **AC5** (imported personas persist like manual ones) — **pass**:
+  `handleLoadPersonas` calls the same `window.api.data.personas.set(...)`
+  the manual create/edit/delete paths already use, which is already
+  covered end-to-end by `config.test.ts`'s existing persona
+  close/reopen-cycle tests — no new persistence path was introduced for
+  this feature to separately break.
+
+Live check (independent of `/implement`'s and `/test`'s own): bundled
+`personasFile.ts` standalone with `esbuild` and fed it the real, in-use
+`~/.config/outlook-sim/config/personas.json`'s persona array (15 real
+personas, from this session's own live config — read-only, never
+written to) as a "someone exported their real cast" input. All 15
+validated successfully, correctly tolerating extra fields the schema
+doesn't know about (`id`) rather than rejecting them, and each re-imports
+into a clean `PersonasFilePersona`. Corrupting one real entry
+(`displayName` removed) produced the exact expected
+`personas[3].displayName must be a string` — pinpointing the corrupted
+entry by index within 15 real records, not just "some record is broken."
+
+No live multi-window Electron GUI click-through attempted — same
+non-blocking sandbox gap noted in every prior feature (no attached
+display). The RTL test coverage plus the live check against real
+production persona data are the strongest available substitute.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

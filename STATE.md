@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 031 (Settings — load personas from a JSON file)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  validated: lint/typecheck/build pass; full test suite (536/536) re-run
+  3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs, no implementation drift. All 5 ACs verified by tests plus
+  code inspection plus a live check against real data — bundled
+  `personasFile.ts` standalone with `esbuild` and fed it the real, in-use
+  `~/.config/outlook-sim/config/personas.json`'s persona array (15 real
+  personas): all validated successfully (tolerating extra fields like
+  `id` the schema doesn't know about), and corrupting one real entry
+  produced the exact expected per-index error. AC4 (personas-only scope)
+  re-confirmed structurally — the module has no import from
+  `./db`/`./config`/`./clock` at all. No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
 - 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
   tested: added 21 tests (515 → 536, all passing; re-run 3x, stable), all
   AC-traceable by number, across 2 files — new `personasFile.test.ts`
