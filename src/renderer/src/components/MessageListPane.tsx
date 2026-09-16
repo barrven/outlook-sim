@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent, type ReactElement } from 'react'
-import type { MailMessage } from '../../../shared/data-types'
+import type { Folder, MailMessage } from '../../../shared/data-types'
+import MessageContextMenu from './MessageContextMenu'
 
 interface MessageListPaneProps {
   selectedFolderId: string
@@ -7,6 +8,11 @@ interface MessageListPaneProps {
   selectedMessageIds: string[]
   onSelectionChange: (messageIds: string[]) => void
   messagesVersion: number
+  folders: Folder[]
+  onReply: (message: MailMessage) => void
+  onReplyAll: (message: MailMessage) => void
+  onForward: (message: MailMessage) => void
+  onDeleteMessages: (messages: MailMessage[]) => void
 }
 
 function MessageListPane({
@@ -14,7 +20,12 @@ function MessageListPane({
   selectedFolderName,
   selectedMessageIds,
   onSelectionChange,
-  messagesVersion
+  messagesVersion,
+  folders,
+  onReply,
+  onReplyAll,
+  onForward,
+  onDeleteMessages
 }: MessageListPaneProps): ReactElement {
   const [messages, setMessages] = useState<MailMessage[]>([])
   const [allMessages, setAllMessages] = useState<MailMessage[]>([])
@@ -27,6 +38,10 @@ function MessageListPane({
   // here rather than being lifted to the parent alongside the selection
   // itself.
   const [anchorId, setAnchorId] = useState<string | null>(null)
+  // The right-click context menu (feature 040) — `messageIds` is the
+  // selection it was opened on (AC2: the existing selection if the
+  // right-clicked row was already part of it, otherwise just that row).
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageIds: string[] } | null>(null)
   // Reset the filter (and selection anchor) when the folder changes — done
   // during render (React's recommended pattern for "adjusting state when a
   // prop changes") rather than in an effect, since setState-in-effect
@@ -36,6 +51,7 @@ function MessageListPane({
     setCategoryFilterFolderId(selectedFolderId)
     setCategoryFilter('')
     setAnchorId(null)
+    setContextMenu(null)
   }
 
   useEffect(() => {
@@ -97,6 +113,42 @@ function MessageListPane({
     onSelectionChange([messageId])
   }
 
+  // Right-clicking a message that's already part of the current selection
+  // keeps that selection; right-clicking outside it selects just that one
+  // message first (AC2), same as a plain click.
+  function handleMessageContextMenu(messageId: string, event: MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault()
+    const targetIds = selectedMessageIds.includes(messageId) ? selectedMessageIds : [messageId]
+    if (!selectedMessageIds.includes(messageId)) {
+      setAnchorId(messageId)
+      onSelectionChange([messageId])
+    }
+    setContextMenu({ x: event.clientX, y: event.clientY, messageIds: targetIds })
+  }
+
+  function handleBulkMarkRead(messageIds: string[], isRead: boolean): void {
+    messageIds.forEach((id) => window.api.data.messages.update(id, { isRead }))
+  }
+
+  function handleBulkToggleFlag(messageIds: string[], isFlagged: boolean): void {
+    messageIds.forEach((id) => window.api.data.messages.update(id, { isFlagged }))
+  }
+
+  function handleBulkAddCategory(targetMessages: MailMessage[], category: string): void {
+    targetMessages.forEach((message) => {
+      if (message.categories.includes(category)) return
+      window.api.data.messages.update(message.id, { categories: [...message.categories, category] })
+    })
+  }
+
+  // Moving out of the currently viewed folder means the selected messages
+  // are about to disappear from this list, so the selection is cleared —
+  // same reasoning as Delete below.
+  function handleBulkMoveToFolder(messageIds: string[], folderId: string): void {
+    messageIds.forEach((id) => window.api.data.messages.update(id, { folderId }))
+    onSelectionChange([])
+  }
+
   const query = searchQuery.trim().toLowerCase()
   function matchesQuery(message: MailMessage): boolean {
     return (
@@ -115,6 +167,10 @@ function MessageListPane({
   const visibleMessages = categoryFilter
     ? searchedMessages.filter((message) => message.categories.includes(categoryFilter))
     : searchedMessages
+
+  const contextMenuMessages = contextMenu
+    ? visibleMessages.filter((message) => contextMenu.messageIds.includes(message.id))
+    : []
 
   return (
     <div className="message-list-pane">
@@ -165,6 +221,7 @@ function MessageListPane({
                   selectedMessageIds.includes(message.id) ? ' selected' : ''
                 }${message.isRead ? '' : ' unread'}`}
                 onClick={(event) => handleMessageClick(message.id, event)}
+                onContextMenu={(event) => handleMessageContextMenu(message.id, event)}
               >
                 <span className="message-list-item-from">{message.fromName || message.fromEmail}</span>
                 <span className="message-list-item-subject">{message.subject || '(no subject)'}</span>
@@ -186,6 +243,29 @@ function MessageListPane({
             </li>
           ))}
         </ul>
+      )}
+      {contextMenu && (
+        <MessageContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetMessages={contextMenuMessages}
+          folders={folders}
+          onClose={() => setContextMenu(null)}
+          onMoveToFolder={(folderId) => handleBulkMoveToFolder(contextMenu.messageIds, folderId)}
+          onMarkRead={(isRead) => handleBulkMarkRead(contextMenu.messageIds, isRead)}
+          onToggleFlag={(isFlagged) => handleBulkToggleFlag(contextMenu.messageIds, isFlagged)}
+          onAddCategory={(category) => handleBulkAddCategory(contextMenuMessages, category)}
+          onReply={() => {
+            if (contextMenuMessages.length === 1) onReply(contextMenuMessages[0])
+          }}
+          onReplyAll={() => {
+            if (contextMenuMessages.length === 1) onReplyAll(contextMenuMessages[0])
+          }}
+          onForward={() => {
+            if (contextMenuMessages.length === 1) onForward(contextMenuMessages[0])
+          }}
+          onDelete={() => onDeleteMessages(contextMenuMessages)}
+        />
       )}
     </div>
   )

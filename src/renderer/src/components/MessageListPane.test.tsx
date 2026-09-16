@@ -27,6 +27,14 @@ function makeMessage(overrides: Partial<MailMessage> = {}): MailMessage {
 }
 
 describe('MessageListPane', () => {
+  const defaultProps = {
+    folders: [],
+    onReply: vi.fn(),
+    onReplyAll: vi.fn(),
+    onForward: vi.fn(),
+    onDeleteMessages: vi.fn()
+  }
+
   it('shows the empty state when the folder has no messages', async () => {
     render(
       <MessageListPane
@@ -35,6 +43,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -54,6 +63,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -76,6 +86,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectMessage}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -94,6 +105,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a']}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -116,6 +128,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectMessage}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -152,6 +165,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a']}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -172,6 +186,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a']}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -192,6 +207,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a', 'b', 'c']}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -212,6 +228,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -234,6 +251,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -255,6 +273,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -281,6 +300,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -301,6 +321,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a', 'b', 'c']}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -320,6 +341,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={['a', 'c']}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -341,6 +363,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Alpha')
@@ -354,6 +377,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={onSelectionChange}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Echo')
@@ -377,6 +401,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -399,6 +424,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -431,6 +457,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Urgent one')
@@ -448,6 +475,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -471,6 +499,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Nothing Related')
@@ -503,6 +532,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Budget in inbox')
@@ -528,6 +558,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('No items to show.')
@@ -554,6 +585,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Budget review')
@@ -585,6 +617,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Budget review')
@@ -610,6 +643,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Budget review')
@@ -634,6 +668,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('Budget review')
@@ -655,6 +690,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('No items to show.')
@@ -667,6 +703,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
 
@@ -681,6 +718,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={0}
+        {...defaultProps}
       />
     )
     await screen.findByText('No items to show.')
@@ -693,6 +731,7 @@ describe('MessageListPane', () => {
         selectedMessageIds={[]}
         onSelectionChange={vi.fn()}
         messagesVersion={1}
+        {...defaultProps}
       />
     )
 

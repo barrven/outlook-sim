@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 040 (Message list right-click context menu)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 040 (Message list right-click context menu)
+  implemented: new `MessageContextMenu.tsx` renders a fixed-positioned menu
+  (closes on Escape/outside click) with Reply/Reply All/Forward (enabled
+  only for a single-message target, AC5), Mark as read/unread and
+  Flag/Unflag (label reflects whether every targeted message is already
+  read/flagged), Add to category, Move to folder (lists all folders,
+  clears selection after since the messages leave the current view), and
+  Delete (works for any selection size, permanently deleting instead of
+  re-moving when already in Deleted Items — mirroring the Reading Pane's
+  existing per-folder split under one label). `MessageListPane.tsx` owns
+  the right-click semantics (AC2): right-clicking a message already in the
+  selection keeps it; right-clicking outside it selects just that message
+  first, same as a plain click. Read/Flag/category/move actions call
+  `window.api.data.messages.update` directly per message id (same pattern
+  the existing per-row flag button already used, no new IPC); Reply/
+  Forward/Delete reuse `App.tsx`'s existing single-message handlers plus a
+  new bulk-capable `handleDeleteMessages`. No new IPC channels or shared
+  types. Verified live: a throwaway 10-case RTL suite drove every AC
+  directly (all passing). `MessageListPane.test.tsx` needed prop-shape
+  touch-ups (a shared `defaultProps` spread) to keep compiling; no
+  behavioral changes to existing tests. lint/typecheck/build pass; full
+  suite unchanged at 574/574. Phase set to `test`.
 - 2026-09-15 — feature 039 (Message list multi-select) accepted by user;
   logged to CHANGELOG. Active feature set to 040 (Message list right-click
   context menu, next in BACKLOG.md table order), phase set to `implement`.

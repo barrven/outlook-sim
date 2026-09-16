@@ -165,6 +165,26 @@ function App(): ReactElement {
     await moveMessageToDeleted(message.id, message.folderId)
   }
 
+  // The context menu's Delete (feature 040 AC5) — works on any selection
+  // size, and (unlike the single-message Delete above, which the Reading
+  // Pane only ever calls outside Deleted Items) can be invoked from within
+  // Deleted Items too, where it permanently deletes instead of re-moving
+  // there, mirroring the Reading Pane's own Delete/"Delete permanently"
+  // split per folder.
+  async function handleDeleteMessages(messagesToDelete: MailMessage[]): Promise<void> {
+    await Promise.all(
+      messagesToDelete.map((message) =>
+        message.folderId === 'deleted'
+          ? window.api.data.messages.delete(message.id)
+          : window.api.data.messages.update(message.id, {
+              folderId: 'deleted',
+              previousFolderId: message.folderId
+            })
+      )
+    )
+    setSelectedMessageIds([])
+  }
+
   // Mirrors the Reading Pane's Delete button for whatever message is
   // currently selected; disabled (via `canDeleteSelected` below) while
   // viewing Deleted Items, where "Delete" isn't a Reading Pane action
@@ -262,6 +282,11 @@ function App(): ReactElement {
                 selectedMessageIds={selectedMessageIds}
                 onSelectionChange={setSelectedMessageIds}
                 messagesVersion={messagesVersion}
+                folders={folders}
+                onReply={handleReply}
+                onReplyAll={handleReplyAll}
+                onForward={handleForward}
+                onDeleteMessages={handleDeleteMessages}
               />
               <ReadingPane
                 selectedMessageId={selectedMessageId}
