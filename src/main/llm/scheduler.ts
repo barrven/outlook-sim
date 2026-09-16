@@ -1,5 +1,6 @@
-import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
+import type { GenerateUnsolicitedMailResult, Persona, TraineeIdentity } from '../../shared/data-types'
 import { generateText } from './client'
+import { buildFileVineContextPrompt } from './fileVineContext'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
@@ -14,11 +15,6 @@ const CHECK_INTERVAL_REAL_MS = 10_000
 const RECENT_MESSAGE_LIMIT = 5
 const UPCOMING_CALENDAR_LIMIT = 10
 
-export type GenerateUnsolicitedMailResult =
-  | { ok: true; sent: true; message: MailMessage }
-  | { ok: true; sent: false }
-  | { ok: false; error: string }
-
 function randomIntervalMs(): number {
   return MIN_INTERVAL_SIM_MS + Math.random() * (MAX_INTERVAL_SIM_MS - MIN_INTERVAL_SIM_MS)
 }
@@ -28,13 +24,19 @@ function pickPersona(personas: Persona[]): Persona | undefined {
   return personas[Math.floor(Math.random() * personas.length)]
 }
 
-function buildSystemPrompt(systemPrompt: string, persona: Persona, identity: TraineeIdentity): string {
+function buildSystemPrompt(
+  systemPrompt: string,
+  persona: Persona,
+  identity: TraineeIdentity,
+  fileVineContext: string | null
+): string {
   return [
     systemPrompt,
     `You are playing ${persona.displayName}${persona.role ? ` (${persona.role})` : ''} in an email training simulation. Write a NEW, unsolicited email to ${identity.displayName || 'the trainee'}${identity.jobTitle ? ` (${identity.jobTitle})` : ''} — not a reply to anything specific, but a status update, demand, reminder, or new request that makes sense given the context below.`,
     persona.bio && `Background: ${persona.bio}`,
     persona.writingStyleNotes && `Writing style: ${persona.writingStyleNotes}`,
     persona.extraPrompt,
+    fileVineContext,
     'Respond in exactly this format and nothing else:\nSubject: <subject line>\n\n<body text>'
   ]
     .filter(Boolean)
@@ -108,9 +110,10 @@ export async function generateUnsolicitedMail(
 
   const identity = config.getIdentity()
   const { systemPrompt } = config.getSystemPrompt()
+  const fileVineContext = buildFileVineContextPrompt(db, persona.id)
 
   const result = await generateText(config.getSettings(), {
-    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity),
+    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, fileVineContext),
     userPrompt: buildContextPrompt(db, clock, persona, identity)
   })
 
@@ -134,6 +137,24 @@ export async function generateUnsolicitedMail(
     timestamp: clock.now()
   })
   return { ok: true, sent: true, message }
+}
+
+/**
+ * Wraps `generateUnsolicitedMail` with the durable failure-log append
+ * (feature 027) — used both by the scheduler's own tick and by a manual
+ * Retry from the UI, so a failure is logged exactly once regardless of
+ * which caller triggered the attempt.
+ */
+export async function attemptUnsolicitedMail(
+  db: MailDb,
+  config: ConfigStore,
+  clock: SimClock
+): Promise<GenerateUnsolicitedMailResult> {
+  const result = await generateUnsolicitedMail(db, config, clock)
+  if (!result.ok) {
+    config.appendLlmFailureLog({ timestamp: Date.now(), source: 'unsolicitedMail', error: result.error })
+  }
+  return result
 }
 
 /**
@@ -188,7 +209,7 @@ export class UnsolicitedMailScheduler {
 
       this.config.setSchedulerState({ nextDueSimTime: now + randomIntervalMs() })
 
-      const result = await generateUnsolicitedMail(this.db, this.config, this.clock)
+      const result = await attemptUnsolicitedMail(this.db, this.config, this.clock)
       if (result.ok && result.sent) {
         this.onGenerated?.()
       } else if (!result.ok) {

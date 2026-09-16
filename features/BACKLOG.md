@@ -33,23 +33,23 @@
 | 024 | Fix — persona replies quote the prior thread chain | done | high | 024-fix-persona-reply-quotes-thread.md |
 | 025 | Fix — attachments persist on the Sent Items copy | done | high | 025-fix-sent-attachments-dropped.md |
 | 026 | Fix — recurring event reminders fire per occurrence | done | high | 026-fix-recurring-reminder-per-occurrence.md |
-| 047 | FileVine tab — folder structure and client association | accept | high | 047-filevine-folders-and-clients.md |
-| 048 | FileVine notes/files CRUD with Markdown content | backlog | high | 048-filevine-notes-markdown.md |
-| 027 | LLM error banner — Retry button and durable failure log | backlog | medium | 027-llm-error-retry-and-log.md |
-| 028 | Trainee identity & personas — org-structure fields | backlog | medium | 028-org-structure-fields.md |
-| 029 | Scenario packs include the system prompt | backlog | medium | 029-scenario-pack-system-prompt.md |
-| 030 | Settings panels refresh live after a scenario pack load | backlog | medium | 030-settings-live-refresh-after-pack-load.md |
-| 031 | Settings — load personas from a JSON file | backlog | medium | 031-load-personas-from-json.md |
-| 032 | Settings — generate personas via LLM | backlog | medium | 032-generate-personas-via-llm.md |
-| 039 | Message list multi-select | backlog | medium | 039-message-list-multiselect.md |
-| 040 | Message list right-click context menu | backlog | medium | 040-message-list-context-menu.md |
-| 041 | Double-click message opens a pop-out reading window | backlog | medium | 041-message-popout-window.md |
-| 043 | Calendar item view-mode and single-open swap | backlog | medium | 043-calendar-view-edit-mode.md |
-| 046 | Tasks side panel | backlog | medium | 046-tasks-panel.md |
-| 049 | FileVine content feeds persona LLM context | backlog | medium | 049-filevine-llm-context.md |
-| 033 | Ribbon — hide Send/Receive and Folder tabs | backlog | low | 033-hide-unused-ribbon-tabs.md |
-| 034 | Move Settings into the File menu | backlog | low | 034-settings-in-file-menu.md |
-| 035 | File menu — About section | backlog | low | 035-file-menu-about.md |
+| 047 | FileVine tab — folder structure and client association | done | high | 047-filevine-folders-and-clients.md |
+| 048 | FileVine notes/files CRUD with Markdown content | done | high | 048-filevine-notes-markdown.md |
+| 027 | LLM error banner — Retry button and durable failure log | done | medium | 027-llm-error-retry-and-log.md |
+| 028 | Trainee identity & personas — org-structure fields | done | medium | 028-org-structure-fields.md |
+| 029 | Scenario packs include the system prompt | done | medium | 029-scenario-pack-system-prompt.md |
+| 030 | Settings panels refresh live after a scenario pack load | done | medium | 030-settings-live-refresh-after-pack-load.md |
+| 031 | Settings — load personas from a JSON file | done | medium | 031-load-personas-from-json.md |
+| 032 | Settings — generate personas via LLM | done | medium | 032-generate-personas-via-llm.md |
+| 039 | Message list multi-select | done | medium | 039-message-list-multiselect.md |
+| 040 | Message list right-click context menu | done | medium | 040-message-list-context-menu.md |
+| 041 | Double-click message opens a pop-out reading window | done | medium | 041-message-popout-window.md |
+| 043 | Calendar item view-mode and single-open swap | done | medium | 043-calendar-view-edit-mode.md |
+| 046 | Tasks side panel | done | medium | 046-tasks-panel.md |
+| 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
+| 033 | Ribbon — hide Send/Receive and Folder tabs | done | low | 033-hide-unused-ribbon-tabs.md |
+| 034 | Move Settings into the File menu | done | low | 034-settings-in-file-menu.md |
+| 035 | File menu — About section | done | low | 035-file-menu-about.md |
 | 036 | App icon uses email.png | backlog | low | 036-app-icon.md |
 | 037 | Element-level styling pass — semantic colors, border-radius, red flags | backlog | low | 037-styling-pass.md |
 | 038 | Move mail search into the ribbon | backlog | low | 038-search-in-ribbon.md |

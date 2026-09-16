@@ -6,14 +6,20 @@ import type {
   CalendarItemPatch,
   FileVineFolder,
   FileVineFolderPatch,
+  FileVineNote,
+  FileVineNotePatch,
   Folder,
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
-  RecurrenceFrequency
+  NewTask,
+  RecurrenceFrequency,
+  Task,
+  TaskPatch
 } from '../../shared/data-types'
 
 const DB_FILE_NAME = 'outlook-sim.db'
@@ -65,6 +71,23 @@ CREATE TABLE IF NOT EXISTS filevine_folders (
   name TEXT NOT NULL,
   parent_id TEXT REFERENCES filevine_folders(id),
   client_persona_id TEXT
+);
+
+CREATE TABLE IF NOT EXISTS filevine_notes (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL REFERENCES filevine_folders(id),
+  name TEXT NOT NULL,
+  content TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_filevine_notes_folder_id ON filevine_notes(folder_id);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  done INTEGER NOT NULL DEFAULT 0,
+  due_at INTEGER,
+  created_at INTEGER NOT NULL
 );
 `
 
@@ -121,6 +144,21 @@ interface FileVineFolderRow {
   client_persona_id: string | null
 }
 
+interface FileVineNoteRow {
+  id: string
+  folder_id: string
+  name: string
+  content: string
+}
+
+interface TaskRow {
+  id: string
+  text: string
+  done: number
+  due_at: number | null
+  created_at: number
+}
+
 function folderFromRow(row: FolderRow): Folder {
   return { id: row.id, name: row.name, type: row.type as Folder['type'], sortOrder: row.sort_order }
 }
@@ -163,6 +201,14 @@ function calendarItemFromRow(row: CalendarItemRow): CalendarItem {
 
 function fileVineFolderFromRow(row: FileVineFolderRow): FileVineFolder {
   return { id: row.id, name: row.name, parentId: row.parent_id, clientPersonaId: row.client_persona_id }
+}
+
+function fileVineNoteFromRow(row: FileVineNoteRow): FileVineNote {
+  return { id: row.id, folderId: row.folder_id, name: row.name, content: row.content }
+}
+
+function taskFromRow(row: TaskRow): Task {
+  return { id: row.id, text: row.text, done: row.done === 1, dueAt: row.due_at, createdAt: row.created_at }
 }
 
 function generateId(): string {
@@ -463,7 +509,10 @@ export class MailDb {
 
   // Deletes a folder and all of its descendants — mirrors a real
   // file-system folder delete removing its contents, rather than silently
-  // orphaning/reparenting children to the root.
+  // orphaning/reparenting children to the root. Also removes every deleted
+  // folder's notes (feature 048) — otherwise their folder_id foreign key
+  // would block the folder deletes below, and orphaned notes would be an
+  // undefined, not deliberate, outcome.
   deleteFileVineFolder(id: string): void {
     const all = this.listFileVineFolders()
     const toDelete = new Set<string>()
@@ -474,6 +523,9 @@ export class MailDb {
       }
     }
     collect(id)
+    for (const folderId of toDelete) {
+      this.db.prepare('DELETE FROM filevine_notes WHERE folder_id = ?').run(folderId)
+    }
     // `collect` visits a folder before its children (pre-order), so
     // reversing guarantees every descendant is deleted before its parent —
     // required by the parent_id foreign key, since a parent can't be
@@ -481,6 +533,83 @@ export class MailDb {
     for (const folderId of [...toDelete].reverse()) {
       this.db.prepare('DELETE FROM filevine_folders WHERE id = ?').run(folderId)
     }
+  }
+
+  // FileVine notes (feature 048)
+
+  listFileVineNotes(folderId: string): FileVineNote[] {
+    const rows = this.db
+      .prepare('SELECT * FROM filevine_notes WHERE folder_id = ? ORDER BY name ASC')
+      .all(folderId) as unknown as FileVineNoteRow[]
+    return rows.map(fileVineNoteFromRow)
+  }
+
+  getFileVineNote(id: string): FileVineNote | null {
+    const row = this.db.prepare('SELECT * FROM filevine_notes WHERE id = ?').get(id) as
+      | FileVineNoteRow
+      | undefined
+    return row ? fileVineNoteFromRow(row) : null
+  }
+
+  createFileVineNote(note: NewFileVineNote): FileVineNote {
+    const id = generateId()
+    const full: FileVineNote = { id, ...note }
+    this.db
+      .prepare('INSERT INTO filevine_notes (id, folder_id, name, content) VALUES (?, ?, ?, ?)')
+      .run(full.id, full.folderId, full.name, full.content)
+    return full
+  }
+
+  updateFileVineNote(id: string, patch: FileVineNotePatch): FileVineNote | null {
+    const existing = this.getFileVineNote(id)
+    if (!existing) return null
+    const updated: FileVineNote = { ...existing, ...patch, id }
+    this.db
+      .prepare('UPDATE filevine_notes SET name = ?, content = ? WHERE id = ?')
+      .run(updated.name, updated.content, id)
+    return updated
+  }
+
+  deleteFileVineNote(id: string): void {
+    this.db.prepare('DELETE FROM filevine_notes WHERE id = ?').run(id)
+  }
+
+  // Freestanding tasks (feature 046) — deliberately not touched by
+  // resetMailboxAndCalendar/free-play/scenario-pack loads below: these are
+  // the trainee's own to-do list, not scenario data, so they persist across
+  // a scenario reset the same way Settings/personas already do.
+
+  listTasks(): Task[] {
+    const rows = this.db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all() as unknown as TaskRow[]
+    return rows.map(taskFromRow)
+  }
+
+  getTask(id: string): Task | null {
+    const row = this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined
+    return row ? taskFromRow(row) : null
+  }
+
+  createTask(task: NewTask): Task {
+    const id = generateId()
+    const full: Task = { id, createdAt: Date.now(), ...task }
+    this.db
+      .prepare('INSERT INTO tasks (id, text, done, due_at, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(full.id, full.text, full.done ? 1 : 0, full.dueAt, full.createdAt)
+    return full
+  }
+
+  updateTask(id: string, patch: TaskPatch): Task | null {
+    const existing = this.getTask(id)
+    if (!existing) return null
+    const updated: Task = { ...existing, ...patch, id }
+    this.db
+      .prepare('UPDATE tasks SET text = ?, done = ?, due_at = ?, created_at = ? WHERE id = ?')
+      .run(updated.text, updated.done ? 1 : 0, updated.dueAt, updated.createdAt, id)
+    return updated
+  }
+
+  deleteTask(id: string): void {
+    this.db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
   }
 
   // Free-play session

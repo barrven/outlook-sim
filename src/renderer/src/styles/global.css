@@ -52,6 +52,13 @@ body {
   font-size: 12px;
 }
 
+.llm-error-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 .llm-error-banner button {
   background: none;
   border: none;
@@ -118,6 +125,59 @@ body {
   font-weight: 600;
 }
 
+.ribbon-tab-file {
+  position: relative;
+}
+
+.file-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 4px 0;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.file-menu button[role='menuitem'] {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.file-menu button[role='menuitem']:hover {
+  background: #eaeaea;
+}
+
+.file-menu-divider {
+  margin: 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+.file-menu-about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 12px 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.file-menu-about a {
+  color: var(--accent);
+}
+
 .ribbon-actions {
   display: flex;
   gap: 4px;
@@ -132,6 +192,12 @@ body {
   font-size: 12px;
   color: var(--text);
   cursor: default;
+}
+
+.ribbon-action.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  color: var(--accent);
 }
 
 .office-clock {
@@ -319,23 +385,6 @@ body {
   color: var(--accent);
 }
 
-.settings-nav-button {
-  flex: 0 0 auto;
-  padding: 8px 10px;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  text-align: left;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.settings-nav-button:hover {
-  background: var(--selected-bg);
-  color: var(--text);
-}
-
 /* Settings view */
 
 .settings-view {
@@ -464,6 +513,9 @@ body {
 
 .settings-test-result-ok,
 .settings-test-result-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 8px 0 0;
   font-size: 12px;
 }
@@ -474,6 +526,14 @@ body {
 
 .settings-test-result-error {
   color: #d13438;
+}
+
+.settings-test-result-error button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .persona-list {
@@ -538,6 +598,26 @@ body {
   border: 1px solid var(--border);
   border-radius: 2px;
   resize: vertical;
+}
+
+.persona-generate,
+.persona-generate-review {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.persona-generate label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.persona-generate textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 8px;
 }
 
 /* Message list pane */
@@ -662,6 +742,69 @@ body {
 
 .message-list-flag-btn.flagged {
   color: var(--accent);
+}
+
+.message-context-menu {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 4px 0;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.message-context-menu button[role='menuitem'] {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.message-context-menu button[role='menuitem']:hover:not(:disabled) {
+  background: #eaeaea;
+}
+
+.message-context-menu button[role='menuitem']:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.message-context-menu-divider {
+  margin: 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+.message-context-submenu {
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--nav-rail-bg);
+}
+
+.message-context-submenu button[role='menuitem'] {
+  padding-left: 24px;
+}
+
+.message-context-menu-category-form {
+  padding: 4px 12px;
+}
+
+.message-context-menu-category-form input {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 12px;
 }
 
 /* Reading pane */
@@ -1035,6 +1178,25 @@ body {
   gap: 8px;
 }
 
+.calendar-event-view {
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  background: var(--nav-rail-bg);
+}
+
+.calendar-event-view-label {
+  flex: 0 0 90px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.calendar-event-view-value {
+  flex: 1 1 auto;
+  font-size: 13px;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .calendar-recurrence-scope-chooser {
   border-top: 1px solid var(--border);
   padding: 16px 20px;
@@ -1050,6 +1212,15 @@ body {
 /* Compose window */
 
 .compose-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pane-bg);
+}
+
+/* Message pop-out window (feature 041) */
+
+.message-popout-window {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1380,4 +1551,255 @@ body {
   margin-top: 12px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.filevine-notes-section {
+  margin-top: 20px;
+  max-width: 640px;
+}
+
+.filevine-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.filevine-notes-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.filevine-new-note-btn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.filevine-new-note-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.filevine-notes-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.filevine-notes-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.filevine-notes-list-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.filevine-notes-list-item:last-child {
+  border-bottom: none;
+}
+
+.filevine-notes-list-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 6px;
+}
+
+.filevine-note-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  padding: 3px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.filevine-note-name:hover {
+  background: #eaeaea;
+}
+
+.filevine-note-name.selected {
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  padding: 2px 5px;
+}
+
+.filevine-note-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.filevine-note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.filevine-note-editor input {
+  padding: 5px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid var(--selected-border);
+  border-radius: 2px;
+}
+
+.filevine-note-textarea {
+  min-height: 140px;
+  padding: 6px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  resize: vertical;
+}
+
+.filevine-note-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.filevine-note-rendered {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.filevine-note-rendered :first-child {
+  margin-top: 0;
+}
+
+.filevine-note-rendered :last-child {
+  margin-bottom: 0;
+}
+
+/* Tasks panel (feature 046) */
+
+.tasks-panel {
+  flex: 0 0 260px;
+  border-left: 1px solid var(--border);
+  background: var(--nav-rail-bg);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.tasks-panel-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tasks-panel-heading {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tasks-panel-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.tasks-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Every item gets a line above and below it. Only the top border is set
+   per-item — an item's bottom edge is the next item's top border, so
+   adjacent items share one line instead of drawing it twice; the last
+   item then needs its own bottom border to close the list off. */
+.tasks-panel-flagged-item {
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: break-word;
+  border-top: 1px solid var(--border);
+}
+
+.tasks-panel-flagged-item:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.tasks-panel-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+}
+
+.tasks-panel-task:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.tasks-panel-task.done .tasks-panel-task-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.tasks-panel-task-text {
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
+}
+
+.tasks-panel-task-due {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tasks-panel-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.tasks-panel-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tasks-panel-add-row input,
+.tasks-panel-add-row button {
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
 }

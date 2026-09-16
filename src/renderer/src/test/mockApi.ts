@@ -35,6 +35,9 @@ export const DEFAULT_MOCK_CLOCK_STATE: ClockState = {
 
 export function createMockApi(): Window['api'] {
   return {
+    app: {
+      getVersion: vi.fn().mockResolvedValue('0.1.0')
+    },
     data: {
       folders: {
         list: vi.fn().mockResolvedValue(DEFAULT_MOCK_FOLDERS),
@@ -63,6 +66,20 @@ export function createMockApi(): Window['api'] {
         update: vi.fn().mockResolvedValue(undefined),
         delete: vi.fn().mockResolvedValue(undefined)
       },
+      fileVineNotes: {
+        list: vi.fn().mockResolvedValue([]),
+        get: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
+      tasks: {
+        list: vi.fn().mockResolvedValue([]),
+        get: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(undefined),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
       settings: {
         get: vi
           .fn()
@@ -74,7 +91,7 @@ export function createMockApi(): Window['api'] {
         set: vi.fn().mockResolvedValue(undefined)
       },
       identity: {
-        get: vi.fn().mockResolvedValue({ displayName: '', jobTitle: '', fromEmail: '' }),
+        get: vi.fn().mockResolvedValue({ displayName: '', jobTitle: '', fromEmail: '', reportsTo: '', department: '' }),
         set: vi.fn().mockResolvedValue(undefined)
       },
       personas: {
@@ -92,6 +109,9 @@ export function createMockApi(): Window['api'] {
     compose: {
       open: vi.fn().mockResolvedValue(undefined)
     },
+    messagePopout: {
+      open: vi.fn().mockResolvedValue(undefined)
+    },
     session: {
       startFreePlay: vi.fn().mockResolvedValue({ ok: true })
     },
@@ -100,10 +120,15 @@ export function createMockApi(): Window['api'] {
       applyPack: vi.fn().mockResolvedValue({ ok: true }),
       savePack: vi.fn().mockResolvedValue({ ok: false, canceled: true })
     },
+    personasFile: {
+      pick: vi.fn().mockResolvedValue({ ok: false, canceled: true })
+    },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),
       test: vi.fn().mockResolvedValue({ ok: true, text: '' }),
-      personaReply: vi.fn().mockResolvedValue(undefined)
+      personaReply: vi.fn().mockResolvedValue({ ok: true, replied: false }),
+      retryUnsolicitedMail: vi.fn().mockResolvedValue({ ok: true, sent: false }),
+      generatePersonas: vi.fn().mockResolvedValue({ ok: false, error: 'not mocked' })
     },
     onMessagesChanged: vi.fn().mockReturnValue(() => {}),
     onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),

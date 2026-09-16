@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 047 (FileVine tab — folder structure and client association)
-- **Last updated:** 2026-09-14
+- **Phase:** implement
+- **Active feature:** 036 (App icon uses email.png)
+- **Last updated:** 2026-09-16
 
 ## Phases
 
@@ -18,6 +18,988 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 035 (File menu — About section) accepted by user
+  (selected "Accept (Recommended)" against the validation summary, no
+  changes requested); logged to CHANGELOG. Active feature set to 036 (App
+  icon uses email.png, next in BACKLOG.md table order), phase set to
+  `implement`.
+- 2026-09-16 — feature 035 (File menu — About section) validated:
+  lint/typecheck/build pass; full suite 661/661, re-run 3x, stable. All 4
+  ACs re-checked directly against current source and pass — AC1 (About
+  menuitem present), AC2 (version sourced via `app:getVersion` IPC ->
+  Electron's `app.getVersion()` -> `package.json`, not hardcoded), AC3
+  (link href/text exactly match the required GitHub URL), AC4 (target=
+  "_blank" plus the main window's pre-existing, unmodified
+  `setWindowOpenHandler`/`shell.openExternal` routing — verified by
+  inspection since jsdom can't exercise Electron's own window-open
+  handling). Phase set to `accept`.
+- 2026-09-16 — feature 035 (File menu — About section) tested:
+  `mockApi.ts` got the missing `app.getVersion` mock (fixed for real);
+  `RibbonBar.test.tsx` got a new `About entry (035)` block (5 tests)
+  covering the collapsed/expanded toggle, the version display sourced
+  from `window.api.app.getVersion()`, the GitHub link's href/target, and
+  About collapsing when the File menu closes. Full suite 656 → 661, all
+  passing, re-run stable. Phase set to `validate`.
+- 2026-09-16 — feature 035 (File menu — About section) implemented: the
+  File menu (034) gets an About entry that expands an inline panel with
+  the app version (via new `app:getVersion` IPC calling Electron's
+  `app.getVersion()`, sourced from `package.json`) and a GitHub link that
+  opens externally via the main window's existing `setWindowOpenHandler`
+  (`shell.openExternal`) — no new main-process plumbing needed for that
+  part. `src/renderer/src/test/mockApi.ts` has a known, expected typecheck
+  failure (missing new `AppApi`) left for `/test` to fix for real, per
+  this repo's established convention. Phase set to `test`.
+- 2026-09-16 — feature 034 (Move Settings into the File menu) accepted by
+  user (selected "Accept (Recommended)" against the validation summary
+  and diff, no changes requested); logged to CHANGELOG. Active feature set
+  to 035 (File menu — About section, next in BACKLOG.md table order),
+  phase set to `implement`.
+- 2026-09-16 — feature 034 (Move Settings into the File menu) validated:
+  lint/typecheck/build pass; full suite 656/656, re-run 3x, stable. All 4
+  ACs re-checked directly against current source and pass — AC1 (nav
+  rail's Settings button gone, confirmed by grep and a dedicated test),
+  AC2 (File tab opens a `role="menu"` with a Settings `menuitem`), AC3
+  (Settings entry wires to the same `setShowSettings(true)`/`SettingsView`
+  props as before, unchanged by diff), AC4 (✕ close affordance and its
+  wiring untouched by this feature). Phase set to `accept`.
+- 2026-09-16 — feature 034 (Move Settings into the File menu) tested:
+  `RibbonBar.test.tsx` and `App.test.tsx` updated for the new File-menu
+  path (the previously-failing assertions fixed for real, plus 6 new File
+  menu tests and a new AC1 nav-rail test); full suite 649 → 656, all
+  passing, re-run stable. Phase set to `validate`.
+- 2026-09-16 — feature 034 (Move Settings into the File menu) implemented:
+  `RibbonBar.tsx`'s File tab is now a clickable dropdown (`role="menu"`)
+  with a Settings entry, mirroring `MessageContextMenu`'s click-outside/
+  Escape pattern; the nav rail's Settings button is removed, `App.tsx`
+  wires the same `setShowSettings(true)` through the new `onOpenSettings`
+  prop instead. `RibbonBar.test.tsx` and `App.test.tsx` have known,
+  expected failures (missing required prop / relocated Settings trigger)
+  left for `/test` to fix for real, per this repo's established
+  convention. Phase set to `test`.
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  accepted by user (selected "Accept (Recommended)" against the validation
+  summary and diff, no changes requested); logged to CHANGELOG. Active
+  feature set to 034 (Move Settings into the File menu, next in
+  BACKLOG.md table order), phase set to `implement`.
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  validated: lint/typecheck/build pass; full suite 649/649, re-run 3x,
+  stable. All 4 ACs re-checked directly against current source and pass —
+  AC1/AC2 (Send/Receive and Folder no longer in `TABS`, no other render
+  path exists), AC3 (Home/View/FileVine untouched, still wired and
+  passing their existing tests), AC4 (`grep` across `src/` finds no
+  leftover references outside an explanatory comment and the new test).
+  Phase set to `accept`.
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  tested: `RibbonBar.test.tsx` updated for the removed tabs (the
+  previously-failing assertions fixed for real, plus a new explicit
+  not-rendered test for AC1/AC2); full suite 648 → 649, all passing,
+  re-run stable. Phase set to `validate`.
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  implemented: `RibbonBar.tsx`'s `TABS` array shrunk to drop Send/Receive
+  and Folder, which were always-disabled placeholders with no other wired
+  logic to remove. `RibbonBar.test.tsx` still asserts on the removed tabs
+  and is expected to fail until `/test` updates it, per this repo's
+  established convention. Phase set to `test`.
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  accepted by user; logged to CHANGELOG. AC3 (live LLM referencing
+  specific content) flagged as inherently manual and accepted with that
+  understanding. Active feature set to 033 (Ribbon — hide Send/Receive and
+  Folder tabs, next in BACKLOG.md table order), phase set to `implement`.
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  validated: lint/typecheck/build pass; full test suite (648/648) re-run
+  3x, stable; confirmed via `git diff --stat` (7ebd663..a8dd074) that
+  `/test` touched only test/doc files, no implementation drift. All 4 ACs
+  re-verified directly against current source: AC1 the helper's
+  folder/note assembly and its wiring into both `buildSystemPrompt`
+  functions; AC2 the no-folder `null` return runs through the exact same
+  `.filter(Boolean)` every other optional prompt section already relies
+  on, confirmed no other line in either `buildSystemPrompt` changed; AC3
+  re-confirmed as inherently a live/manual check (a stubbed `fetch` can't
+  prove a real model chooses to reference content) — flagged for the
+  user's own confirmation, not treated as a gap blocking acceptance; AC4
+  the helper has no cache at all, structurally and by test. No live
+  multi-window Electron GUI click-through attempted — same non-blocking
+  gap as every prior feature. All checks pass; the one open item (AC3) is
+  inherently manual, not a defect. Phase set to `accept`.
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  tested: 632 → 648 net (+16, all passing; re-run 3x, stable), across new
+  `fileVineContext.test.ts` (+9, unit-level: null cases, name+content
+  inclusion, multi-folder aggregation, cross-persona exclusion, an
+  explicit "no notes/files yet" line for an empty folder, truncation of a
+  very large note vs. no truncation of a small one, immediate reflection
+  of an update) plus `personaReply.test.ts`/`scheduler.test.ts` (+4/+3,
+  AC1/AC2/AC4 each, asserting the actual system-prompt content sent to the
+  LLM). AC3 (a live LLM response referencing specific content) deliberately
+  left uncovered by automated tests — it needs a real provider response,
+  not a stubbed one, so it's a manual step for the user against their own
+  API key. lint/typecheck/build all pass. Test Notes filled in; phase set
+  to `validate`.
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  implemented: new `main/llm/fileVineContext.ts`'s
+  `buildFileVineContextPrompt(db, personaId)` finds every FileVine folder
+  with `clientPersonaId === personaId`, formats each folder's notes (name
+  + content, truncated at 4000 chars per note as the "reasonable summary"
+  for anything very large) into a prompt section, and returns `null` for
+  no-folder personas so the existing `filter(Boolean)` prompt assembly
+  omits it entirely (AC2, structural). Wired into both `personaReply.ts`
+  (feature 015) and `scheduler.ts` (feature 016)'s `buildSystemPrompt`
+  functions, right alongside `persona.bio`/`extraPrompt`. AC4 (no stale
+  caching) needed no code — the helper always re-reads fresh from `db`,
+  same as every other context source these builders already assemble.
+  Verified live: a standalone `esbuild`-bundled script (real `MailDb`/
+  `ConfigStore`, stubbed `fetch`) confirmed the LLM-bound system prompt
+  includes specific note content + folder name for an associated persona,
+  omits the section entirely for one with no folder, and reflects a note
+  edit on the very next call with the old content gone. AC3 (a live LLM
+  response actually referencing the content) needs a real provider/API
+  key — flagged for the user's own manual confirmation, same category as
+  every prior feature's no-attached-display GUI gap. lint/typecheck/build
+  pass; existing `personaReply.test.ts`/`scheduler.test.ts` unchanged,
+  39/39. Phase set to `test`.
+- 2026-09-16 — feature 046 (Tasks side panel) accepted by user; logged to
+  CHANGELOG. Active feature set to 049 (FileVine content feeds persona LLM
+  context, next in BACKLOG.md table order — 033-045 excluding 043/046 are
+  lower `low`-priority rows further down the table), phase set to
+  `implement`.
+- 2026-09-16 — feature 046 (Tasks side panel) validated (requested-changes
+  round): lint/typecheck/build pass; full suite (632/632) re-run 3x,
+  stable; `git diff --stat` (2eceff4..7d5c3dc) confirms `/test` touched
+  only test/doc files. Re-verified both requested changes directly against
+  current source: the add-row precedes the list in `TasksPanel.tsx`'s JSX;
+  both `.tasks-panel-flagged-item` and `.tasks-panel-task` carry the
+  shared-border-top/last-child-border-bottom divider pattern in
+  `global.css`, consistent with this codebase's existing `var(--border)`
+  divider convention elsewhere. Border rendering itself not re-verified
+  via a live GUI (no attached display, same gap as every prior feature).
+  All checks pass, no gaps found. Phase set to `accept`.
+- 2026-09-16 — feature 046 (Tasks side panel) tested (requested-changes
+  round): added one permanent regression test (631 → 632, stable across
+  3 runs) confirming the add-task row precedes the first task in DOM
+  order with 2+ tasks present. No existing test needed rewriting — none
+  asserted DOM order or border classes. The divider-line CSS remains
+  unverified by unit test (jsdom here doesn't load the external
+  stylesheet, same as every other CSS rule in this codebase). lint/
+  typecheck/build all pass. Test Notes filled in; phase set to `validate`.
+- 2026-09-16 — feature 046 (Tasks side panel) implemented requested
+  changes: (1) added a visual divider (border-top on every item, plus a
+  matching border-bottom on the last one, so adjacent items share one
+  line instead of doubling it) to both `.tasks-panel-task` and
+  `.tasks-panel-flagged-item`; (2) moved the add-task row above the task
+  list in `TasksPanel.tsx` (a JSX-order change, no CSS positioning) so it
+  stays fixed in place as tasks are added rather than being pushed down;
+  `.tasks-panel-add-row`'s margin flipped from `margin-top` to
+  `margin-bottom` to match. Verified live: a throwaway RTL check confirmed
+  the add-row now precedes the list in DOM order; the border CSS itself
+  isn't unit-testable here since jsdom in this project's test setup
+  doesn't load the external stylesheet (confirmed by a failed throwaway
+  computed-style assertion — not a new gap, no CSS in this codebase is
+  verified that way). lint/typecheck/build pass; full suite unchanged at
+  631/631 (no existing test asserted DOM order or border classes, so
+  nothing needed rewriting). Phase set to `test`.
+- 2026-09-16 — feature 046 (Tasks side panel) accept gate: user selected
+  "Request changes", then specified (1) a divider line above/below each
+  task and each flagged-mail item, (2) move the add-task input row to the
+  top of the Tasks section so it stays fixed as tasks are added. Recorded
+  in the feature file's Acceptance Log. Status set to `testing` directly
+  (the fix was implemented in the same pass rather than stopping at
+  `implementing`), phase set to `test`.
+- 2026-09-16 — feature 046 (Tasks side panel) validated: lint/typecheck/
+  build pass; full test suite (631/631) re-run 3x, stable; confirmed via
+  `git diff --stat` (f52357e..b210896) that `/test` touched only test/doc
+  files, no implementation drift. Mid-validation detour: the session's
+  original worktree (`.claude/worktrees/feature-043-calendar-view-mode`)
+  had been cleaned up — its git registration and tracked files were gone,
+  leaving only a stray `node_modules`, most likely the user's own cleanup
+  after fast-forward-merging the branch into their local `master` (per
+  their "you merge/pull it" answer at 043's accept gate) and then removing
+  the now-redundant worktree/branch. No work was lost: the local `master`
+  already had all 6 commits through this feature's `Test 046` commit
+  (`b210896`), confirmed via `git log` in the user's own checkout before
+  touching anything. Re-entered a fresh worktree
+  (`.claude/worktrees/feature-046-tasks-panel`), fast-forwarded it to that
+  same `master` tip, `npm install`, and re-ran lint/typecheck/build/full
+  suite there — identical green results — before resuming validation. All
+  6 ACs re-verified directly against current source (not just tests): AC1
+  the View tab's Tasks toggle and `TasksPanel`'s render condition; AC2 the
+  flagged-mail effect shares the exact `messagesVersion` mechanism every
+  other live pane uses; AC3/AC4 add/complete/remove call through to the
+  real store with independent, explicit actions; AC5 independently
+  re-verified live via a standalone `esbuild`-bundled script — create a
+  task, mark it done, close the `MailDb`, open a *second* one against the
+  same directory (a real restart) — it came back intact; AC6 the folder/
+  module-switch handlers touch neither the toggle state nor the tasks
+  store, and `TasksPanel` takes no folder/module prop at all. No live
+  multi-window Electron GUI click-through attempted — no attached display;
+  same non-blocking gap as every prior feature. All checks pass, no gaps
+  found. Phase set to `accept`.
+- 2026-09-15 — feature 046 (Tasks side panel) tested: 608 → 631 net (+23,
+  all passing; re-run 3x, stable) across 5 files. Both pre-existing tests
+  that `/implement` left genuinely failing (RibbonBar's "View disabled"
+  assertion, ipc.test.ts's exhaustive channel list) were fixed for real,
+  not patched around. New coverage: `db.test.ts` CRUD/persistence/missing-id
+  plus a regression test pinning tasks survive `resetMailboxAndCalendar`;
+  `ipc.test.ts` a tasks round-trip mirroring the calendar-item one;
+  `RibbonBar.test.tsx` a new View-tab describe block (active-tab tracking,
+  action-row swap, Tasks button aria-pressed/active/click); new
+  `TasksPanel.test.tsx` (12 unit tests, AC2-AC4); `App.test.tsx` (+3
+  integration tests, AC1/AC6, plus Settings hiding the panel). lint/
+  typecheck/build all pass. Test Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 046 (Tasks side panel) implemented: new `tasks`
+  SQLite table + `MailDb` CRUD (mirrors `calendar_items` exactly),
+  `db:tasks:*` IPC channels, and `window.api.data.tasks`, deliberately
+  excluded from `resetMailboxAndCalendar`/free-play/scenario-pack resets
+  (freestanding tasks are the trainee's own list, not scenario data — a
+  judgment call). `RibbonBar`'s View tab is now real and clickable
+  (previously a disabled placeholder whose code comment already
+  anticipated this feature); it's tracked as its own `viewTabActive`
+  concern in `App.tsx`, independent of `showFileVine`/`activeModule`, so
+  selecting it only swaps the ribbon's action set (now showing a `Tasks`
+  toggle button, `aria-pressed` + new `.ribbon-action.active` style) and
+  never touches Mail/Calendar content (AC1). New `TasksPanel.tsx` renders
+  as an `app-body` sibling whenever `showTasksPanel` is true and Settings
+  isn't open: a "Flagged Mail" section refetches
+  `window.api.data.messages.list()` filtered by `isFlagged` on the same
+  `messagesVersion` bump every other live-updating pane already uses (AC2,
+  no new broadcast needed), and a "Tasks" section owns add/complete/remove
+  against the new store (AC3/AC4), refetching locally after each mutation
+  (AC5, confirmed via a standalone script: create → update → close and
+  reopen a fresh `MailDb` against the same directory → task survives with
+  its `done`/`text` intact). Neither `viewTabActive`/`showTasksPanel` nor
+  the tasks store is touched by folder/module-switch handlers, which is
+  what makes AC6 hold with no special-casing. Verified live: a throwaway
+  4-case RTL suite drove AC1 (toggle on/off), AC2 (flagged list plus a
+  live update via the messages-changed listener), AC3/AC4/AC5 (add via
+  Enter or the Add button, complete via checkbox, remove via the × button,
+  all calling through to the real store shape), and AC6 (panel stays open
+  across a Mail↔Calendar module switch). lint/typecheck/build pass.
+  Existing suite 606/608 (two pre-existing tests now genuinely fail on the
+  intentional behavior change — RibbonBar's "View is disabled" assertion
+  and ipc.test.ts's exhaustive-channel-list assertion — left for `/test`
+  to rewrite rather than papered over here, same convention as 043's
+  CalendarView tests). Phase set to `test`.
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  accepted by user; logged to CHANGELOG. First accept attempt surfaced that
+  this session's isolated worktree branch
+  (`worktree-feature-043-calendar-view-mode`) hadn't reached the user's
+  local `master` — user chose to merge/pull it themselves rather than have
+  it pushed to `master` directly. After merging and testing locally, user
+  accepted. Active feature set to 046 (Tasks side panel, next in
+  BACKLOG.md table order — 049/033-045 are lower priority or later in the
+  table), phase set to `implement`.
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  validated: lint/typecheck/build pass; full test suite (608/608) re-run
+  3x, stable; confirmed via `git diff` (d84187d..7c578b0) that `/test`
+  touched only test/doc files, no implementation drift. All 4 ACs
+  re-verified directly against current source: AC1 the view branch renders
+  only `<span>`s, structurally nothing to edit; AC2 `startEdit()` flips the
+  same panel's mode in place, chooser now correctly gated behind `panelMode
+  === 'edit'`; AC3 `openView()` unconditionally resets state on every
+  click and `openOccurrence` is a single value, so two panels open at once
+  is structurally impossible; AC4 the create branch is byte-for-byte
+  unchanged. One flagged-not-blocking item for `/retro`: Cancel returning
+  to view (vs. a full close) was a judgment call beyond the literal AC
+  text, documented and tested but worth confirming matches intended UX. No
+  live multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  tested: `CalendarView.test.tsx` net +4 (604 → 608, all passing; re-run 3x,
+  stable). Several existing "click an item" tests genuinely asserted the
+  old click-opens-edit-directly behavior and were rewritten (not just
+  patched to compile) to click through view mode first — a deliberate
+  fix-the-test-to-match-intended-behavior change, not weakening. AC1: new
+  test confirms a click opens a read-only view with zero
+  `textbox`/`checkbox` roles, for both a plain and a recurring item (🔁
+  indicator, no chooser yet). AC2: new test confirms Edit reaches the
+  pre-filled editable form directly for a plain item; the pre-existing
+  scope-chooser tests (recurring shows chooser / non-recurring skips it)
+  now trigger via an Edit click rather than the item click itself. AC3: new
+  test opens one item into edit, clicks a second item, and asserts exactly
+  one dialog exists afterward (the second item's view) — the first is
+  fully gone, never both. AC4 needed no new tests — the create-flow
+  ternary branch is untouched and its existing coverage (unchanged) already
+  covers it. Also added, as a documented design decision beyond the literal
+  AC text: two tests confirming Cancel (from the edit form, and from the
+  this-event/whole-series chooser) returns to the read-only view rather
+  than closing the panel outright, with no API calls either way.
+  lint/typecheck/build all pass; full suite 608/608 (30 files), re-run 3x
+  stable. Test Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  implemented: `CalendarView.tsx` gained a `panelMode: 'view' | 'edit'`
+  alongside its existing `openOccurrence`/`editScope` state. Clicking any
+  item (`openView`, renamed from `openEdit`) always (re)opens fresh in
+  read-only view mode — a new sibling `CalendarItemView` component
+  rendering fields as plain text, no inputs — so clicking a different item
+  while one is open naturally replaces the single open panel (AC1, AC3).
+  Its "Edit" button (`startEdit`) flips to edit mode: a non-recurring item
+  skips straight to the existing form (matching prior skip-the-chooser
+  behavior), a recurring one shows the pre-existing this-event/whole-series
+  chooser first, now gated on `panelMode === 'edit'` so it doesn't show
+  while still viewing (AC2). Design decision beyond the literal AC text:
+  Cancel from the edit form or the scope chooser now returns to view mode
+  rather than closing outright, since Cancel undoes the edit attempt, not
+  the fact that you were looking at the item; a full close still happens
+  from the view panel's own Close button and after any successful
+  save/delete. Create-flow (`showCreateForm`) untouched, still opens the
+  editable form directly first in the render ternary (AC4). Verified live:
+  a throwaway 6-case RTL suite drove all 4 ACs directly (view has no
+  inputs, Edit reaches the form for a plain item, Edit shows the chooser
+  for a recurring item, Cancel returns to view not full-close, switching
+  items swaps the single open panel, create still opens directly editable).
+  lint/typecheck/build all pass. Existing `CalendarView.test.tsx` now has
+  11 failing assertions (was 34/34) because they click an item and expect
+  the edit form immediately — expected fallout of the intentional
+  click-opens-view-first behavior change, left for `/test` to update rather
+  than papered over here. Phase set to `test`.
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) accepted by user; logged to CHANGELOG. Active feature set to
+  043 (Calendar item view-mode and single-open swap, next in BACKLOG.md
+  table order — 042 skipped, it's a `low`-priority feature 041's AC4
+  merely references, not a dependency in build order), phase set to
+  `implement`.
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) validated: lint/typecheck/build pass; full test suite (604/604)
+  re-run 3x, stable; confirmed via `git diff` (90fd23a..6b3b05c) that
+  `/test` touched only test files/docs, no implementation drift. All 4
+  ACs re-verified directly against current source: AC1 confirmed
+  end-to-end across every layer (double-click → preload → IPC handler →
+  `createMessagePopoutWindow` → routed renderer → real `ReadingPane`);
+  AC2 confirmed structurally (`broadcastMessagesChanged` sends to every
+  `BrowserWindow` with no window-type distinction, and the pop-out bumps
+  its own `messagesVersion` on that same broadcast, same pattern as
+  `App.tsx`); AC3 confirmed by inspection (`MessagePopoutWindow`'s only
+  prop is `messageId`, no reference to `App.tsx`'s selection state, a
+  genuinely separate window/process); AC4 confirmed feature 042 is still
+  `backlog` (no "Off" state exists to fail against yet) and that nothing
+  in this feature's code reads any Reading-Pane-visibility flag, so
+  there's nothing to regress — flagged for `/retro`'s awareness that 042
+  should re-confirm this pop-out still works once built. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) tested: added 8 tests (596 → 604, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 2 files — new
+  `MessagePopoutWindow.test.tsx` (+7): AC1 content renders via the real
+  `ReadingPane` scoped to the right message id; AC2 a `data:messages-
+  changed` broadcast triggers a refetch and the listener is cleaned up on
+  unmount; plus action-wiring checks (Reply/Reply All/Forward, Delete,
+  Restore/Delete-permanently for a message already in Deleted Items, Edit
+  draft) all confirmed to call through with the correct arguments, same as
+  the inline Reading Pane. `MessageListPane.test.tsx` (+1): AC1's "opens"
+  half — double-click calls `messagePopout.open` with the right id, using
+  `userEvent.dblClick` (the real click→click→dblclick sequence) rather
+  than the bare `fireEvent.doubleClick`. Deliberately not covered: AC3
+  (structural — separate window/process, no shared state to test at this
+  layer), AC4 (feature 042 doesn't exist yet, nothing to test against, and
+  nothing here depends on it), and main-process `BrowserWindow` creation
+  (matches the project's existing convention of not unit-testing
+  `createComposeWindow` either). lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) implemented: mirrors the existing compose pop-out pattern
+  (feature 004) exactly — new `window:openMessagePopout` IPC handler in
+  `main/index.ts` (looks up the message subject for the window title) plus
+  `createMessagePopoutWindow` in `main/windows.ts`; `main.tsx` routes a
+  `messagePopout=1&messageId=…` query string to a new
+  `MessagePopoutWindow.tsx`, a thin host rendering the *same* `ReadingPane`
+  component the main window uses (AC1). AC2 (live cross-window refresh)
+  needed no new plumbing — every create/update/delete already broadcasts
+  to every open window, so the pop-out just needed its own
+  `messagesVersion` bumped on the existing `onMessagesChanged` listener;
+  `ReadingPane`'s existing fetch-by-id effect does the rest, including for
+  the pop-out's own Delete/Restore/Mark-read/Flag actions. AC3 (closing
+  doesn't affect the main window) is structural — a wholly separate
+  `BrowserWindow`/renderer process with no shared React state. AC4 (works
+  with Reading Pane "Right" or "Off", feature 042): 042 doesn't exist yet,
+  but nothing here depends on the inline Reading Pane's visibility — the
+  double-click handler lives directly on the message row
+  (`MessageListPane.tsx`, calling `window.api.messagePopout.open`
+  directly, no new prop from `App.tsx`) and fires regardless. New
+  `MessagePopoutApi` in preload; each pop-out action (Reply/Forward/
+  Delete/etc.) is a small standalone `window.api` call, matching
+  `ComposeWindow.tsx`'s existing each-window-is-self-contained convention
+  rather than importing from `App.tsx`. Verified live: a throwaway 6-case
+  RTL suite confirmed real content rendering via the real `ReadingPane`,
+  refetch on the cross-window broadcast, Reply/Delete calling through
+  correctly, the Deleted-Items button set showing for an
+  already-deleted message, and the double-click wiring in
+  `MessageListPane`. lint/typecheck/build pass; existing suite unchanged
+  596/596 (test setup's mock API needed a `messagePopout` stub to satisfy
+  the type). Phase set to `test`.
+- 2026-09-15 — feature 040 (Message list right-click context menu)
+  accepted by user; logged to CHANGELOG. Active feature set to 041
+  (Double-click message opens a pop-out reading window, next in
+  BACKLOG.md table order), phase set to `implement`.
+- 2026-09-15 — feature 040 (Message list right-click context menu)
+  validated: lint/typecheck/build pass; full test suite (596/596) re-run
+  3x, stable; confirmed via `git diff` (72f30ec..d586ac8) that `/test`
+  touched only test files/docs, no implementation drift. All 5 ACs
+  re-verified directly against current source: AC1 all 8 action items
+  render immediately (Move to folder/Add to category's own sub-panels
+  need an extra click, the top-level items don't); AC2 `targetIds`
+  correctly preserves the existing selection when the right-clicked row
+  is already in it (no `onSelectionChange` call) vs. selecting just that
+  row otherwise, including the empty-selection case; AC3 Move to folder
+  lists every folder and moves every targeted id, clearing selection
+  after; AC4 Mark read/unread and Flag/Unflag iterate every targeted id,
+  Add to category iterates every targeted *message* and skips only ones
+  that already carry it; AC5 Reply/Reply All/Forward gated single-only by
+  both the `disabled` attribute and a second callback-level guard, Delete
+  ungated and its `App.tsx` handler correctly branches move-to-Deleted vs.
+  permanent-delete per message (verified end-to-end). One non-blocking nit
+  found by fresh inspection: right-clicking the per-row flag button falls
+  through to the native menu (no `onContextMenu` there) — intentional,
+  mirrors the flag button's existing left-click `stopPropagation`
+  treatment as a separate control, not a defect against any AC. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
+- 2026-09-15 — feature 040 (Message list right-click context menu) tested:
+  added 22 tests (574 → 596, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 3 layers — new `MessageContextMenu.test.tsx`
+  (+13, unit-level): AC1 every listed action renders; AC5 Reply/Reply
+  All/Forward enabled only for a single-message target, Delete works at any
+  size; AC4 Mark read/unread and Flag/Unflag label + applied-value switch
+  correctly between "not uniformly set" and "every target already set",
+  Add to category submits the trimmed name and no-ops on blank; AC3 Move to
+  folder stays collapsed until clicked, then lists every folder; plus
+  Escape/outside-click dismissal (an inside click doesn't trigger it).
+  `MessageListPane.test.tsx` (+8, integration): AC2 both halves — outside
+  the selection selects just that message (menu scoped to one, Reply
+  enabled), inside an existing multi-selection leaves it untouched (Reply
+  disabled); AC4 Mark as read/Flag/Add-to-category applied per selected id
+  correctly; AC3 Move to folder moves every selected message and clears
+  the selection; AC5 Delete/Reply call through with the correct
+  message(s); plus the menu closing on a folder change. `App.test.tsx`
+  (+1, end-to-end): the one branch nothing else covers — Delete
+  permanently deletes (not re-moves) a message already in Deleted Items,
+  confirmed by actually navigating there first. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 040 (Message list right-click context menu)
+  implemented: new `MessageContextMenu.tsx` renders a fixed-positioned menu
+  (closes on Escape/outside click) with Reply/Reply All/Forward (enabled
+  only for a single-message target, AC5), Mark as read/unread and
+  Flag/Unflag (label reflects whether every targeted message is already
+  read/flagged), Add to category, Move to folder (lists all folders,
+  clears selection after since the messages leave the current view), and
+  Delete (works for any selection size, permanently deleting instead of
+  re-moving when already in Deleted Items — mirroring the Reading Pane's
+  existing per-folder split under one label). `MessageListPane.tsx` owns
+  the right-click semantics (AC2): right-clicking a message already in the
+  selection keeps it; right-clicking outside it selects just that message
+  first, same as a plain click. Read/Flag/category/move actions call
+  `window.api.data.messages.update` directly per message id (same pattern
+  the existing per-row flag button already used, no new IPC); Reply/
+  Forward/Delete reuse `App.tsx`'s existing single-message handlers plus a
+  new bulk-capable `handleDeleteMessages`. No new IPC channels or shared
+  types. Verified live: a throwaway 10-case RTL suite drove every AC
+  directly (all passing). `MessageListPane.test.tsx` needed prop-shape
+  touch-ups (a shared `defaultProps` spread) to keep compiling; no
+  behavioral changes to existing tests. lint/typecheck/build pass; full
+  suite unchanged at 574/574. Phase set to `test`.
+- 2026-09-15 — feature 039 (Message list multi-select) accepted by user;
+  logged to CHANGELOG. Active feature set to 040 (Message list right-click
+  context menu, next in BACKLOG.md table order), phase set to `implement`.
+- 2026-09-15 — feature 039 (Message list multi-select) validated:
+  lint/typecheck/build pass; full test suite (571/571) re-run 3x, stable;
+  confirmed via `git diff` that `/test` touched only test files/docs, no
+  implementation drift. All 4 ACs verified by tests plus direct code
+  inspection — AC1 Ctrl/Cmd-click adds/removes only the clicked id
+  without replacing the array; AC2 the range is computed against the
+  actual on-screen `visibleMessages` order (correctly honoring search/
+  category filters) between the anchor and clicked message inclusive,
+  either direction; AC3 a plain click always passes a fresh one-element
+  array, never a merge; AC4 `selectedMessageId` is non-null only for a
+  true single selection, with `selectedCount` distinguishing 0-selected
+  from N>1-selected in the neutral-state branch. Flagged one
+  documentation-only inaccuracy in Implementation Notes (a typo in the
+  derived-selectedMessageId snippet — the actual code is correct) for
+  `/retro`'s awareness, not a code defect. No live multi-window Electron
+  GUI click-through attempted — no attached display; same non-blocking
+  gap as every prior feature; `App.test.tsx`'s integration test
+  substitutes by driving real modifier-key clicks through the real
+  component tree. All checks pass, no gaps found. Phase set to `accept`.
+- 2026-09-15 — feature 039 (Message list multi-select) tested: added 14
+  tests (557 → 571, all passing; re-run 3x, stable), all AC-traceable by
+  number, across 3 layers — `MessageListPane.test.tsx` (+10, using
+  `fireEvent` for precise modifier keys): AC1 Ctrl-click add/remove
+  without disturbing the rest of the selection plus Cmd/Meta-click
+  parity, AC2 Shift-click ranging both directions, a second Shift-click
+  re-ranging from the same anchor rather than the previous Shift-click's
+  target, and a Shift-click with no prior anchor falling back to plain
+  single-select, AC3 a plain click replacing a multi-selection, plus
+  structural checks that every selected row highlights and the anchor
+  resets on folder change; `ReadingPane.test.tsx` (+3): AC4 the
+  "N selected" neutral state, confirming the 0-selected and N>1-selected
+  cases (both `selectedMessageId === null`) are genuinely distinguished;
+  `App.test.tsx` (+1, integration-level through the real component
+  wiring): a full plain→Ctrl→plain→Shift click sequence checked against
+  the Reading Pane's visible state at each step. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 039 (Message list multi-select) implemented:
+  `App.tsx`'s single `selectedMessageId` state became `selectedMessageIds:
+  string[]`, with a derived `selectedMessageId` (non-null only when
+  exactly one is selected) keeping every existing single-message consumer
+  (Reading Pane actions, ribbon Delete, Reply/Forward, Restore/permanent-
+  delete) unchanged. `MessageListPane.tsx` owns the click semantics — a
+  local `anchorId` (last plain/Ctrl-clicked message, unmoved by Shift-
+  click) drives Ctrl-click toggle (AC1), Shift-click contiguous range
+  (AC2, computed against its own filtered/searched `visibleMessages`
+  order), and plain-click replace (AC3); the `.selected` class check
+  changed from `===` to `.includes()` so every selected row highlights.
+  `ReadingPane.tsx` gained a `selectedCount` prop (AC4) to distinguish
+  "nothing selected" from "multiple selected" in its empty state, both of
+  which leave `selectedMessageId` null. No bulk actions were added —
+  scoped strictly to selection state and its two visible effects.
+  Existing `MessageListPane.test.tsx`/`ReadingPane.test.tsx` needed
+  prop-shape touch-ups to keep compiling (one assertion's expected call
+  shape also changed, from a plain click now reporting an array);
+  `App.test.tsx` needed no changes. Verified live: a throwaway test
+  confirmed Ctrl-click add/remove without disturbing the rest of the
+  selection, Shift-click ranging both directions plus re-ranging from the
+  same anchor on a second Shift-click, a plain click clearing a 3-message
+  selection down to one, multiple rows simultaneously carrying the
+  `selected` class, and `ReadingPane` showing the single message /
+  "N selected" / the original empty state at counts 1/3/0 respectively.
+  lint/typecheck/build pass; existing suite unchanged 557/557 (only the
+  two component test files needed prop-shape touch-ups). Phase set to
+  `test`.
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM)
+  accepted by user; logged to CHANGELOG. Active feature set to 039
+  (Message list multi-select, next in BACKLOG.md table order), phase set
+  to `implement`.
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM) validated:
+  lint/typecheck/build pass; full test suite (557/557) re-run 3x, stable;
+  confirmed via `git diff` that `/test` touched only test files/docs, no
+  implementation drift. All 5 ACs verified by tests plus code inspection
+  plus an independent live check — a standalone `tsx`-run script against
+  the real `generatePersonas`/`ConfigStore` code (only `fetch` stubbed)
+  drove the full pipeline: generation read the exact configured
+  provider/key (AC1), produced a well-formed 2-persona cast with a
+  correct reportsTo relationship (AC2), simulated the UI's Accept-append
+  flow (AC3), and — critically — opened a *second* `ConfigStore` against
+  the same scratch directory (a real restart, not a mock), confirming all
+  3 personas (1 pre-existing + 2 generated) survived intact with
+  `reportsTo` preserved (AC5). AC4 confirmed by the unit/IPC tests'
+  4-failure-shape coverage (network, auth, non-JSON, bad-shape), each
+  leaving `config.getPersonas()` untouched. Code inspection independently
+  confirmed `personas.set` is never called from the generate handler
+  itself, only from Accept, so "shown before committed" (AC2/AC3) is a
+  structural guarantee, not just test behavior. No live multi-window
+  Electron GUI click-through attempted — no attached display; same
+  non-blocking gap as every prior feature. All checks pass, no gaps
+  found. Phase set to `accept`.
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM) tested:
+  added 21 tests (536 → 557, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 3 layers — `main/llm/generatePersonas.test.ts`
+  (+10, new file, real `ConfigStore` + stubbed `fetch`): AC1 provider/model/
+  key read from persisted Settings and the description passed through as
+  user prompt; AC2 well-formed parsing incl. reportsTo preserved and a
+  code-fence-wrapped response; AC4 network error/auth error/non-JSON/
+  missing-field all resolve to a clear error never a throw, persisted
+  personas confirmed untouched on failure. `main/data/ipc.test.ts` (+4,
+  new `llm:generatePersonas` block): AC1 settings read from real
+  ConfigStore; AC4 durable failure-log entry with `source:
+  'generatePersonas'` (mirroring 027's `llm:test` pattern), success logs
+  nothing, malformed response leaves personas untouched; a dedicated test
+  pins that the IPC handler itself never calls `setPersonas` — only the
+  renderer's Accept flow does. `PersonasSettings.test.tsx` (+7): AC1
+  Generate disabled until text entered, calls `llm.generatePersonas` with
+  the exact description; AC2 a successful generation renders a review
+  list before `personas.set` is ever called; AC3 Accept appends (not
+  replaces) to the existing list and persists the merged array, Discard
+  persists nothing; AC4 a failed generation shows the exact error via the
+  existing `role="alert"` convention without touching the list; AC5 an
+  accepted generated persona goes through the identical `personas.set`
+  call manual create/031's Load Personas already use, so no new
+  persistence test was needed. lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM)
+  implemented: new `main/llm/generatePersonas.ts` asks the configured LLM
+  (via the existing provider-agnostic `generateText`) to return a JSON
+  array shaped exactly like 031's `PersonasFilePersona`, with guidance to
+  form a coherent, acyclic `reportsTo` structure (AC1/AC2); the response
+  is parsed (stripping an optional code fence) and validated by reusing
+  031's existing `validatePersonasFile` as-is, so malformed LLM output is
+  caught the same way a bad hand-edited import file is — never thrown,
+  never partially applied (AC4). New `llm:generatePersonas` IPC handler
+  logs failures to the existing durable LLM failure log (027), matching
+  every other user-triggered LLM call. `PersonasSettings.tsx` gained a
+  description textarea + Generate button; a successful generation is
+  staged in a review list (name/email/role/client/reports-to) with
+  Add-N/Discard actions (AC2/AC3) — Accept appends (not replaces) to the
+  existing list via the same `personas.set` call manual create/edit
+  already uses, so persistence (AC5) needed no new code. Verified live: a
+  standalone Vitest+stubbed-fetch check covered a well-formed
+  code-fence-wrapped response, non-JSON output, JSON missing a required
+  field, and a network failure, all resolving correctly with no throw and
+  the persisted persona list confirmed untouched on failure; a throwaway
+  RTL smoke test drove the full UI flow (generate → review → Accept
+  appends and persists, Discard leaves the list untouched, a failed
+  generation shows the exact error without touching the list).
+  lint/typecheck/build pass; existing suite unchanged 536/536 (only
+  `ipc.test.ts`'s exhaustive channel-list test needed a content touch-up
+  for the new channel). Phase set to `test`.
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  accepted by user; logged to CHANGELOG. Active feature set to 032
+  (Settings — generate personas via LLM, next in BACKLOG.md table order),
+  phase set to `implement`.
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  validated: lint/typecheck/build pass; full test suite (536/536) re-run
+  3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs, no implementation drift. All 5 ACs verified by tests plus
+  code inspection plus a live check against real data — bundled
+  `personasFile.ts` standalone with `esbuild` and fed it the real, in-use
+  `~/.config/outlook-sim/config/personas.json`'s persona array (15 real
+  personas): all validated successfully (tolerating extra fields like
+  `id` the schema doesn't know about), and corrupting one real entry
+  produced the exact expected per-index error. AC4 (personas-only scope)
+  re-confirmed structurally — the module has no import from
+  `./db`/`./config`/`./clock` at all. No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  tested: added 21 tests (515 → 536, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 2 files — new `personasFile.test.ts`
+  (+17, real `validatePersonasFile`): full/multi-entry/empty-array
+  acceptance, optional-field defaulting, a 12-case `it.each` covering
+  malformed root/entry shapes and wrong-typed fields with exact per-field
+  errors (never throwing), and a by-index error test for a multi-entry
+  file; `PersonasSettings.test.tsx` (+4): clicking "Load Personas…"
+  invokes the pick IPC call, a valid file replaces (not merges) the list
+  and persists with a generated id, an invalid file shows the specific
+  error while the app stays usable, and canceling is a true no-op. AC4
+  (personas-only scope) and part of AC5 (restart persistence) were
+  confirmed by code inspection / existing coverage rather than new tests,
+  since they're structural guarantees / already-tested shared code paths
+  with nothing new to assert. lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  implemented: new standalone file format (a bare JSON array of persona
+  entries, distinct from a scenario pack's wrapping object) — new
+  `PersonasFilePersona` type and `main/data/personasFile.ts`'s
+  `validatePersonasFile` (never throws, per-field error messages, mirrors
+  `scenarioPack.ts`'s conventions but self-contained rather than sharing
+  its private helpers). New `personasFile:pick` IPC handler in
+  `main/index.ts` (alongside `scenario:pickPack`/`savePack`) opens a
+  native file picker and validates the chosen file.
+  `PersonasSettings.tsx`'s new "Load Personas…" button converts validated
+  entries into full `Persona` objects and calls the existing `personas.set`
+  IPC — the same call manual create/edit already use — so persistence
+  (AC5) needed no new code and personas-only scope (AC4) is structural
+  (the validator has no `db`/`config`/`clock` reference at all). Verified
+  live: a standalone `esbuild`-bundled script confirmed valid-file parsing
+  with correct isClient/reportsTo handling and five different malformed
+  shapes each producing a specific error rather than throwing; a
+  throwaway RTL smoke test drove the full UI (load replaces the list, an
+  invalid file shows a specific error without crashing, cancel is a
+  no-op, replace-not-merge semantics). lint/typecheck/build pass; existing
+  suite unchanged 515/515. Phase set to `test`.
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) accepted by user; logged to CHANGELOG. Active feature set to
+  031 (Settings — load personas from a JSON file, next in BACKLOG.md
+  table order), phase set to `implement`.
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) validated: lint/typecheck/build pass; full test suite
+  (515/515) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests plus fresh code inspection (no main-process component
+  to independently re-run for this purely renderer-side feature) —
+  confirmed `PersonasSettings`'s fetch effect is keyed on `reloadKey`,
+  `SettingsView`'s `refreshAfterScenarioPackLoad` re-fetches the system
+  prompt directly rather than trusting the pack's in-memory value, and
+  `App.tsx`'s ternary rendering genuinely unmounts `SettingsView` when
+  closed. No live multi-window Electron GUI click-through attempted — no
+  attached display; same non-blocking gap as every prior feature. Phase
+  set to `accept`.
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) tested: added 9 tests (506 → 515, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 2 files —
+  `PersonasSettings.test.tsx` (+5, unit-level via `rerender`): a
+  `reloadKey` bump refetches and shows new data without unmount/remount,
+  an unchanged `reloadKey` doesn't cause an extra fetch, an in-progress
+  unsaved create *and* edit form are both discarded cleanly on a
+  `reloadKey` bump (asserted no accidental save either), and a bare
+  render with no `reloadKey` prop stays backward compatible;
+  `SettingsView.test.tsx` (+4, integration-level): loading a pack updates
+  the visible persona list and System Prompt text in place (no
+  navigation), unmounting/remounting Settings (the actual mechanism
+  behind "closed is unaffected") shows fresh data with nothing carried
+  over, and an in-progress unsaved System Prompt edit is overwritten by a
+  pack load without ever being saved. lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 030 (Settings panels refresh live after a scenario
+  pack load) implemented: `SettingsView.tsx`'s `handleLoadScenarioPack`
+  now refreshes System Prompt directly (re-fetches into local state) and
+  bumps a new `personasReloadKey` counter passed to `PersonasSettings` as
+  a prop — its own mount-only fetch effect now depends on that key,
+  mirroring the same version-counter pattern `App.tsx` already uses for
+  `messagesVersion`. AC3 (Settings closed ⇒ unaffected) needs no code
+  since `SettingsView` already fully unmounts when closed. AC4 (unsaved-
+  edit handling): chosen behavior is overwrite/discard, not preserve —
+  documented explicitly, consistent with the destructive-replace
+  confirmation dialog the user already agreed to and every other
+  destructive action in this app already just overwriting. Verified live:
+  a throwaway RTL smoke test drove the full flow (System Prompt text and
+  persona list both updating in place with Settings open, no navigation;
+  an in-progress unsaved "+ New Persona" form gone, not dangling, after a
+  pack load). lint/typecheck/build pass; existing suite unchanged 506/506
+  (no existing tests needed touch-ups). Phase set to `test`.
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  accepted by user; logged to CHANGELOG. Active feature set to 030
+  (Settings panels refresh live after a scenario pack load, next in
+  BACKLOG.md table order), phase set to `implement`.
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  validated: lint/typecheck/build pass; full test suite (506/506) re-run
+  3x, stable; confirmed via `git diff` that `/test` touched only test
+  files/docs, no implementation drift. All 4 ACs verified by tests plus
+  an unusually strong independent live check — found two of the user's
+  own real, previously-saved scenario pack files on disk
+  (`~/Downloads/scenario-pack1.json`, `scenario-pack2.json`), genuinely
+  pre-029 (no `systemPrompt` key at all, not synthetic fixtures): both
+  validated and applied via a fresh `esbuild`-bundled script without
+  error, correctly leaving a freshly-set current system prompt untouched
+  (AC3); a real system prompt built into a fresh pack, JSON-round-tripped,
+  and applied into a completely fresh store came back byte-for-byte
+  identical (AC1/AC2/AC4). Both real downloaded files confirmed unmodified
+  (md5, read-only access) afterward. No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  tested: added 8 tests (498 → 506, all passing; re-run 3x, stable), all
+  AC-traceable by number, plus 2 existing tests extended in place, all in
+  `scenarioPack.test.ts` — `validateScenarioPack` (+4): present/absent/
+  explicitly-empty `systemPrompt` parse correctly (absent stays
+  `undefined`, not defaulted to `''` like every other field), and a
+  non-string value is rejected with a clear error. `applyScenarioPack`
+  (+3): a pack's system prompt replaces the current one, an explicitly
+  empty one clears it, and a hand-constructed pre-029-shaped pack (key
+  deleted from the JSON) applies without throwing and leaves the current
+  system prompt untouched. `buildScenarioPack` (+1, plus the existing
+  comprehensive round-trip test extended): a configured system prompt is
+  included when building, and the round-trip test now proves it survives
+  build → real `JSON.stringify`/`parse` → apply into a completely fresh
+  store, byte-for-byte, alongside the already-covered
+  personas/inbox/calendar/timed-messages. lint/typecheck/build all pass.
+  Test Notes filled in; phase set to `validate`.
+- 2026-09-15 — feature 029 (Scenario packs include the system prompt)
+  implemented: added `systemPrompt?: string` to `ScenarioPack` — genuinely
+  optional (`undefined`), not defaulted to `''` like other fields, so a
+  pre-029 pack (key absent) is distinguishable from a pack that explicitly
+  clears the system prompt (key present, empty string). `validateScenarioPack`
+  parses it only when present; `applyScenarioPack` only touches the
+  current system prompt when the pack carried one (AC2+AC3 in one guard);
+  `buildScenarioPack` always includes the current system prompt (AC1) —
+  doesn't conflict with the function's existing "never reads
+  Settings/API keys" guarantee since the system prompt lives in its own
+  config file. No renderer changes needed (Save/Load Scenario Pack is
+  main-process-opaque from the UI's perspective; live-refreshing the
+  System Prompt textarea after a load is separate future feature 030).
+  Verified live: a standalone `esbuild`-bundled script drove all 4 ACs
+  directly, including a hand-constructed pre-029-shaped pack (key deleted
+  entirely) leaving the current system prompt completely untouched when
+  applied. lint/typecheck/build pass; existing suite unchanged 498/498
+  (one exact-shape test assertion needed a content touch-up). Phase set
+  to `test`.
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) accepted by user; logged to CHANGELOG. Active feature set to
+  029 (Scenario packs include the system prompt, next in BACKLOG.md table
+  order), phase set to `implement`.
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) validated: lint/typecheck/build pass; full test suite
+  (498/498) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests + code inspection plus an unusually strong
+  independent live check — this session's own real, in-use
+  `~/.config/outlook-sim/config/identity.json`/`personas.json` genuinely
+  predate this feature (no synthetic fixture needed): loading them via a
+  fresh `esbuild`-bundled `config.ts` against a scratch copy didn't throw,
+  every reader defaulted the missing `reportsTo`/`department` to `''`
+  while leaving all other real data (15 personas, trainee identity)
+  intact, and a further round-trip of real org-structure values persisted
+  correctly without disturbing other personas' defaults. Real on-disk
+  config confirmed byte-for-byte unchanged (md5) afterward. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. Phase set to
+  `accept`.
+- 2026-09-15 — feature 028 (Trainee identity & personas — org-structure
+  fields) tested: added 13 tests (485 → 498, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 3 layers — `config.test.ts`
+  (+6, real `ConfigStore`): identity/persona org-fields persistence across
+  close/reopen, both fields round-tripping as empty when left blank, and
+  raw pre-028-shaped `identity.json`/`personas.json` written directly to
+  disk loading without error and defaulting to `''`; `SettingsView.test.tsx`
+  (+4): Reports To/Department prefill and save alongside existing identity
+  fields, blank-is-valid, and a legacy identity object missing both fields
+  rendering blank rather than crashing; `PersonasSettings.test.tsx` (+5):
+  create/edit persisting Reports To, blank-is-valid on create, and a
+  legacy persona missing `reportsTo` entirely opening for edit without
+  error. lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
+- 2026-09-14 — feature 028 (Trainee identity & personas — org-structure
+  fields) implemented: added `reportsTo`/`department` to `TraineeIdentity`
+  and `reportsTo` to `Persona` (shared types), plus form fields in
+  `SettingsView.tsx`'s Trainee Identity section and `PersonasSettings.tsx`'s
+  persona editor. AC4 (pre-feature data loads without error, defaulting to
+  empty) enforced at the data layer: `ConfigStore.getIdentity()`/
+  `getPersonas()` now merge/default missing fields on every read, not just
+  in the UI. `applyScenarioPack` defaults a loaded persona's `reportsTo` to
+  `''`, same as `isClient`. Verified live: a standalone `esbuild`-bundled
+  `config.ts` script wrote raw pre-028-shaped JSON directly to disk and
+  confirmed it loads without error, correctly defaulting; a throwaway RTL
+  smoke test drove the full UI including legacy (missing-field) identity
+  and persona objects rendering blank without error. lint/typecheck/build
+  pass; existing suite unchanged 485/485 (11 existing test files needed
+  compile touch-ups for the two now-required fields, no unrelated
+  behavior changes). Phase set to `test`.
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) accepted by user; logged to CHANGELOG. Active feature set
+  to 028 (Trainee identity & personas — org-structure fields, next in
+  BACKLOG.md table order), phase set to `implement`.
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) validated: lint/typecheck/build pass; full test suite
+  (485/485) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 4 ACs
+  verified by tests + code inspection plus an independent live check —
+  bundled `config.ts` standalone with `esbuild` and ran it against a
+  scratch copy of the real, in-use `~/.config/outlook-sim/config/`
+  directory (15 real personas carried over): two appended failure-log
+  entries survived a close/reopen cycle in order, and the real config
+  directory was confirmed byte-for-byte unchanged (md5) afterward. Flagged
+  one cosmetic, non-blocking nit (a type declaration sitting between two
+  import statements in `App.tsx`). No live multi-window Electron GUI
+  click-through attempted — no attached display; same non-blocking gap as
+  every prior feature. Phase set to `accept`.
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) tested: added 18 tests (467 → 485, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 5 layers — `config.test.ts`
+  (+3): failure-log round-trip, ordered multi-source appends, close/reopen
+  persistence; `scheduler.test.ts` (+3, plus a log assertion added to an
+  existing test): the scheduler's own tick() logs exactly once per real
+  failure, a dedicated `attemptUnsolicitedMail` block covers a real
+  failure logging, a success logging nothing, and the no-personas no-op
+  logging nothing either; `ipc.test.ts` (+6): personaReply/test failure
+  logging, and a concrete Retry-mechanics test that calls
+  `llm:personaReply` with the same `sentMessageId` twice (fail then
+  succeed), proving both the success broadcast and that the failure log
+  keeps the first attempt's entry; a new `llm:retryUnsolicitedMail`
+  describe block covers both outcomes; `App.test.tsx` (+4): Retry calls
+  `llm.personaReply` with the exact original `sentMessageId`, a second
+  Retry failure updates the same single `role="alert"` banner rather than
+  stacking, a successful Retry clears it, and the unsolicited-mail
+  banner's Retry/clear path; `SettingsView.test.tsx` (+4): Retry/Dismiss
+  visibility, Retry re-calling `llm.test` with the exact currently-
+  displayed settings, a second failure replacing the displayed message,
+  and Dismiss clearing the error without touching any form field.
+  lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
+- 2026-09-14 — feature 027 (LLM error banner — Retry button and durable
+  failure log) implemented: persona-reply failures now carry their
+  `sentMessageId` through the `llm:persona-reply-failed` broadcast so
+  Retry can re-issue the exact same `llm.personaReply` call; unsolicited-
+  mail Retry goes through a new `llm:retryUnsolicitedMail` IPC handler
+  (no caller-supplied input exists to replay there, so Retry just
+  re-attempts generation via the same `attemptUnsolicitedMail` wrapper the
+  scheduler's own tick() now uses). `App.tsx`'s single-slot background-
+  failure state widened to a discriminated union so Retry knows which call
+  to reissue while keeping the existing non-stacking behavior (AC2).
+  Retry clears the banner based on the IPC call's own resolved result
+  (`result.ok`), not a broadcast, since `data:messages-changed` doesn't
+  fire when a persona legitimately declines to reply. Settings' Test
+  Connection reuses its own existing retry-equivalent
+  (`handleTestConnection`) and gained a Dismiss button. New durable
+  `ConfigStore.appendLlmFailureLog`/`getLlmFailureLog`
+  (`config/llm-failure-log.json`) records every failure at the point it
+  happens, independent of whether its banner is later shown/dismissed — no
+  in-app viewer built, not an AC bullet. `PersonaReplyResult`/
+  `GenerateUnsolicitedMailResult` moved from `main/llm/*.ts` to
+  `shared/data-types.ts` so the renderer/preload can type them. Verified
+  live: a standalone `esbuild`-bundled script confirmed the failure log
+  persists across restart and `attemptUnsolicitedMail` logs exactly once
+  per real failure (zero for a no-personas no-op); two throwaway RTL smoke
+  tests drove the full Retry flow for both the App-level banner (same
+  `sentMessageId` replayed, clears on success, second failure updates
+  rather than stacks) and Settings' Test Connection (Retry + new Dismiss).
+  lint/typecheck/build pass; existing suite unchanged 467/467 (only
+  `ipc.test.ts`/`App.test.tsx` needed compile touch-ups for the new
+  channel and the two-argument failure callback). Phase set to `test`.
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) accepted by user; logged to CHANGELOG. All high-priority
+  backlog items (023-026, 047, 048) are now done. Active feature set to
+  027 (LLM error banner — Retry button and durable failure log, the first
+  remaining medium-priority item), phase set to `implement`.
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) validated: lint/typecheck/build pass; full test suite
+  (467/467) re-run 3x, stable; confirmed via `git diff` that `/test`
+  touched only test files/docs, no implementation drift. All 5 ACs
+  verified by tests + code inspection plus fresh independent live checks —
+  a throwaway jsdom check fed `renderMarkdown` headings, a list, italic,
+  bold, and a link, confirming real DOM elements come back (not raw
+  source) and that a raw `<script>` tag is actually stripped, not just
+  displayed-as-text; a standalone `esbuild`-bundled `db.ts` script drove
+  note create/edit/close-reopen-persist/cascade-delete (including a
+  nested child folder's note) against a scratch copy of the real, in-use
+  `~/.config/outlook-sim/outlook-sim.db` — all correct, and the real
+  on-disk DB confirmed byte-for-byte unchanged (md5) afterward. No live
+  multi-window Electron GUI click-through attempted — this session has no
+  attached display; same non-blocking gap as every prior feature. Phase
+  set to `accept`.
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) tested: added 13 tests (454 → 467, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 3 layers — `db.test.ts` (+6,
+  real `MailDb`): create/edit/delete, folder-scoped listing, close/reopen
+  persistence, and a regression test mirroring 047's own cascade-delete
+  FK-ordering bug for a folder-with-nested-child's notes; `ipc.test.ts`
+  (+1, incl. the exhaustive channel-list update done during `/implement`):
+  full CRUD (scoped listing across two folders) through the actual
+  registered handlers; `FileVineView.test.tsx` (+6): empty state, create
+  (incl. blank-name no-op) and delete, a Markdown-rendering test that
+  explicitly asserts the raw `# `/`**` source text does *not* appear
+  anywhere (not just that the rendered tags do), a distinct-edit-mode test
+  proving the rendered view is hidden while a note is mid-edit, and a
+  UI-level regression for the `/implement`-stage `selectFolder()` state-
+  reset fix (switching folders shows the new folder's own notes, not the
+  previous folder's). lint/typecheck/build all pass. Test Notes filled in;
+  phase set to `validate`.
+- 2026-09-14 — feature 048 (FileVine notes/files CRUD with Markdown
+  content) implemented: new `FileVineNote { id, folderId, name, content }`
+  (Markdown source) plus a `filevine_notes` SQLite table and full CRUD on
+  `MailDb`, mirroring 047's `filevine_folders` conventions; `047`'s
+  `deleteFileVineFolder` cascade now also deletes each deleted folder's
+  notes (AC5), same FK-ordering fix pattern as 047 itself. Added `marked` +
+  `dompurify` (new deps — no Markdown library existed yet) behind a small
+  `renderer/src/markdown.ts` wrapper for sanitized-HTML rendering, the
+  app's first `dangerouslySetInnerHTML` use. Extended `FileVineView.tsx`'s
+  detail pane with a Notes section: create/edit inline forms (name +
+  Markdown-source textarea) following the folder tree's existing
+  conventions, a rendered (not raw) view when a note is selected, and a
+  structurally distinct edit mode (AC1-3). A first attempt at resetting
+  note-selection state via a `useEffect` on folder-change tripped
+  `react-hooks/set-state-in-effect`; fixed by moving the reset into an
+  explicit `selectFolder()` handler used everywhere `selectedFolderId`
+  changes, leaving the effect to only fetch. Verified live: a standalone
+  `esbuild`-bundled `db.ts` script drove full note CRUD, close/reopen
+  persistence, and cascade-delete (including a nested descendant folder's
+  notes) against a real `MailDb`; a throwaway RTL smoke test (written, run,
+  deleted) drove the full UI flow including confirming real rendered
+  `<h1>`/`<strong>` tags appear, not literal Markdown source. lint/
+  typecheck/build pass; existing suite unchanged 454/454 (only
+  `ipc.test.ts`'s exhaustive channel-list test needed a content
+  touch-up for the 5 new channels). Phase set to `test`.
+- 2026-09-14 — feature 047 (FileVine tab — folder structure and client
+  association) accepted by user, with one change requested before sign-off:
+  the FileVine client dropdown was listing all personas (including Grollo
+  Law staff), so a folder could be assigned an employee as its "client".
+  Added a structured `isClient` boolean to `Persona` (a "Client" checkbox in
+  Settings > Personas), filtered `FileVineView`'s client `<select>` to
+  `isClient` personas (preserving an already-assigned persona in the
+  dropdown even if later unmarked), and defaulted scenario-pack-loaded
+  personas to `isClient: false`. Re-verified lint/typecheck/build/full
+  suite (454/454, +3 tests) after the change, outside the normal
+  `/test`/`/validate` stages since it was requested at this gate. Logged to
+  CHANGELOG. Active feature set to 048 (FileVine notes/files CRUD with
+  Markdown content), phase set to `implement`.
 - 2026-09-14 — feature 047 (FileVine tab — folder structure and client
   association) validated: lint/typecheck/build pass; full test suite
   (451/451) re-run 3x, stable; confirmed via `git diff` that `/test`

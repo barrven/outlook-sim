@@ -7,6 +7,166 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — File menu — About section (features/035-file-menu-about.md)
+The File menu gains an About entry showing the app's current version
+(read straight from `package.json`, never hardcoded) and a link to its
+GitHub repo, https://github.com/barrven/outlook-sim/, which opens in your
+default browser rather than inside the app.
+
+## 2026-09-16 — Move Settings into the File menu (features/034-settings-in-file-menu.md)
+Settings is no longer a nav-rail button; it's opened from a new File menu
+on the ribbon (a dropdown, matching classic Outlook's File > Options
+pattern), with a Settings entry. Clicking it opens the same Settings view
+as before, with the same ✕ close affordance.
+
+## 2026-09-16 — Ribbon — hide Send/Receive and Folder tabs (features/033-hide-unused-ribbon-tabs.md)
+The ribbon's Send/Receive and Folder tabs — placeholders since the app's
+first version, never wired to any functionality — are now hidden entirely
+instead of showing as permanently-disabled, empty tabs. File, Home,
+FileVine, and View are unaffected.
+
+## 2026-09-16 — FileVine content feeds persona LLM context (features/049-filevine-llm-context.md)
+Personas with an associated FileVine folder now have that folder's notes
+(name and content) woven into their LLM prompt context when generating a
+reply or unsolicited mail, so they can meaningfully reference and
+correspond about the documents in it. Personas with no associated folder
+are unaffected. Folder updates are reflected immediately, with no stale
+caching.
+
+## 2026-09-16 — Tasks side panel (features/046-tasks-panel.md)
+A new View ribbon tab exposes a Tasks toggle: turning it on shows a
+right-hand column panel with two sections. Flagged Mail lists every
+currently-flagged email and updates live as flags change anywhere else in
+the app. Tasks lets you add a freestanding to-do (text plus an optional
+due date), mark it complete, or remove it — freestanding tasks persist
+across restarts in their own store. Each item in both lists is separated
+by a divider line, and the add-task controls stay fixed at the top of the
+Tasks section as the list grows. The panel's visibility and its tasks are
+unaffected by which Mail folder or Calendar view is active.
+
+## 2026-09-15 — Calendar item view-mode and single-open swap (features/043-calendar-view-edit-mode.md)
+Clicking a calendar item now opens it in a read-only view first — fields
+visible but not editable, so a stray click can't accidentally change
+anything — with an explicit "Edit" button to switch into the existing
+editable form. Clicking a different calendar item while one is open
+closes the current one and opens the new one in its place (never two
+open at once). Cancelling out of editing (or out of the recurring
+this-event/whole-series choice) returns to the read-only view rather than
+closing the panel outright. Creating a new item is unaffected — it still
+opens directly into an empty, editable form.
+
+## 2026-09-15 — Double-click message opens a pop-out reading window (features/041-message-popout-window.md)
+Double-clicking a message in the list now opens it in its own separate
+window, showing the same content and action buttons (Reply/Reply
+All/Forward, Delete, Restore, Mark read/flag, categories) as the inline
+Reading Pane — mirroring the existing compose pop-out. The pop-out stays
+live: a change made anywhere (elsewhere in the app, or from within the
+pop-out itself) refreshes it in place, the same way every other window
+already stays in sync. Closing the pop-out never affects the main
+window's selection.
+
+## 2026-09-15 — Message list right-click context menu (features/040-message-list-context-menu.md)
+Right-clicking a message (or an existing multi-selection) in the message
+list now opens a context menu: Move to folder, Mark as read/unread,
+Flag/Unflag, Add to category, Reply/Reply All/Forward, and Delete —
+applying to the whole targeted selection. Right-clicking inside an
+existing selection keeps it; right-clicking outside one selects just that
+message first. Move to folder lists every folder and moves the whole
+selection there; Mark read/unread, Flag/Unflag, and Add to category apply
+to every selected message. Reply/Reply All/Forward stay enabled only when
+exactly one message is targeted; Delete works for any selection size, and
+permanently deletes instead of re-moving when the target is already in
+Deleted Items.
+
+## 2026-09-15 — Message list multi-select (features/039-message-list-multiselect.md)
+The message list now supports selecting multiple messages at once:
+Ctrl-click (Cmd-click on Mac) toggles a message in or out of the
+selection without disturbing the rest, and Shift-click selects the
+contiguous range between the last-clicked message and the shift-clicked
+one. A plain click still selects just that one message, clearing any
+prior multi-selection, exactly as before. The Reading Pane shows the
+single message when exactly one is selected, and a neutral "N selected"
+state when multiple are.
+
+## 2026-09-15 — Settings — generate personas via LLM (features/032-generate-personas-via-llm.md)
+Settings' Personas section gains a "Generate Personas" control — enter a
+short company/industry description and the configured LLM drafts a full
+cast of personas (name, email, role, bio, writing style, reports-to)
+reflecting it, shown in a review list before anything is saved. Accept
+appends the generated personas to the existing list; Discard drops the
+result with no changes made. A failed generation (bad key, network
+error, malformed LLM output) shows a clear error and never touches the
+existing persona list; accepted personas persist across restarts like
+any other persona.
+
+## 2026-09-15 — Settings — load personas from a JSON file (features/031-load-personas-from-json.md)
+Settings' Personas section gains a "Load Personas…" button that imports a
+persona list from a standalone JSON file — its own schema (a bare array
+of persona entries), distinct from a full scenario pack — replacing the
+current persona list. An invalid or corrupted file shows a specific,
+readable error instead of crashing; loading this way never touches
+mailbox, calendar, or system prompt, and imported personas persist across
+restarts like manually-entered ones.
+
+## 2026-09-15 — Settings panels refresh live after a scenario pack load (features/030-settings-live-refresh-after-pack-load.md)
+If Settings is open (on the Personas section, or the System Prompt
+section) when a scenario pack is loaded, it now reflects the newly loaded
+data immediately, without needing to close and reopen Settings. Loading a
+pack while Settings is closed is unaffected, as before. An in-progress
+unsaved edit in an open Settings section is overwritten by the pack's
+data rather than preserved — consistent with the destructive-replace
+confirmation the trainee already agrees to when loading a pack.
+
+## 2026-09-15 — Scenario packs include the system prompt (features/029-scenario-pack-system-prompt.md)
+Save Scenario Pack now writes the current system prompt into the pack's
+JSON alongside the existing inbox/personas/calendar/timed-messages, and
+Load Scenario Pack applies it, replacing whatever was configured before —
+the same way loading already replaces personas/calendar/inbox. A pack
+saved before this feature still loads fine and leaves the current system
+prompt untouched, rather than clearing it.
+
+## 2026-09-15 — Trainee identity & personas — org-structure fields (features/028-org-structure-fields.md)
+Trainee Identity in Settings gains "Reports To" and "Department" fields;
+the Persona create/edit form gains a free-text "Reports To" field (a
+persona may report to someone outside the configured cast entirely).
+Both are optional and persist across restarts, and existing identity/
+persona data saved before this feature loads unaffected, with the new
+fields simply blank until filled in.
+
+## 2026-09-14 — LLM error banner — Retry button and durable failure log (features/027-llm-error-retry-and-log.md)
+When a persona-reply, unsolicited-mail, or Test Connection LLM call fails,
+its failure message now includes a Retry button (alongside dismiss) that
+re-attempts the exact same call — the same message for a persona reply,
+the currently-displayed settings for Test Connection. A repeat failure
+updates the existing message rather than piling up duplicates, and a
+successful retry clears it and completes whatever the original call was
+meant to do (e.g. the persona's reply gets inserted). Every LLM failure,
+across all three surfaces, is now also appended to a durable local log
+under the app's config directory, independent of whether its on-screen
+message was ever seen or dismissed — useful for spotting a pattern of
+repeated failures later.
+
+## 2026-09-14 — FileVine notes/files CRUD with Markdown content (features/048-filevine-notes-markdown.md)
+Within a FileVine folder, trainees can now create, edit, and delete notes
+— each with a name and a Markdown body. Notes display formatted (real
+headings, lists, bold/italic, links) by default; an explicit Edit mode
+exposes the raw Markdown source, distinct from the rendered view. Deleting
+a folder deletes its notes too, and everything persists across restarts.
+Feeding FileVine content into persona LLM context remains a separate,
+not-yet-built feature (049).
+
+## 2026-09-14 — FileVine tab — folder structure and client association (features/047-filevine-folders-and-clients.md)
+A new "FileVine" ribbon tab (between Home and View) opens a case-file
+management UI in the center/right content area, while the mail folder pane
+stays visible on the left. Trainees can build a nested folder tree
+(create/rename/delete, file-system-style) and associate any folder with a
+persona as its "client" — the client dropdown only offers personas flagged
+as clients (Settings > Personas now has a "Client" checkbox), so firm staff
+can't be assigned as a folder's client. Folder structure and client
+associations persist across restarts. Notes/files CRUD and feeding
+FileVine content into persona LLM context are separate, not-yet-built
+features (048/049).
+
 ## 2026-09-14 — Fix: recurring event reminders fire per occurrence (features/026-fix-recurring-reminder-per-occurrence.md)
 A recurring event or deadline's reminder now fires for every occurrence
 that reaches its reminder time — the 2nd, 3rd, and so on — instead of only

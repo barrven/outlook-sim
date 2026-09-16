@@ -97,3 +97,27 @@ export function createComposeWindow(parent: BrowserWindow, options?: ComposeOpen
 
   return composeWindow
 }
+
+export function createMessagePopoutWindow(parent: BrowserWindow, messageId: string, title: string): BrowserWindow {
+  const popoutWindow = new BrowserWindow({
+    width: 640,
+    height: 620,
+    parent,
+    autoHideMenuBar: true,
+    title,
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  popoutWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  loadRenderer(popoutWindow, { messagePopout: '1', messageId })
+
+  return popoutWindow
+}

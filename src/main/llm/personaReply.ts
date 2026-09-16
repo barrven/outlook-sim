@@ -1,16 +1,12 @@
-import type { MailMessage, Persona, TraineeIdentity } from '../../shared/data-types'
+import type { MailMessage, Persona, PersonaReplyResult, TraineeIdentity } from '../../shared/data-types'
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
+import { buildFileVineContextPrompt } from './fileVineContext'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
 
 const NO_REPLY_MARKER = 'NO_REPLY'
-
-export type PersonaReplyResult =
-  | { ok: true; replied: true; message: MailMessage }
-  | { ok: true; replied: false }
-  | { ok: false; error: string }
 
 function normalizeSubject(subject: string): string {
   let current = subject.trim()
@@ -44,13 +40,19 @@ export function findThread(
     .sort((a, b) => a.timestamp - b.timestamp)
 }
 
-function buildSystemPrompt(systemPrompt: string, persona: Persona, identity: TraineeIdentity): string {
+function buildSystemPrompt(
+  systemPrompt: string,
+  persona: Persona,
+  identity: TraineeIdentity,
+  fileVineContext: string | null
+): string {
   return [
     systemPrompt,
     `You are playing ${persona.displayName}${persona.role ? ` (${persona.role})` : ''} in an email training simulation, replying to ${identity.displayName || 'the trainee'}${identity.jobTitle ? ` (${identity.jobTitle})` : ''}.`,
     persona.bio && `Background: ${persona.bio}`,
     persona.writingStyleNotes && `Writing style: ${persona.writingStyleNotes}`,
     persona.extraPrompt,
+    fileVineContext,
     `Decide whether a reply is appropriate given the conversation and the guidance above — for example, a purely FYI message may not warrant one. If a reply is NOT warranted, respond with exactly this text and nothing else: ${NO_REPLY_MARKER}`,
     'Otherwise, respond with ONLY the body text of your reply email — no subject line, no meta-commentary about being an AI.'
   ]
@@ -101,9 +103,10 @@ export async function generatePersonaReply(
   const identity = config.getIdentity()
   const { systemPrompt } = config.getSystemPrompt()
   const thread = findThread(db.listMessages(), persona.email, identity.fromEmail, sentMessage.subject)
+  const fileVineContext = buildFileVineContextPrompt(db, persona.id)
 
   const result = await generateText(config.getSettings(), {
-    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity),
+    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, fileVineContext),
     userPrompt: buildThreadTranscript(thread)
   })
 

@@ -16,7 +16,9 @@ const PERSONA: Persona = {
   role: 'Office Manager',
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false,
+  reportsTo: ''
 }
 
 const SETTINGS: Settings = {
@@ -46,7 +48,13 @@ describe('generatePersonaReply', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings(SETTINGS)
   })
 
@@ -237,7 +245,9 @@ describe('generatePersonaReply', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     const message = sendMessage({ toEmail: 'alex@example.com', toName: 'Alex Chen' })
@@ -285,7 +295,9 @@ describe('generatePersonaReply', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, ccPersona])
     const message = sendMessage({ cc: [{ name: 'Alex Chen', email: 'alex@example.com' }] })
@@ -341,6 +353,73 @@ describe('generatePersonaReply', () => {
 
     expect(result).toEqual({ ok: false, error: 'openai API error (401): Incorrect API key provided.' })
     expect(db.listMessages('inbox')).toEqual([])
+  })
+
+  describe('049: FileVine content in the prompt', () => {
+    it('AC1: includes the associated FileVine folder\'s notes (name + content) in the system prompt', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      db.createFileVineNote({
+        folderId: folder.id,
+        name: 'Deadline note',
+        content: 'The probate filing is due 2026-06-01.'
+      })
+      const message = sendMessage()
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+      await generatePersonaReply(db, config, clock, message.id)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Rivera Estate')
+      expect(systemMessage).toContain('Deadline note')
+      expect(systemMessage).toContain('The probate filing is due 2026-06-01.')
+    })
+
+    it('AC2: a persona with no associated FileVine folder generates exactly as before (no FileVine section)', async () => {
+      // An unrelated folder exists, but is not associated with this persona.
+      db.createFileVineFolder({ name: 'Unrelated Matter', parentId: null, clientPersonaId: null })
+      const message = sendMessage()
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+      await generatePersonaReply(db, config, clock, message.id)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).not.toContain('FileVine')
+      expect(systemMessage).not.toContain('Unrelated Matter')
+    })
+
+    it('AC4: a folder content update is reflected in the very next generation, with the old content gone', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      const note = db.createFileVineNote({ folderId: folder.id, name: 'Deadline note', content: 'Due 2026-04-01.' })
+      db.updateFileVineNote(note.id, { content: 'Due 2026-05-15 (moved).' })
+      const message = sendMessage()
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+      await generatePersonaReply(db, config, clock, message.id)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Due 2026-05-15 (moved).')
+      expect(systemMessage).not.toContain('Due 2026-04-01.')
+    })
+
+    it('includes a folder with no notes yet as an explicit "no notes/files yet" line, not silently omitted', async () => {
+      db.createFileVineFolder({ name: 'Empty Matter', parentId: null, clientPersonaId: PERSONA.id })
+      const message = sendMessage()
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+      await generatePersonaReply(db, config, clock, message.id)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Empty Matter')
+      expect(systemMessage).toContain('no notes/files yet')
+    })
   })
 })
 

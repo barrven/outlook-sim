@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import type { FiredReminder, Folder, MailMessage } from '../../shared/data-types'
+
+// A single-slot failure so a second failure (of either kind) replaces the
+// banner rather than stacking a duplicate one (feature 027 AC2) — `kind`
+// carries what Retry needs to re-attempt the same call: `personaReply`
+// keeps the `sentMessageId` it was called with, `unsolicitedMail` has no
+// caller-supplied input to replay (the scheduler picks its own persona and
+// context each attempt), so Retry there just re-attempts generation fresh.
+type LlmBackgroundFailure =
+  | { kind: 'personaReply'; sentMessageId: string; error: string }
+  | { kind: 'unsolicitedMail'; error: string }
 import type { ModuleId } from './types'
 import RibbonBar from './components/RibbonBar'
 import NavSwitcher from './components/NavSwitcher'
@@ -10,18 +20,37 @@ import ReadingPane from './components/ReadingPane'
 import CalendarView from './components/CalendarView'
 import FileVineView from './components/FileVineView'
 import SettingsView from './components/SettingsView'
+import TasksPanel from './components/TasksPanel'
 
 function App(): ReactElement {
   const [activeModule, setActiveModule] = useState<ModuleId>('mail')
   const [showSettings, setShowSettings] = useState(false)
   const [folders, setFolders] = useState<Folder[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
+  // Multi-select (feature 039) — order doesn't matter for rendering, only
+  // membership; the last-clicked "anchor" a Shift-click ranges from is
+  // tracked locally inside MessageListPane, since it's purely a click-
+  // handling detail nothing else needs to read.
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([])
+  // Reading Pane, Reply/Forward, and single-message delete/restore all
+  // operate on exactly one message — this is `null` both when nothing is
+  // selected and when multiple messages are (AC4: Reading Pane shows a
+  // neutral "N selected" state in that second case, not some arbitrary one
+  // of them).
+  const selectedMessageId = selectedMessageIds.length === 1 ? selectedMessageIds[0] : null
   const [messagesVersion, setMessagesVersion] = useState(0)
-  const [llmBackgroundError, setLlmBackgroundError] = useState<string | null>(null)
+  const [llmBackgroundFailure, setLlmBackgroundFailure] = useState<LlmBackgroundFailure | null>(null)
+  const [retryingLlmFailure, setRetryingLlmFailure] = useState(false)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
   const [firedReminders, setFiredReminders] = useState<FiredReminder[]>([])
   const [showFileVine, setShowFileVine] = useState(false)
+  // View ribbon tab (feature 046) — orthogonal to activeModule/showFileVine:
+  // selecting it only changes which ribbon action set is shown (the Tasks
+  // toggle), never the underlying Mail/Calendar content. showTasksPanel is
+  // its own independent on/off state (AC6: unaffected by folder/view nav) —
+  // nothing here resets it on folder/module changes.
+  const [viewTabActive, setViewTabActive] = useState(false)
+  const [showTasksPanel, setShowTasksPanel] = useState(false)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -45,16 +74,35 @@ function App(): ReactElement {
   }, [])
 
   useEffect(() => {
-    return window.api.onPersonaReplyFailed((error) => {
-      setLlmBackgroundError(`Persona reply failed: ${error}`)
+    return window.api.onPersonaReplyFailed((sentMessageId, error) => {
+      setLlmBackgroundFailure({ kind: 'personaReply', sentMessageId, error })
     })
   }, [])
 
   useEffect(() => {
     return window.api.onUnsolicitedMailFailed((error) => {
-      setLlmBackgroundError(`Unsolicited mail generation failed: ${error}`)
+      setLlmBackgroundFailure({ kind: 'unsolicitedMail', error })
     })
   }, [])
+
+  // Re-attempts the exact same failed call: personaReply with the same
+  // sentMessageId (so it's genuinely "the same call, same inputs" per
+  // AC2), unsolicitedMail via the same manual-retry channel the scheduler's
+  // own tick() also uses. A second failure re-broadcasts through the same
+  // listeners above, replacing this banner's contents rather than adding a
+  // new one (AC2); success is read directly off the resolved result rather
+  // than inferred from a broadcast, since `data:messages-changed` doesn't
+  // fire when a persona legitimately declines to reply.
+  async function handleRetryLlmFailure(): Promise<void> {
+    if (!llmBackgroundFailure) return
+    setRetryingLlmFailure(true)
+    const result =
+      llmBackgroundFailure.kind === 'personaReply'
+        ? await window.api.llm.personaReply(llmBackgroundFailure.sentMessageId)
+        : await window.api.llm.retryUnsolicitedMail()
+    setRetryingLlmFailure(false)
+    if (result.ok) setLlmBackgroundFailure(null)
+  }
 
   useEffect(() => {
     return window.api.onReminderFired((reminder) => {
@@ -68,7 +116,7 @@ function App(): ReactElement {
 
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
     setShowSettings(false)
     setShowFileVine(false)
   }
@@ -89,12 +137,22 @@ function App(): ReactElement {
     setActiveModule('mail')
     setShowSettings(false)
     setShowFileVine(false)
+    setViewTabActive(false)
   }
 
   function handleSelectFileVineTab(): void {
     setActiveModule('mail')
     setShowSettings(false)
     setShowFileVine(true)
+    setViewTabActive(false)
+  }
+
+  function handleSelectViewTab(): void {
+    setViewTabActive(true)
+  }
+
+  function handleToggleTasksPanel(): void {
+    setShowTasksPanel((prev) => !prev)
   }
 
   function handleEditDraft(message: MailMessage): void {
@@ -118,11 +176,31 @@ function App(): ReactElement {
       folderId: 'deleted',
       previousFolderId: currentFolderId
     })
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   async function handleDeleteMessage(message: MailMessage): Promise<void> {
     await moveMessageToDeleted(message.id, message.folderId)
+  }
+
+  // The context menu's Delete (feature 040 AC5) — works on any selection
+  // size, and (unlike the single-message Delete above, which the Reading
+  // Pane only ever calls outside Deleted Items) can be invoked from within
+  // Deleted Items too, where it permanently deletes instead of re-moving
+  // there, mirroring the Reading Pane's own Delete/"Delete permanently"
+  // split per folder.
+  async function handleDeleteMessages(messagesToDelete: MailMessage[]): Promise<void> {
+    await Promise.all(
+      messagesToDelete.map((message) =>
+        message.folderId === 'deleted'
+          ? window.api.data.messages.delete(message.id)
+          : window.api.data.messages.update(message.id, {
+              folderId: 'deleted',
+              previousFolderId: message.folderId
+            })
+      )
+    )
+    setSelectedMessageIds([])
   }
 
   // Mirrors the Reading Pane's Delete button for whatever message is
@@ -139,12 +217,12 @@ function App(): ReactElement {
       folderId: message.previousFolderId ?? 'inbox',
       previousFolderId: null
     })
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   async function handlePermanentDeleteMessage(message: MailMessage): Promise<void> {
     await window.api.data.messages.delete(message.id)
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
@@ -152,12 +230,21 @@ function App(): ReactElement {
 
   return (
     <div className="app-shell">
-      {llmBackgroundError && (
+      {llmBackgroundFailure && (
         <div className="llm-error-banner" role="alert">
-          <span>{llmBackgroundError}</span>
-          <button type="button" aria-label="Dismiss" onClick={() => setLlmBackgroundError(null)}>
-            &times;
-          </button>
+          <span>
+            {llmBackgroundFailure.kind === 'personaReply'
+              ? `Persona reply failed: ${llmBackgroundFailure.error}`
+              : `Unsolicited mail generation failed: ${llmBackgroundFailure.error}`}
+          </span>
+          <span className="llm-error-banner-actions">
+            <button type="button" onClick={handleRetryLlmFailure} disabled={retryingLlmFailure}>
+              {retryingLlmFailure ? 'Retrying…' : 'Retry'}
+            </button>
+            <button type="button" aria-label="Dismiss" onClick={() => setLlmBackgroundFailure(null)}>
+              &times;
+            </button>
+          </span>
         </div>
       )}
       {firedReminders.map((reminder) => (
@@ -173,8 +260,13 @@ function App(): ReactElement {
       <RibbonBar
         activeModule={activeModule}
         showFileVine={showFileVine}
+        viewTabActive={viewTabActive}
+        showTasksPanel={showTasksPanel}
         onSelectHomeTab={handleSelectHomeTab}
         onSelectFileVineTab={handleSelectFileVineTab}
+        onSelectViewTab={handleSelectViewTab}
+        onToggleTasksPanel={handleToggleTasksPanel}
+        onOpenSettings={() => setShowSettings(true)}
         onNewEmail={() => window.api.compose.open()}
         onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
         onNewEvent={() => setShowNewEventForm(true)}
@@ -192,15 +284,12 @@ function App(): ReactElement {
             <CalendarFolderPane />
           )}
           <NavSwitcher activeModule={activeModule} onSelectModule={handleSelectModule} />
-          <button type="button" className="settings-nav-button" onClick={() => setShowSettings(true)}>
-            Settings
-          </button>
         </div>
         {showSettings ? (
           <SettingsView
             onClose={() => setShowSettings(false)}
-            onFreePlayStarted={() => setSelectedMessageId(null)}
-            onScenarioPackLoaded={() => setSelectedMessageId(null)}
+            onFreePlayStarted={() => setSelectedMessageIds([])}
+            onScenarioPackLoaded={() => setSelectedMessageIds([])}
           />
         ) : activeModule === 'mail' ? (
           showFileVine ? (
@@ -210,12 +299,18 @@ function App(): ReactElement {
               <MessageListPane
                 selectedFolderId={selectedFolderId}
                 selectedFolderName={selectedFolder?.name ?? ''}
-                selectedMessageId={selectedMessageId}
-                onSelectMessage={setSelectedMessageId}
+                selectedMessageIds={selectedMessageIds}
+                onSelectionChange={setSelectedMessageIds}
                 messagesVersion={messagesVersion}
+                folders={folders}
+                onReply={handleReply}
+                onReplyAll={handleReplyAll}
+                onForward={handleForward}
+                onDeleteMessages={handleDeleteMessages}
               />
               <ReadingPane
                 selectedMessageId={selectedMessageId}
+                selectedCount={selectedMessageIds.length}
                 messagesVersion={messagesVersion}
                 onEditDraft={handleEditDraft}
                 onReply={handleReply}
@@ -233,6 +328,7 @@ function App(): ReactElement {
             onCloseCreateForm={() => setShowNewEventForm(false)}
           />
         )}
+        {showTasksPanel && !showSettings && <TasksPanel messagesVersion={messagesVersion} />}
       </div>
     </div>
   )

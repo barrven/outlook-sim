@@ -4,27 +4,184 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
 
-// Home/FileVine are now real tabs (feature 047) — every render needs these,
-// even tests unrelated to them.
-function tabProps(overrides: Partial<{ showFileVine: boolean }> = {}): {
+// Home/FileVine/View are now real tabs (features 047/046), and File opens
+// a menu (034) — every render needs these, even tests unrelated to them.
+function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boolean; showTasksPanel: boolean }> = {}): {
   showFileVine: boolean
+  viewTabActive: boolean
+  showTasksPanel: boolean
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
+  onSelectViewTab: () => void
+  onToggleTasksPanel: () => void
+  onOpenSettings: () => void
 } {
-  return { showFileVine: false, onSelectHomeTab: vi.fn(), onSelectFileVineTab: vi.fn(), ...overrides }
+  return {
+    showFileVine: false,
+    viewTabActive: false,
+    showTasksPanel: false,
+    onSelectHomeTab: vi.fn(),
+    onSelectFileVineTab: vi.fn(),
+    onSelectViewTab: vi.fn(),
+    onToggleTasksPanel: vi.fn(),
+    onOpenSettings: vi.fn(),
+    ...overrides
+  }
 }
 
 describe('RibbonBar', () => {
-  it('renders ribbon tabs and mail actions, with only Home/FileVine/New Email interactive', () => {
+  it('renders ribbon tabs and mail actions, with Home/FileVine/View/File/New Email interactive', () => {
     render(<RibbonBar activeModule="mail" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'Home' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'FileVine' })).toBeEnabled()
-    for (const tab of ['File', 'Send / Receive', 'Folder', 'View']) {
-      expect(screen.getByRole('button', { name: tab })).toBeDisabled()
-    }
+    expect(screen.getByRole('button', { name: 'View' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'File' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'New Email' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument()
+  })
+
+  // 033 AC1/AC2: Send/Receive and Folder are placeholders that were never
+  // wired to anything — hidden entirely rather than shown disabled.
+  it('does not render the Send/Receive or Folder tabs', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+    expect(screen.queryByRole('button', { name: 'Send / Receive' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Folder' })).not.toBeInTheDocument()
+  })
+
+  // 034: Settings moved off the nav rail into a File ribbon menu.
+  describe('File menu (034)', () => {
+    it('does not show the menu until File is clicked', () => {
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+      expect(screen.queryByRole('menuitem', { name: 'Settings' })).not.toBeInTheDocument()
+    })
+
+    it('clicking File opens a menu with a Settings entry', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      const fileTab = screen.getByRole('button', { name: 'File' })
+      expect(fileTab).toHaveAttribute('aria-expanded', 'false')
+
+      await user.click(fileTab)
+
+      expect(fileTab).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: 'Settings' })).toBeInTheDocument()
+    })
+
+    it('clicking Settings calls onOpenSettings and closes the menu', async () => {
+      const user = userEvent.setup()
+      const onOpenSettings = vi.fn()
+      render(<RibbonBar activeModule="mail" {...tabProps()} onOpenSettings={onOpenSettings} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'Settings' }))
+
+      expect(onOpenSettings).toHaveBeenCalledTimes(1)
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    })
+
+    it('clicking File again toggles the menu closed', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      const fileTab = screen.getByRole('button', { name: 'File' })
+      await user.click(fileTab)
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+
+      await user.click(fileTab)
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    })
+
+    it('clicking outside the menu closes it', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+
+      await user.click(document.body)
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    })
+
+    it('pressing Escape closes the menu', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+
+      await user.keyboard('{Escape}')
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    })
+  })
+
+  // 035: File menu gains an About entry.
+  describe('About entry (035)', () => {
+    it('has an About entry that is collapsed until clicked', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      const aboutItem = screen.getByRole('menuitem', { name: 'About' })
+      expect(aboutItem).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+    })
+
+    it('clicking About shows the app version sourced from window.api.app.getVersion()', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+
+      expect(window.api.app.getVersion).toHaveBeenCalled()
+      expect(await screen.findByText('Version 0.1.0')).toBeInTheDocument()
+    })
+
+    it('shows the GitHub repo URL as an external link', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+
+      const link = await screen.findByRole('link', { name: 'https://github.com/barrven/outlook-sim/' })
+      expect(link).toHaveAttribute('href', 'https://github.com/barrven/outlook-sim/')
+      expect(link).toHaveAttribute('target', '_blank')
+    })
+
+    it('clicking About again collapses it', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      const aboutItem = screen.getByRole('menuitem', { name: 'About' })
+      await user.click(aboutItem)
+      expect(await screen.findByText(/^Version/)).toBeInTheDocument()
+
+      await user.click(aboutItem)
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+    })
+
+    it('closing the File menu collapses About, so it is not expanded the next time File opens', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+      await screen.findByText(/^Version/)
+
+      await user.keyboard('{Escape}')
+      await user.click(screen.getByRole('button', { name: 'File' }))
+
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: 'About' })).toHaveAttribute('aria-expanded', 'false')
+    })
   })
 
   it('swaps to calendar actions when the calendar module is active', () => {
@@ -104,7 +261,7 @@ describe('RibbonBar', () => {
     const onSelectFileVineTab = vi.fn()
     render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} onSelectFileVineTab={onSelectFileVineTab} />)
 
-    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|Send \/ Receive|Folder|FileVine|View)$/ }).map((b) => b.textContent)
+    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|FileVine|View)$/ }).map((b) => b.textContent)
     expect(tabNames.indexOf('FileVine')).toBeGreaterThan(tabNames.indexOf('Home'))
     expect(tabNames.indexOf('FileVine')).toBeLessThan(tabNames.indexOf('View'))
 
@@ -120,5 +277,56 @@ describe('RibbonBar', () => {
     rerender(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} />)
     expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
     expect(screen.getByRole('button', { name: 'FileVine' })).not.toHaveClass('active')
+  })
+
+  // 046 AC1: View tab has a Tasks toggle.
+  describe('View tab (046)', () => {
+    it('clicking View calls onSelectViewTab, and marks View (not Home/FileVine) active', () => {
+      const onSelectViewTab = vi.fn()
+      const { rerender } = render(
+        <RibbonBar activeModule="mail" {...tabProps()} onSelectViewTab={onSelectViewTab} />
+      )
+      expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
+
+      rerender(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} onSelectViewTab={onSelectViewTab} />)
+      expect(screen.getByRole('button', { name: 'View' })).toHaveClass('active')
+      expect(screen.getByRole('button', { name: 'Home' })).not.toHaveClass('active')
+    })
+
+    it('swaps the ribbon actions to just Tasks when View is active, regardless of mail/calendar module', () => {
+      render(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} onNewEvent={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: 'Tasks' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'New Email' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument()
+    })
+
+    it('the Tasks button reflects showTasksPanel via aria-pressed and an active class, and toggles it on click', async () => {
+      const user = userEvent.setup()
+      const onToggleTasksPanel = vi.fn()
+      const { rerender } = render(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps({ viewTabActive: true, showTasksPanel: false })}
+          onToggleTasksPanel={onToggleTasksPanel}
+        />
+      )
+      const button = screen.getByRole('button', { name: 'Tasks' })
+      expect(button).toHaveAttribute('aria-pressed', 'false')
+      expect(button).not.toHaveClass('active')
+
+      await user.click(button)
+      expect(onToggleTasksPanel).toHaveBeenCalledTimes(1)
+
+      rerender(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps({ viewTabActive: true, showTasksPanel: true })}
+          onToggleTasksPanel={onToggleTasksPanel}
+        />
+      )
+      expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Tasks' })).toHaveClass('active')
+    })
   })
 })

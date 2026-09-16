@@ -6,7 +6,7 @@ import type { Persona } from '../../shared/data-types'
 import { ConfigStore } from '../data/config'
 import { MailDb } from '../data/db'
 import { SimClock } from '../data/clock'
-import { generateUnsolicitedMail, UnsolicitedMailScheduler } from './scheduler'
+import { attemptUnsolicitedMail, generateUnsolicitedMail, UnsolicitedMailScheduler } from './scheduler'
 
 const PERSONA: Persona = {
   id: 'p1',
@@ -15,7 +15,9 @@ const PERSONA: Persona = {
   role: 'Office Manager',
   bio: 'Runs the front office.',
   writingStyleNotes: 'Warm but brief.',
-  extraPrompt: ''
+  extraPrompt: '',
+  isClient: false,
+  reportsTo: ''
 }
 
 function subjectBodyResponse(subject: string, body: string): Response {
@@ -39,7 +41,13 @@ describe('generateUnsolicitedMail', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings({
       provider: 'openai',
       model: 'gpt-4o',
@@ -207,7 +215,9 @@ describe('generateUnsolicitedMail', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
@@ -232,7 +242,9 @@ describe('generateUnsolicitedMail', () => {
       role: 'Paralegal',
       bio: '',
       writingStyleNotes: '',
-      extraPrompt: ''
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: ''
     }
     config.setPersonas([PERSONA, otherPersona])
     db.createMessage({
@@ -259,6 +271,55 @@ describe('generateUnsolicitedMail', () => {
     const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
     expect(userMessage).not.toContain('never leak into Morgan')
   })
+
+  describe('049: FileVine content in the prompt', () => {
+    it('AC1: includes the associated FileVine folder\'s notes (name + content) in the system prompt', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      db.createFileVineNote({
+        folderId: folder.id,
+        name: 'Deadline note',
+        content: 'The probate filing is due 2026-06-01.'
+      })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Rivera Estate')
+      expect(systemMessage).toContain('Deadline note')
+      expect(systemMessage).toContain('The probate filing is due 2026-06-01.')
+    })
+
+    it('AC2: a persona with no associated FileVine folder generates exactly as before (no FileVine section)', async () => {
+      db.createFileVineFolder({ name: 'Unrelated Matter', parentId: null, clientPersonaId: null })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).not.toContain('FileVine')
+      expect(systemMessage).not.toContain('Unrelated Matter')
+    })
+
+    it('AC4: a folder content update is reflected in the very next generation, with the old content gone', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      const note = db.createFileVineNote({ folderId: folder.id, name: 'Deadline note', content: 'Due 2026-04-01.' })
+      db.updateFileVineNote(note.id, { content: 'Due 2026-05-15 (moved).' })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Due 2026-05-15 (moved).')
+      expect(systemMessage).not.toContain('Due 2026-04-01.')
+    })
+  })
 })
 
 describe('UnsolicitedMailScheduler', () => {
@@ -273,7 +334,13 @@ describe('UnsolicitedMailScheduler', () => {
     config = new ConfigStore(baseDir)
     clock = new SimClock(baseDir)
     config.setPersonas([PERSONA])
-    config.setIdentity({ displayName: 'Jordan Trainee', jobTitle: 'Analyst', fromEmail: 'jordan@example.com' })
+    config.setIdentity({
+      displayName: 'Jordan Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 'jordan@example.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setSettings({
       provider: 'openai',
       model: 'gpt-4o',
@@ -348,6 +415,12 @@ describe('UnsolicitedMailScheduler', () => {
     await scheduler.tick()
 
     expect(onFailed).toHaveBeenCalledWith('Network error: fetch failed')
+    // 027 AC4: the scheduler's own tick() goes through attemptUnsolicitedMail,
+    // so a failure is logged durably even though nothing in this test ever
+    // showed or dismissed a UI banner.
+    expect(config.getLlmFailureLog()).toEqual([
+      { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+    ])
     const newState = config.getSchedulerState()
     expect(newState.nextDueSimTime).toBeGreaterThan(200)
 
@@ -438,5 +511,64 @@ describe('UnsolicitedMailScheduler', () => {
     clock.pause()
     await scheduler.tick()
     expect(onGenerated).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('attemptUnsolicitedMail (feature 027)', () => {
+  let baseDir: string
+  let db: MailDb
+  let config: ConfigStore
+  let clock: SimClock
+
+  beforeEach(() => {
+    baseDir = mkdtempSync(join(tmpdir(), 'outlook-sim-scheduler-'))
+    db = new MailDb(baseDir)
+    config = new ConfigStore(baseDir)
+    clock = new SimClock(baseDir)
+  })
+
+  afterEach(() => {
+    db.close()
+    rmSync(baseDir, { recursive: true, force: true })
+    vi.restoreAllMocks()
+  })
+
+  it('AC4: appends a failure-log entry on a real failure', async () => {
+    config.setPersonas([PERSONA])
+    config.setSettings({
+      provider: 'openai',
+      model: 'gpt-4o',
+      apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+    })
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+    expect(config.getLlmFailureLog()).toEqual([
+      { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+    ])
+  })
+
+  it('does not log anything on success', async () => {
+    config.setPersonas([PERSONA])
+    config.setSettings({
+      provider: 'openai',
+      model: 'gpt-4o',
+      apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+    })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toMatchObject({ ok: true, sent: true })
+    expect(config.getLlmFailureLog()).toEqual([])
+  })
+
+  it('does not log anything for the no-personas-configured no-op (not a failure)', async () => {
+    const result = await attemptUnsolicitedMail(db, config, clock)
+
+    expect(result).toEqual({ ok: true, sent: false })
+    expect(config.getLlmFailureLog()).toEqual([])
   })
 })

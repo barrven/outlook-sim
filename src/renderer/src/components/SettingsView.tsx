@@ -33,6 +33,8 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   const [displayName, setDisplayName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
   const [fromEmail, setFromEmail] = useState('')
+  const [reportsTo, setReportsTo] = useState('')
+  const [department, setDepartment] = useState('')
   const [identityJustSaved, setIdentityJustSaved] = useState(false)
 
   const [systemPrompt, setSystemPrompt] = useState('')
@@ -45,6 +47,11 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
 
   const [savePackStatus, setSavePackStatus] = useState<string | null>(null)
   const [savePackError, setSavePackError] = useState<string | null>(null)
+
+  // Bumped after a scenario pack load to trigger PersonasSettings' own
+  // refetch (feature 030) — it owns its persona list/editor state and
+  // isn't otherwise told when the underlying data changed.
+  const [personasReloadKey, setPersonasReloadKey] = useState(0)
 
   const [loaded, setLoaded] = useState(false)
 
@@ -62,6 +69,9 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
       setDisplayName(identity.displayName)
       setJobTitle(identity.jobTitle)
       setFromEmail(identity.fromEmail)
+      // Identity saved before feature 028 lacks these fields (AC4: load without error, default to empty).
+      setReportsTo(identity.reportsTo ?? '')
+      setDepartment(identity.department ?? '')
       setSystemPrompt(systemPromptConfig.systemPrompt)
       setLoaded(true)
     })
@@ -85,7 +95,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   }
 
   async function handleSaveIdentity(): Promise<void> {
-    const identity: TraineeIdentity = { displayName, jobTitle, fromEmail }
+    const identity: TraineeIdentity = { displayName, jobTitle, fromEmail, reportsTo, department }
     await window.api.data.identity.set(identity)
     setIdentityJustSaved(true)
   }
@@ -109,6 +119,19 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
     setFreePlayStatus('Free-play started — mailbox and calendar are now fresh and empty.')
   }
 
+  // Refreshes the Settings sections that a scenario pack load can change
+  // underneath an already-open Settings window (feature 030) — System
+  // Prompt directly, Personas via a reload-key bump since it's a separate
+  // component owning its own fetch/editor state. If Settings is closed
+  // when a pack loads, this never runs and the data is simply correct
+  // next time Settings opens, as before (AC3).
+  async function refreshAfterScenarioPackLoad(): Promise<void> {
+    const systemPromptConfig = await window.api.data.systemPrompt.get()
+    setSystemPrompt(systemPromptConfig.systemPrompt)
+    setSystemPromptJustSaved(false)
+    setPersonasReloadKey((key) => key + 1)
+  }
+
   async function handleLoadScenarioPack(): Promise<void> {
     setScenarioStatus(null)
     setScenarioError(null)
@@ -125,6 +148,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
       if (!confirmed) return
       await window.api.scenario.applyPack(picked.pack, true)
     }
+    await refreshAfterScenarioPackLoad()
     onScenarioPackLoaded?.()
     setScenarioStatus(`Scenario pack "${picked.pack.name}" loaded.`)
   }
@@ -224,12 +248,22 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
               </button>
             </div>
             {testResult && (
-              <p
+              <div
                 className={testResult.ok ? 'settings-test-result-ok' : 'settings-test-result-error'}
-                role="status"
+                role={testResult.ok ? 'status' : 'alert'}
               >
-                {testResult.ok ? `Success: ${testResult.text}` : testResult.error}
-              </p>
+                <span>{testResult.ok ? `Success: ${testResult.text}` : testResult.error}</span>
+                {!testResult.ok && (
+                  <>
+                    <button type="button" onClick={handleTestConnection} disabled={testing}>
+                      {testing ? 'Retrying…' : 'Retry'}
+                    </button>
+                    <button type="button" aria-label="Dismiss test result" onClick={() => setTestResult(null)}>
+                      &times;
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </section>
@@ -273,6 +307,32 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
                 }}
               />
             </div>
+            <div className="settings-field-row">
+              <label htmlFor="settings-reports-to">Reports To</label>
+              <input
+                id="settings-reports-to"
+                type="text"
+                placeholder="Optional"
+                value={reportsTo}
+                onChange={(event) => {
+                  setReportsTo(event.target.value)
+                  setIdentityJustSaved(false)
+                }}
+              />
+            </div>
+            <div className="settings-field-row">
+              <label htmlFor="settings-department">Department</label>
+              <input
+                id="settings-department"
+                type="text"
+                placeholder="Optional"
+                value={department}
+                onChange={(event) => {
+                  setDepartment(event.target.value)
+                  setIdentityJustSaved(false)
+                }}
+              />
+            </div>
             <p className="settings-view-note">Used as the From name/email on mail you send.</p>
             <div className="settings-view-actions">
               <button type="button" onClick={handleSaveIdentity}>
@@ -305,7 +365,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
           </div>
         </section>
 
-        <PersonasSettings />
+        <PersonasSettings reloadKey={personasReloadKey} />
 
         <section className="settings-section" aria-label="Session">
           <h2 className="settings-section-header">Session</h2>

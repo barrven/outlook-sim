@@ -6,23 +6,33 @@ import type {
   ComposeOpenOptions,
   FileVineFolder,
   FileVineFolderPatch,
+  FileVineNote,
+  FileVineNotePatch,
   FiredReminder,
   Folder,
+  GeneratePersonasResult,
+  GenerateUnsolicitedMailResult,
   LlmGenerateInput,
   LlmGenerateResult,
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
+  PersonaReplyResult,
+  PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  Task,
+  TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
 
@@ -54,6 +64,20 @@ export interface DataApi {
     update: (id: string, patch: FileVineFolderPatch) => Promise<FileVineFolder | null>
     delete: (id: string) => Promise<void>
   }
+  fileVineNotes: {
+    list: (folderId: string) => Promise<FileVineNote[]>
+    get: (id: string) => Promise<FileVineNote | null>
+    create: (note: NewFileVineNote) => Promise<FileVineNote>
+    update: (id: string, patch: FileVineNotePatch) => Promise<FileVineNote | null>
+    delete: (id: string) => Promise<void>
+  }
+  tasks: {
+    list: () => Promise<Task[]>
+    get: (id: string) => Promise<Task | null>
+    create: (task: NewTask) => Promise<Task>
+    update: (id: string, patch: TaskPatch) => Promise<Task | null>
+    delete: (id: string) => Promise<void>
+  }
   settings: {
     get: () => Promise<Settings>
     set: (settings: Settings) => Promise<void>
@@ -79,8 +103,16 @@ export interface DataApi {
   }
 }
 
+export interface AppApi {
+  getVersion: () => Promise<string>
+}
+
 export interface ComposeApi {
   open: (options?: ComposeOpenOptions) => Promise<void>
+}
+
+export interface MessagePopoutApi {
+  open: (messageId: string) => Promise<void>
 }
 
 export interface SessionApi {
@@ -93,10 +125,16 @@ export interface ScenarioApi {
   savePack: () => Promise<SaveScenarioPackResult>
 }
 
+export interface PersonasFileApi {
+  pick: () => Promise<PickPersonasFileResult>
+}
+
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
-  personaReply: (sentMessageId: string) => Promise<void>
+  personaReply: (sentMessageId: string) => Promise<PersonaReplyResult>
+  retryUnsolicitedMail: () => Promise<GenerateUnsolicitedMailResult>
+  generatePersonas: (description: string) => Promise<GeneratePersonasResult>
 }
 
 export {}
@@ -104,13 +142,16 @@ export {}
 declare global {
   interface Window {
     api: {
+      app: AppApi
       data: DataApi
       compose: ComposeApi
+      messagePopout: MessagePopoutApi
       session: SessionApi
       scenario: ScenarioApi
+      personasFile: PersonasFileApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
-      onPersonaReplyFailed: (callback: (error: string) => void) => () => void
+      onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
       onReminderFired: (callback: (reminder: FiredReminder) => void) => () => void
     }

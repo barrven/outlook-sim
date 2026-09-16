@@ -4,24 +4,33 @@ import type {
   CalendarItemPatch,
   ComposeOpenOptions,
   FileVineFolderPatch,
+  FileVineNotePatch,
   FiredReminder,
+  GeneratePersonasResult,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
+  PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
 
 const api = {
+  app: {
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')
+  },
   data: {
     folders: {
       list: () => ipcRenderer.invoke('db:folders:list'),
@@ -51,6 +60,20 @@ const api = {
         ipcRenderer.invoke('db:fileVineFolders:update', id, patch),
       delete: (id: string) => ipcRenderer.invoke('db:fileVineFolders:delete', id)
     },
+    fileVineNotes: {
+      list: (folderId: string) => ipcRenderer.invoke('db:fileVineNotes:list', folderId),
+      get: (id: string) => ipcRenderer.invoke('db:fileVineNotes:get', id),
+      create: (note: NewFileVineNote) => ipcRenderer.invoke('db:fileVineNotes:create', note),
+      update: (id: string, patch: FileVineNotePatch) => ipcRenderer.invoke('db:fileVineNotes:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('db:fileVineNotes:delete', id)
+    },
+    tasks: {
+      list: () => ipcRenderer.invoke('db:tasks:list'),
+      get: (id: string) => ipcRenderer.invoke('db:tasks:get', id),
+      create: (task: NewTask) => ipcRenderer.invoke('db:tasks:create', task),
+      update: (id: string, patch: TaskPatch) => ipcRenderer.invoke('db:tasks:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('db:tasks:delete', id)
+    },
     settings: {
       get: () => ipcRenderer.invoke('config:settings:get'),
       set: (settings: Settings) => ipcRenderer.invoke('config:settings:set', settings)
@@ -78,6 +101,9 @@ const api = {
   compose: {
     open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
   },
+  messagePopout: {
+    open: (messageId: string) => ipcRenderer.invoke('window:openMessagePopout', messageId)
+  },
   session: {
     startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
       ipcRenderer.invoke('session:startFreePlay', confirmed)
@@ -88,18 +114,24 @@ const api = {
       ipcRenderer.invoke('scenario:applyPack', pack, confirmed),
     savePack: (): Promise<SaveScenarioPackResult> => ipcRenderer.invoke('scenario:savePack')
   },
+  personasFile: {
+    pick: (): Promise<PickPersonasFileResult> => ipcRenderer.invoke('personasFile:pick')
+  },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
     test: (settings: Settings) => ipcRenderer.invoke('llm:test', settings),
-    personaReply: (sentMessageId: string) => ipcRenderer.invoke('llm:personaReply', sentMessageId)
+    personaReply: (sentMessageId: string) => ipcRenderer.invoke('llm:personaReply', sentMessageId),
+    retryUnsolicitedMail: () => ipcRenderer.invoke('llm:retryUnsolicitedMail'),
+    generatePersonas: (description: string): Promise<GeneratePersonasResult> =>
+      ipcRenderer.invoke('llm:generatePersonas', description)
   },
   onMessagesChanged: (callback: () => void) => {
     const listener = (): void => callback()
     ipcRenderer.on('data:messages-changed', listener)
     return () => ipcRenderer.removeListener('data:messages-changed', listener)
   },
-  onPersonaReplyFailed: (callback: (error: string) => void) => {
-    const listener = (_event: unknown, error: string): void => callback(error)
+  onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => {
+    const listener = (_event: unknown, sentMessageId: string, error: string): void => callback(sentMessageId, error)
     ipcRenderer.on('llm:persona-reply-failed', listener)
     return () => ipcRenderer.removeListener('llm:persona-reply-failed', listener)
   },

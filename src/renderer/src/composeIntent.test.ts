@@ -5,7 +5,9 @@ import type { MailMessage, TraineeIdentity } from '../../shared/data-types'
 const IDENTITY: TraineeIdentity = {
   displayName: 'Jordan Trainee',
   jobTitle: 'Analyst',
-  fromEmail: 'jordan.trainee@example.com'
+  fromEmail: 'jordan.trainee@example.com',
+  reportsTo: '',
+  department: ''
 }
 
 const BASE_MESSAGE: MailMessage = {

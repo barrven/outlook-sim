@@ -114,6 +114,23 @@ export type NewCalendarItem = Omit<CalendarItem, 'id' | 'remindersFired' | 'recu
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
 
+// A freestanding to-do item in the Tasks panel (feature 046) — distinct
+// from a flagged email, which the panel also shows but derives from
+// `MailMessage.isFlagged` rather than storing here. `dueAt` is an optional
+// due-date "indicator" per the spec, not a full scheduling feature.
+export interface Task {
+  id: string
+  text: string
+  done: boolean
+  dueAt: number | null
+  // Stable creation-order sort key — not otherwise user-facing.
+  createdAt: number
+}
+
+export type NewTask = Omit<Task, 'id' | 'createdAt'> & Partial<Pick<Task, 'createdAt'>>
+
+export type TaskPatch = Partial<Omit<Task, 'id'>>
+
 // A case-file/matter folder in the FileVine module (feature 047). Folders
 // nest via `parentId` (file-system-like, not the flat list mail folders
 // use); `clientPersonaId` optionally associates a folder with a configured
@@ -130,6 +147,21 @@ export type NewFileVineFolder = Omit<FileVineFolder, 'id' | 'parentId' | 'client
   Partial<Pick<FileVineFolder, 'parentId' | 'clientPersonaId'>>
 
 export type FileVineFolderPatch = Partial<Omit<FileVineFolder, 'id'>>
+
+// A note/file entry within a FileVine folder (feature 048). `content` is
+// Markdown source, rendered formatted in the view UI and edited as raw
+// source in edit mode — this type only stores the source, not any rendered
+// form.
+export interface FileVineNote {
+  id: string
+  folderId: string
+  name: string
+  content: string
+}
+
+export type NewFileVineNote = Omit<FileVineNote, 'id'>
+
+export type FileVineNotePatch = Partial<Omit<FileVineNote, 'id' | 'folderId'>>
 
 // Broadcast when the reminder scheduler fires a specific occurrence's
 // reminder. Deliberately not `CalendarItem` itself: `id` here is unique per
@@ -159,6 +191,34 @@ export interface LlmGenerateInput {
 
 export type LlmGenerateResult = { ok: true; text: string } | { ok: false; error: string }
 
+// Persona-reply generation's result (feature 015), lifted to shared so the
+// renderer can inspect it directly for the Retry flow (feature 027) rather
+// than only reacting to the llm:persona-reply-failed broadcast.
+export type PersonaReplyResult =
+  | { ok: true; replied: true; message: MailMessage }
+  | { ok: true; replied: false }
+  | { ok: false; error: string }
+
+// Unsolicited-mail generation's result (feature 016), lifted to shared for
+// the same reason (feature 027's Retry flow needs the resolved value, not
+// just the failure broadcast).
+export type GenerateUnsolicitedMailResult =
+  | { ok: true; sent: true; message: MailMessage }
+  | { ok: true; sent: false }
+  | { ok: false; error: string }
+
+// Every LLM call failure (feature 027) — persona replies, unsolicited mail,
+// and Settings' Test Connection — gets appended here regardless of whether
+// its UI banner/message was dismissed, so a trainer can inspect a durable
+// history of failures for troubleshooting.
+export type LlmFailureSource = 'personaReply' | 'unsolicitedMail' | 'testConnection' | 'generatePersonas'
+
+export interface LlmFailureLogEntry {
+  timestamp: number
+  source: LlmFailureSource
+  error: string
+}
+
 export interface SystemPromptConfig {
   systemPrompt: string
 }
@@ -167,6 +227,11 @@ export interface TraineeIdentity {
   displayName: string
   jobTitle: string
   fromEmail: string
+  // Org-structure fields (feature 028) — free text, both optional (empty
+  // is valid). Data saved before this feature lacks them; readers must
+  // default to '' rather than assume presence.
+  reportsTo: string
+  department: string
 }
 
 export interface Persona {
@@ -177,11 +242,58 @@ export interface Persona {
   bio: string
   writingStyleNotes: string
   extraPrompt: string
+  // Whether this persona represents a client of the firm, as opposed to
+  // firm staff or another external contact (adjuster, opposing counsel,
+  // etc.) — gates which personas can be assigned as a FileVine folder's
+  // client.
+  isClient: boolean
+  // Free text, not a reference to another configured persona — a persona
+  // may report to someone outside the configured cast entirely (feature
+  // 028). Optional in spirit (empty is valid); data saved before this
+  // feature lacks it, so readers must default to ''.
+  reportsTo: string
 }
 
 export interface PersonasConfig {
   personas: Persona[]
 }
+
+// A standalone personas-only import file (feature 031) — distinct from a
+// full scenario pack: just a bare JSON array of persona entries, no
+// name/description/inbox/calendar/timedMessages. Unlike
+// `ScenarioPackPersona` (which omits `isClient`/`reportsTo` entirely,
+// since scenario packs treat those as trainer-side data, not scenario
+// data), this feature is specifically about managing the persona cast, so
+// both are importable here — optional in the file, defaulting to
+// false/'' when absent.
+export interface PersonasFilePersona {
+  displayName: string
+  email: string
+  role: string
+  bio: string
+  writingStyleNotes: string
+  extraPrompt: string
+  isClient: boolean
+  reportsTo: string
+}
+
+export type PersonasFileValidationResult =
+  | { ok: true; personas: PersonasFilePersona[] }
+  | { ok: false; error: string }
+
+// Picking a file adds a third outcome on top of validation — the user
+// closing the file-picker dialog without choosing anything, mirroring
+// `PickScenarioPackResult`.
+export type PickPersonasFileResult = PersonasFileValidationResult | { ok: false; canceled: true }
+
+// LLM-generated persona cast (feature 032) — the model is instructed to
+// produce exactly a `PersonasFilePersona[]`-shaped JSON array, so its
+// output is validated with the same `validatePersonasFile` a hand-edited
+// import file goes through; this just names that reused result shape for
+// the generation call.
+export type GeneratePersonasResult =
+  | { ok: true; personas: PersonasFilePersona[] }
+  | { ok: false; error: string }
 
 export interface ClockState {
   // Simulated time (ms epoch) as of the last start/pause/speed-change boundary.
@@ -256,6 +368,11 @@ export interface ScenarioPack {
   // Incoming messages delivered later, once simulated time reaches each
   // one's offset from load time (usually positive offsetMinutes).
   timedMessages: ScenarioPackMessage[]
+  // Optional (feature 029) — genuinely absent (not '') for a pack saved
+  // before this feature, so applying it can distinguish "no system prompt
+  // in this pack, leave the current one alone" from "this pack explicitly
+  // clears the system prompt to empty."
+  systemPrompt?: string
 }
 
 export type ScenarioPackValidationResult =

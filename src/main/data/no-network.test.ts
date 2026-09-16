@@ -58,7 +58,13 @@ describe('local data layer makes no network calls', () => {
 
     config.setSettings({ provider: 'openai', model: 'x', apiKeys: { openai: 'k', anthropic: '', gemini: '', xai: '' } })
     config.setSystemPrompt({ systemPrompt: 'hello' })
-    config.setIdentity({ displayName: 'Trainee', jobTitle: 'Analyst', fromEmail: 't@x.com' })
+    config.setIdentity({
+      displayName: 'Trainee',
+      jobTitle: 'Analyst',
+      fromEmail: 't@x.com',
+      reportsTo: '',
+      department: ''
+    })
     config.setPersonas([])
     config.getSettings()
     config.getSystemPrompt()

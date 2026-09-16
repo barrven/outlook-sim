@@ -3,22 +3,28 @@ import type {
   ApplyScenarioPackResult,
   CalendarItemPatch,
   FileVineFolderPatch,
+  FileVineNotePatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
   NewFileVineFolder,
+  NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  TaskPatch,
   TraineeIdentity
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
+import { generatePersonas } from '../llm/generatePersonas'
 import { generatePersonaReply } from '../llm/personaReply'
+import { attemptUnsolicitedMail } from '../llm/scheduler'
 import { applyScenarioPack } from './scenarioPack'
 import type { SimClock } from './clock'
 import type { ConfigStore } from './config'
@@ -30,9 +36,9 @@ export function broadcastMessagesChanged(): void {
   }
 }
 
-function broadcastPersonaReplyFailed(error: string): void {
+function broadcastPersonaReplyFailed(sentMessageId: string, error: string): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('llm:persona-reply-failed', error)
+    win.webContents.send('llm:persona-reply-failed', sentMessageId, error)
   }
 }
 
@@ -89,6 +95,20 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   )
   ipcMain.handle('db:fileVineFolders:delete', (_event, id: string) => db.deleteFileVineFolder(id))
 
+  ipcMain.handle('db:fileVineNotes:list', (_event, folderId: string) => db.listFileVineNotes(folderId))
+  ipcMain.handle('db:fileVineNotes:get', (_event, id: string) => db.getFileVineNote(id))
+  ipcMain.handle('db:fileVineNotes:create', (_event, note: NewFileVineNote) => db.createFileVineNote(note))
+  ipcMain.handle('db:fileVineNotes:update', (_event, id: string, patch: FileVineNotePatch) =>
+    db.updateFileVineNote(id, patch)
+  )
+  ipcMain.handle('db:fileVineNotes:delete', (_event, id: string) => db.deleteFileVineNote(id))
+
+  ipcMain.handle('db:tasks:list', () => db.listTasks())
+  ipcMain.handle('db:tasks:get', (_event, id: string) => db.getTask(id))
+  ipcMain.handle('db:tasks:create', (_event, task: NewTask) => db.createTask(task))
+  ipcMain.handle('db:tasks:update', (_event, id: string, patch: TaskPatch) => db.updateTask(id, patch))
+  ipcMain.handle('db:tasks:delete', (_event, id: string) => db.deleteTask(id))
+
   ipcMain.handle('config:settings:get', () => config.getSettings())
   ipcMain.handle('config:settings:set', (_event, settings: Settings) => config.setSettings(settings))
 
@@ -108,14 +128,40 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   ipcMain.handle('clock:setSpeed', (_event, speed: number) => clock.setSpeed(speed))
 
   ipcMain.handle('llm:generate', (_event, input: LlmGenerateInput) => generateText(config.getSettings(), input))
-  ipcMain.handle('llm:test', (_event, settings: Settings) =>
-    generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
-  )
+  ipcMain.handle('llm:test', async (_event, settings: Settings) => {
+    const result = await generateText(settings, { userPrompt: 'Reply with exactly one word: pong' })
+    if (!result.ok) {
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'testConnection', error: result.error })
+    }
+    return result
+  })
   ipcMain.handle('llm:personaReply', async (_event, sentMessageId: string) => {
     const result = await generatePersonaReply(db, config, clock, sentMessageId)
     if (!result.ok) {
-      broadcastPersonaReplyFailed(result.error)
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'personaReply', error: result.error })
+      broadcastPersonaReplyFailed(sentMessageId, result.error)
     } else if (result.replied) {
+      broadcastMessagesChanged()
+    }
+    return result
+  })
+  ipcMain.handle('llm:generatePersonas', async (_event, description: string) => {
+    const result = await generatePersonas(config, description)
+    if (!result.ok) {
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'generatePersonas', error: result.error })
+    }
+    return result
+  })
+  // A manual Retry (feature 027) for a failed unsolicited-mail attempt —
+  // distinct from the scheduler's own tick(), which also calls
+  // attemptUnsolicitedMail but is gated by simulated due-time bookkeeping
+  // this retry deliberately bypasses (a retry is an explicit, immediate
+  // request, not a scheduled one).
+  ipcMain.handle('llm:retryUnsolicitedMail', async () => {
+    const result = await attemptUnsolicitedMail(db, config, clock)
+    if (!result.ok) {
+      broadcastUnsolicitedMailFailed(result.error)
+    } else if (result.sent) {
       broadcastMessagesChanged()
     }
     return result

@@ -14,7 +14,9 @@ const SETTINGS: Settings = {
 const IDENTITY: TraineeIdentity = {
   displayName: 'Jordan Trainee',
   jobTitle: 'Analyst',
-  fromEmail: 'jordan.trainee@example.com'
+  fromEmail: 'jordan.trainee@example.com',
+  reportsTo: 'Patricia Sim',
+  department: 'Litigation'
 }
 
 const SYSTEM_PROMPT: SystemPromptConfig = {
@@ -36,7 +38,8 @@ const SCENARIO_PACK: ScenarioPack = {
   ],
   inbox: [],
   calendarItems: [],
-  timedMessages: []
+  timedMessages: [],
+  systemPrompt: 'Domain: insurance claims intake. Be terse and professional.'
 }
 
 function providerSection(): ReturnType<typeof within> {
@@ -57,6 +60,10 @@ function sessionSection(): ReturnType<typeof within> {
 
 function scenarioPackSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'Scenario Pack' }))
+}
+
+function personasSection(): ReturnType<typeof within> {
+  return within(screen.getByRole('region', { name: 'Personas' }))
 }
 
 describe('SettingsView', () => {
@@ -222,6 +229,80 @@ describe('SettingsView', () => {
       ).toBeInTheDocument()
     })
 
+    it('027 AC1: shows Retry and Dismiss on failure, but neither on success', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      expect(providerSection().getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+      expect(providerSection().getByRole('button', { name: 'Dismiss test result' })).toBeInTheDocument()
+
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: true, text: 'pong' })
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+      await providerSection().findByText('Success: pong')
+
+      expect(providerSection().queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+      expect(providerSection().queryByRole('button', { name: 'Dismiss test result' })).not.toBeInTheDocument()
+    })
+
+    it('027 AC2: Retry re-calls llm.test with the currently displayed settings, same as the original call', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+
+      expect(window.api.llm.test).toHaveBeenCalledTimes(2)
+      expect(window.api.llm.test).toHaveBeenNthCalledWith(2, {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: SETTINGS.apiKeys
+      })
+    })
+
+    it('027 AC2: a second failure on Retry updates the same error message rather than adding another', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'first error' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('first error')
+
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'second error' })
+      await user.click(providerSection().getByRole('button', { name: 'Retry' }))
+
+      expect(await providerSection().findByText('second error')).toBeInTheDocument()
+      expect(providerSection().queryByText('first error')).not.toBeInTheDocument()
+    })
+
+    it('027 AC1: Dismiss clears the error without changing any field', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
+      vi.mocked(window.api.llm.test).mockResolvedValue({ ok: false, error: 'bad key' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(providerSection().getByRole('button', { name: 'Test Connection' }))
+      await providerSection().findByText('bad key')
+
+      await user.click(providerSection().getByRole('button', { name: 'Dismiss test result' }))
+
+      expect(providerSection().queryByText('bad key')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Model')).toHaveValue('gpt-4o')
+    })
+
     it('clears a stale test result when the provider, model, or key changes', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.settings.get).mockResolvedValue(SETTINGS)
@@ -249,6 +330,74 @@ describe('SettingsView', () => {
       expect(screen.getByLabelText('From Email')).toHaveValue('jordan.trainee@example.com')
     })
 
+    it('028 AC1: prefills Reports To and Department from saved identity', async () => {
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<SettingsView />)
+
+      expect(await screen.findByLabelText('Reports To')).toHaveValue('Patricia Sim')
+      expect(screen.getByLabelText('Department')).toHaveValue('Litigation')
+    })
+
+    it('028 AC1/AC3: lets the user edit and save Reports To and Department, alongside the existing identity fields', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+
+      render(<SettingsView />)
+
+      const reportsToInput = await screen.findByLabelText('Reports To')
+      await user.clear(reportsToInput)
+      await user.type(reportsToInput, 'Salvatore Grillo')
+
+      const departmentInput = screen.getByLabelText('Department')
+      await user.clear(departmentInput)
+      await user.type(departmentInput, 'Accident Benefits')
+
+      await user.click(identitySection().getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(window.api.data.identity.set).toHaveBeenCalled())
+      expect(window.api.data.identity.set).toHaveBeenCalledWith({
+        displayName: 'Jordan Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'jordan.trainee@example.com',
+        reportsTo: 'Salvatore Grillo',
+        department: 'Accident Benefits'
+      })
+    })
+
+    it('028 AC3: Reports To and Department are optional — blank is valid and saves as empty', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.identity.get).mockResolvedValue({
+        displayName: 'Jordan Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'jordan.trainee@example.com',
+        reportsTo: '',
+        department: ''
+      })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Display Name')
+      await user.click(identitySection().getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(window.api.data.identity.set).toHaveBeenCalled())
+      expect(window.api.data.identity.set).toHaveBeenCalledWith(
+        expect.objectContaining({ reportsTo: '', department: '' })
+      )
+    })
+
+    it('028 AC4: identity missing reportsTo/department (pre-feature data) loads without error, fields render blank', async () => {
+      vi.mocked(window.api.data.identity.get).mockResolvedValue({
+        displayName: 'Legacy Trainee',
+        jobTitle: 'Analyst',
+        fromEmail: 'legacy@example.com'
+      } as TraineeIdentity)
+
+      render(<SettingsView />)
+
+      expect(await screen.findByLabelText('Reports To')).toHaveValue('')
+      expect(screen.getByLabelText('Department')).toHaveValue('')
+    })
+
     it('lets the user edit and save their identity', async () => {
       const user = userEvent.setup()
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
@@ -273,7 +422,9 @@ describe('SettingsView', () => {
       expect(window.api.data.identity.set).toHaveBeenCalledWith({
         displayName: 'Jordan T. Trainee',
         jobTitle: 'Senior Analyst',
-        fromEmail: 'jordan.t@example.com'
+        fromEmail: 'jordan.t@example.com',
+        reportsTo: 'Patricia Sim',
+        department: 'Litigation'
       })
     })
 
@@ -467,6 +618,114 @@ describe('SettingsView', () => {
       await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
       expect(confirmSpy).toHaveBeenCalledTimes(1)
       expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Settings panels refresh live after a scenario pack load (feature 030)', () => {
+    it('030 AC1: updates the visible persona list without navigating away and back', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([])
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await personasSection().findByText('No personas yet.')
+
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([
+        {
+          id: 'p1',
+          displayName: 'Morgan Rivera',
+          email: 'morgan@example.com',
+          role: 'Claims Adjuster',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: '',
+          isClient: false,
+          reportsTo: ''
+        }
+      ])
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      expect(await personasSection().findByText('Morgan Rivera')).toBeInTheDocument()
+      expect(personasSection().queryByText('No personas yet.')).not.toBeInTheDocument()
+      // Still the same open Settings view — other sections are untouched, no navigation happened.
+      expect(providerSection().getByLabelText('Provider')).toBeInTheDocument()
+    })
+
+    it('030 AC2: updates the visible System Prompt text the same way', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'Old prompt.' })
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      const textarea = systemPromptSection().getByRole('textbox')
+      expect(textarea).toHaveValue('Old prompt.')
+
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({
+        systemPrompt: SCENARIO_PACK.systemPrompt ?? ''
+      })
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      await waitFor(() => expect(textarea).toHaveValue(SCENARIO_PACK.systemPrompt))
+    })
+
+    it('030 AC3: closing and reopening Settings fetches fresh data independently — nothing leaks from a previous session', async () => {
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'First session prompt' })
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([])
+
+      const { unmount } = render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      expect(systemPromptSection().getByRole('textbox')).toHaveValue('First session prompt')
+      unmount()
+
+      // A scenario pack could have loaded while this instance didn't exist — closing
+      // Settings unmounts it entirely, so there's nothing here to have missed it.
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: 'Second session prompt' })
+      vi.mocked(window.api.data.personas.get).mockResolvedValueOnce([
+        {
+          id: 'p1',
+          displayName: 'Reopened Persona',
+          email: 'reopened@example.com',
+          role: '',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: '',
+          isClient: false,
+          reportsTo: ''
+        }
+      ])
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      expect(systemPromptSection().getByRole('textbox')).toHaveValue('Second session prompt')
+      expect(await personasSection().findByText('Reopened Persona')).toBeInTheDocument()
+    })
+
+    it('030 AC4: an in-progress unsaved System Prompt edit is overwritten (not preserved) by a pack load', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({ systemPrompt: '' })
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByRole('region', { name: 'System Prompt' })
+      const textarea = systemPromptSection().getByRole('textbox')
+      await user.type(textarea, 'unsaved draft, never saved')
+      expect(textarea).toHaveValue('unsaved draft, never saved')
+
+      vi.mocked(window.api.data.systemPrompt.get).mockResolvedValueOnce({
+        systemPrompt: SCENARIO_PACK.systemPrompt ?? ''
+      })
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledTimes(1))
+
+      await waitFor(() => expect(textarea).toHaveValue(SCENARIO_PACK.systemPrompt))
+      expect(window.api.data.systemPrompt.set).not.toHaveBeenCalled()
     })
   })
 

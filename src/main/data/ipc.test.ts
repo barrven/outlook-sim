@@ -6,12 +6,14 @@ import type {
   CalendarItem,
   ClockState,
   FileVineFolder,
+  FileVineNote,
   FiredReminder,
   Folder,
   LlmGenerateResult,
   MailMessage,
   ScenarioPack,
-  Settings
+  Settings,
+  Task
 } from '../../shared/data-types'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
@@ -79,6 +81,16 @@ describe('registerDataIpcHandlers', () => {
         'db:fileVineFolders:create',
         'db:fileVineFolders:update',
         'db:fileVineFolders:delete',
+        'db:fileVineNotes:list',
+        'db:fileVineNotes:get',
+        'db:fileVineNotes:create',
+        'db:fileVineNotes:update',
+        'db:fileVineNotes:delete',
+        'db:tasks:list',
+        'db:tasks:get',
+        'db:tasks:create',
+        'db:tasks:update',
+        'db:tasks:delete',
         'config:settings:get',
         'config:settings:set',
         'config:systemPrompt:get',
@@ -95,6 +107,8 @@ describe('registerDataIpcHandlers', () => {
         'llm:generate',
         'llm:test',
         'llm:personaReply',
+        'llm:retryUnsolicitedMail',
+        'llm:generatePersonas',
         'session:startFreePlay',
         'scenario:applyPack'
       ].sort()
@@ -145,6 +159,23 @@ describe('registerDataIpcHandlers', () => {
     ])
   })
 
+  it('046: creates, lists, updates, and deletes a task through the IPC channels', () => {
+    const created = handlers.get('db:tasks:create')!(fakeEvent, {
+      text: 'Call client',
+      done: false,
+      dueAt: null
+    }) as Task
+
+    expect((handlers.get('db:tasks:list')!(fakeEvent) as Task[]).map((t) => t.id)).toEqual([created.id])
+    expect(handlers.get('db:tasks:get')!(fakeEvent, created.id)).toMatchObject({ text: 'Call client', done: false })
+
+    const updated = handlers.get('db:tasks:update')!(fakeEvent, created.id, { done: true }) as Task
+    expect(updated.done).toBe(true)
+
+    handlers.get('db:tasks:delete')!(fakeEvent, created.id)
+    expect(handlers.get('db:tasks:list')!(fakeEvent) as Task[]).toEqual([])
+  })
+
   it('047: creates, nests, updates, and deletes a FileVine folder through the IPC channels', () => {
     const root = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
     const child = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
@@ -164,6 +195,37 @@ describe('registerDataIpcHandlers', () => {
 
     handlers.get('db:fileVineFolders:delete')!(fakeEvent, root.id)
     expect(handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).toEqual([])
+  })
+
+  it('048: creates, lists (scoped by folder), updates, and deletes a FileVine note through the IPC channels', () => {
+    const folder = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
+    const otherFolder = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
+      name: 'Unrelated matter'
+    }) as FileVineFolder
+    handlers.get('db:fileVineNotes:create')!(fakeEvent, {
+      folderId: otherFolder.id,
+      name: 'Unrelated note',
+      content: ''
+    })
+
+    const note = handlers.get('db:fileVineNotes:create')!(fakeEvent, {
+      folderId: folder.id,
+      name: 'Intake summary',
+      content: '# Hello'
+    }) as FileVineNote
+
+    expect((handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).map((n) => n.id)).toEqual(
+      [note.id]
+    )
+    expect(handlers.get('db:fileVineNotes:get')!(fakeEvent, note.id)).toMatchObject({ name: 'Intake summary' })
+
+    const updated = handlers.get('db:fileVineNotes:update')!(fakeEvent, note.id, {
+      content: '# Updated'
+    }) as FileVineNote
+    expect(updated.content).toBe('# Updated')
+
+    handlers.get('db:fileVineNotes:delete')!(fakeEvent, note.id)
+    expect(handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).toEqual([])
   })
 
   it('broadcasts a messages-changed event to every open window on create, update, and delete', () => {
@@ -276,6 +338,34 @@ describe('registerDataIpcHandlers', () => {
       expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>)['x-api-key']).toBe('sk-unsaved')
     })
 
+    it('027 AC4: llm:test logs a failure durably, but logs nothing on success', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+      const failingSettings: Settings = {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKeys: { openai: 'sk-bad', anthropic: '', gemini: '', xai: '' }
+      }
+
+      const result = (await handlers.get('llm:test')!(fakeEvent, failingSettings)) as LlmGenerateResult
+
+      expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+      expect(config.getLlmFailureLog()).toEqual([
+        { timestamp: expect.any(Number), source: 'testConnection', error: 'Network error: fetch failed' }
+      ])
+
+      vi.restoreAllMocks()
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve({ choices: [{ message: { content: 'pong' } }] })
+      } as Response)
+      await handlers.get('llm:test')!(fakeEvent, failingSettings)
+
+      // Still just the one entry from the earlier failure — success adds nothing.
+      expect(config.getLlmFailureLog()).toHaveLength(1)
+    })
+
     it('llm:generate resolves with an error result instead of rejecting on failure', async () => {
       config.setSettings({
         provider: 'openai',
@@ -289,6 +379,155 @@ describe('registerDataIpcHandlers', () => {
       expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
     })
 
+    describe('llm:generatePersonas', () => {
+      it('AC1: reads provider/model/key from persisted settings', async () => {
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-persisted', anthropic: '', gemini: '', xai: '' }
+        })
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () =>
+            Promise.resolve({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify([
+                      {
+                        displayName: 'Alice Chen',
+                        email: 'alice@firm.com',
+                        role: 'Partner',
+                        bio: 'Senior partner.',
+                        writingStyleNotes: 'Formal.',
+                        extraPrompt: '',
+                        isClient: false,
+                        reportsTo: ''
+                      }
+                    ])
+                  }
+                }
+              ]
+            })
+        } as Response)
+
+        const result = (await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')) as {
+          ok: true
+          personas: unknown[]
+        }
+
+        expect(result.ok).toBe(true)
+        expect(result.personas).toHaveLength(1)
+        expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBe(
+          'Bearer sk-persisted'
+        )
+      })
+
+      it('AC4: logs a failure durably with source generatePersonas, but logs nothing on success', async () => {
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+
+        const result = await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'generatePersonas', error: 'Network error: fetch failed' }
+        ])
+
+        vi.restoreAllMocks()
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: '[]' } }] })
+        } as Response)
+        await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        // Still just the one entry from the earlier failure — success adds nothing.
+        expect(config.getLlmFailureLog()).toHaveLength(1)
+      })
+
+      it('AC4: malformed JSON output logs a failure and never touches the persisted persona list', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Existing',
+            email: 'existing@x.com',
+            role: '',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false,
+            reportsTo: ''
+          }
+        ])
+        const before = config.getPersonas()
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'not json' } }] })
+        } as Response)
+
+        const result = await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect((result as { ok: boolean }).ok).toBe(false)
+        expect(config.getLlmFailureLog()).toHaveLength(1)
+        expect(config.getLlmFailureLog()[0].source).toBe('generatePersonas')
+        expect(config.getPersonas()).toEqual(before)
+      })
+
+      it('never persists the generated personas itself — that only happens if/when the caller accepts', async () => {
+        const before = config.getPersonas()
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () =>
+            Promise.resolve({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify([
+                      {
+                        displayName: 'Alice Chen',
+                        email: 'alice@firm.com',
+                        role: '',
+                        bio: '',
+                        writingStyleNotes: '',
+                        extraPrompt: '',
+                        isClient: false,
+                        reportsTo: ''
+                      }
+                    ])
+                  }
+                }
+              ]
+            })
+        } as Response)
+
+        await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect(config.getPersonas()).toEqual(before)
+      })
+    })
+
     describe('llm:personaReply', () => {
       it('broadcasts data:messages-changed when the persona replies', async () => {
         config.setPersonas([
@@ -299,10 +538,18 @@ describe('registerDataIpcHandlers', () => {
             role: 'Manager',
             bio: '',
             writingStyleNotes: '',
-            extraPrompt: ''
+            extraPrompt: '',
+            isClient: true,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',
@@ -342,10 +589,18 @@ describe('registerDataIpcHandlers', () => {
             role: 'Manager',
             bio: '',
             writingStyleNotes: '',
-            extraPrompt: ''
+            extraPrompt: '',
+            isClient: true,
+            reportsTo: ''
           }
         ])
-        config.setIdentity({ displayName: 'Jordan', jobTitle: '', fromEmail: 'jordan@example.com' })
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
         config.setSettings({
           provider: 'openai',
           model: 'gpt-4o',
@@ -369,10 +624,74 @@ describe('registerDataIpcHandlers', () => {
 
         expect(fakeWindow.webContents.send).toHaveBeenCalledWith(
           'llm:persona-reply-failed',
+          sent.id,
           'Network error: fetch failed'
         )
         expect(fakeWindow.webContents.send).not.toHaveBeenCalledWith('data:messages-changed')
         expect(db.listMessages('inbox')).toEqual([])
+        // 027 AC4: logged durably, independent of any UI banner.
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'personaReply', error: 'Network error: fetch failed' }
+        ])
+      })
+
+      it('027 AC2/AC3: Retry (re-calling with the same sentMessageId) can succeed after a prior failure, completing the original action', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: true,
+            reportsTo: ''
+          }
+        ])
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        const sent = db.createMessage({
+          folderId: 'sent',
+          subject: 'Hi',
+          body: 'Hello',
+          fromName: 'Jordan',
+          fromEmail: 'jordan@example.com',
+          toName: 'Morgan Rivera',
+          toEmail: 'morgan@example.com',
+          timestamp: 1
+        })
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('fetch failed'))
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const firstResult = await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+        expect(firstResult).toEqual({ ok: false, error: 'Network error: fetch failed' })
+
+        // Retry: the exact same call, same sentMessageId — this time it succeeds.
+        fetchSpy.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'Hi there!' } }] })
+        } as Response)
+        const secondResult = await handlers.get('llm:personaReply')!(fakeEvent, sent.id)
+
+        expect(secondResult).toMatchObject({ ok: true, replied: true })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toHaveLength(1)
+        // The failure log keeps the first attempt's entry — logging doesn't get retroactively erased by a later success.
+        expect(config.getLlmFailureLog()).toHaveLength(1)
       })
 
       it('does nothing (no broadcast, no message) when the recipient is not a persona', async () => {
@@ -394,6 +713,86 @@ describe('registerDataIpcHandlers', () => {
 
         expect(fetchSpy).not.toHaveBeenCalled()
         expect(fakeWindow.webContents.send).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('llm:retryUnsolicitedMail', () => {
+      it('027: on failure, broadcasts llm:unsolicited-mail-failed and logs it durably', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false,
+            reportsTo: ''
+          }
+        ])
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const result = await handlers.get('llm:retryUnsolicitedMail')!(fakeEvent)
+
+        expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith(
+          'llm:unsolicited-mail-failed',
+          'Network error: fetch failed'
+        )
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'unsolicitedMail', error: 'Network error: fetch failed' }
+        ])
+      })
+
+      it('027 AC3: on success, broadcasts data:messages-changed and completes the original action (a message is inserted)', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Morgan Rivera',
+            email: 'morgan@example.com',
+            role: 'Manager',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false,
+            reportsTo: ''
+          }
+        ])
+        config.setIdentity({
+          displayName: 'Jordan',
+          jobTitle: '',
+          fromEmail: 'jordan@example.com',
+          reportsTo: '',
+          department: ''
+        })
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'Subject: Hi\n\nBody text' } }] })
+        } as Response)
+        const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+        getAllWindowsMock.mockReturnValue([fakeWindow])
+
+        const result = await handlers.get('llm:retryUnsolicitedMail')!(fakeEvent)
+
+        expect(result).toMatchObject({ ok: true, sent: true })
+        expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
+        expect(db.listMessages('inbox')).toHaveLength(1)
+        expect(config.getLlmFailureLog()).toEqual([])
       })
     })
   })

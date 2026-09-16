@@ -188,7 +188,34 @@ describe('validateScenarioPack', () => {
         calendarItems: [],
         timedMessages: []
       })
+      // 029 AC3: genuinely undefined, not defaulted to '' like every other field.
+      expect(result.pack.systemPrompt).toBeUndefined()
     }
+  })
+
+  // System prompt (feature 029)
+
+  it('029: parses a present systemPrompt string', () => {
+    const result = validateScenarioPack(validPackJson({ systemPrompt: 'Domain: insurance law office.' }))
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.pack.systemPrompt).toBe('Domain: insurance law office.')
+  })
+
+  it('029: an explicitly empty systemPrompt is preserved as empty (not treated as absent)', () => {
+    const result = validateScenarioPack(validPackJson({ systemPrompt: '' }))
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.pack.systemPrompt).toBe('')
+  })
+
+  it('029 AC3: a pack with no systemPrompt key at all parses with it undefined, not an empty string', () => {
+    const result = validateScenarioPack(validPackJson())
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.pack.systemPrompt).toBeUndefined()
+  })
+
+  it('029: rejects a non-string systemPrompt with a clear error', () => {
+    const result = validateScenarioPack(validPackJson({ systemPrompt: 42 }))
+    expect(result).toEqual({ ok: false, error: 'systemPrompt must be a string' })
   })
 })
 
@@ -247,7 +274,17 @@ describe('applyScenarioPack', () => {
 
   it('sets personas from the pack, replacing any existing ones, with fresh generated ids', () => {
     config.setPersonas([
-      { id: 'old-1', displayName: 'Old Persona', email: 'old@example.com', role: '', bio: '', writingStyleNotes: '', extraPrompt: '' }
+      {
+        id: 'old-1',
+        displayName: 'Old Persona',
+        email: 'old@example.com',
+        role: '',
+        bio: '',
+        writingStyleNotes: '',
+        extraPrompt: '',
+        isClient: false,
+        reportsTo: ''
+      }
     ])
 
     applyScenarioPack(db, config, clock, parsedPack())
@@ -360,6 +397,36 @@ describe('applyScenarioPack', () => {
     expect(db.listCalendarItems()).toEqual([])
     expect(config.getScheduledScenarioMessages()).toEqual([])
   })
+
+  // System prompt (feature 029)
+
+  it('029 AC2: replaces the current system prompt with the pack\'s', () => {
+    config.setSystemPrompt({ systemPrompt: 'Old prompt, should be replaced.' })
+
+    applyScenarioPack(db, config, clock, parsedPack({ systemPrompt: 'Domain: insurance law office.' }))
+
+    expect(config.getSystemPrompt()).toEqual({ systemPrompt: 'Domain: insurance law office.' })
+  })
+
+  it('029 AC2: a pack with an explicitly empty system prompt clears the current one', () => {
+    config.setSystemPrompt({ systemPrompt: 'Old prompt, should be cleared.' })
+
+    applyScenarioPack(db, config, clock, parsedPack({ systemPrompt: '' }))
+
+    expect(config.getSystemPrompt()).toEqual({ systemPrompt: '' })
+  })
+
+  it('029 AC3: a pack saved before this feature (systemPrompt key entirely absent) loads without error, leaving the current system prompt unchanged', () => {
+    config.setSystemPrompt({ systemPrompt: 'Should survive untouched.' })
+    const legacyPackJson = validPackJson()
+    delete (legacyPackJson as { systemPrompt?: unknown }).systemPrompt
+    const result = validateScenarioPack(legacyPackJson)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(() => applyScenarioPack(db, config, clock, result.pack)).not.toThrow()
+    expect(config.getSystemPrompt()).toEqual({ systemPrompt: 'Should survive untouched.' })
+  })
 })
 
 describe('buildScenarioPack', () => {
@@ -393,8 +460,16 @@ describe('buildScenarioPack', () => {
     expect(pack.description).toBe('')
   })
 
+  it('029 AC1: includes the current system prompt', () => {
+    config.setSystemPrompt({ systemPrompt: 'Domain: insurance law office.' })
+
+    const pack = buildScenarioPack(db, config, clock, 'name')
+
+    expect(pack.systemPrompt).toBe('Domain: insurance law office.')
+  })
+
   it('includes current personas, dropping the internal id', () => {
-    config.setPersonas([{ id: 'p1', ...VALID_PERSONA }])
+    config.setPersonas([{ id: 'p1', isClient: false, reportsTo: '', ...VALID_PERSONA }])
 
     const pack = buildScenarioPack(db, config, clock, 'name')
 
@@ -529,12 +604,14 @@ describe('buildScenarioPack', () => {
       personas: [],
       inbox: [],
       calendarItems: [],
-      timedMessages: []
+      timedMessages: [],
+      systemPrompt: ''
     })
   })
 
   it('round-trips through validateScenarioPack and applyScenarioPack without data loss', () => {
-    config.setPersonas([{ id: 'p1', ...VALID_PERSONA }])
+    config.setSystemPrompt({ systemPrompt: 'Domain: insurance law office. Be terse and professional.' })
+    config.setPersonas([{ id: 'p1', isClient: false, reportsTo: '', ...VALID_PERSONA }])
     db.createMessage({
       folderId: 'inbox',
       subject: 'Hello',
@@ -611,6 +688,12 @@ describe('buildScenarioPack', () => {
           dueSimTime: 1_000_000 + 300_000
         }
       ])
+      // 029 AC1/AC4: the system prompt round-trips through save (build) → JSON
+      // (de)serialization → load (apply) into a completely fresh store, exactly.
+      expect(built.systemPrompt).toBe('Domain: insurance law office. Be terse and professional.')
+      expect(config2.getSystemPrompt()).toEqual({
+        systemPrompt: 'Domain: insurance law office. Be terse and professional.'
+      })
     } finally {
       db2.close()
       rmSync(baseDir2, { recursive: true, force: true })
