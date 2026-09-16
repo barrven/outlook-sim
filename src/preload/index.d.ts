@@ -97,6 +97,10 @@ export interface ComposeApi {
   open: (options?: ComposeOpenOptions) => Promise<void>
 }
 
+export interface MessagePopoutApi {
+  open: (messageId: string) => Promise<void>
+}
+
 export interface SessionApi {
   startFreePlay: (confirmed?: boolean) => Promise<StartFreePlayResult>
 }
@@ -126,6 +130,7 @@ declare global {
     api: {
       data: DataApi
       compose: ComposeApi
+      messagePopout: MessagePopoutApi
       session: SessionApi
       scenario: ScenarioApi
       personasFile: PersonasFileApi

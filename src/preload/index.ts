@@ -89,6 +89,9 @@ const api = {
   compose: {
     open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
   },
+  messagePopout: {
+    open: (messageId: string) => ipcRenderer.invoke('window:openMessagePopout', messageId)
+  },
   session: {
     startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
       ipcRenderer.invoke('session:startFreePlay', confirmed)

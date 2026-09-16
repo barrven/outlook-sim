@@ -99,6 +99,9 @@ export function createMockApi(): Window['api'] {
     compose: {
       open: vi.fn().mockResolvedValue(undefined)
     },
+    messagePopout: {
+      open: vi.fn().mockResolvedValue(undefined)
+    },
     session: {
       startFreePlay: vi.fn().mockResolvedValue({ ok: true })
     },

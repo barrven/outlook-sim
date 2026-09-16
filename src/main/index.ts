@@ -21,7 +21,7 @@ import { ReminderScheduler } from './data/reminderScheduler'
 import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
 import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
-import { createComposeWindow, createMainWindow } from './windows'
+import { createComposeWindow, createMainWindow, createMessagePopoutWindow } from './windows'
 
 app.whenReady().then(() => {
   const userDataDir = app.getPath('userData')
@@ -51,6 +51,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle('window:openCompose', (_event, options?: ComposeOpenOptions) => {
     createComposeWindow(mainWindow, options)
+  })
+
+  ipcMain.handle('window:openMessagePopout', (_event, messageId: string) => {
+    const message = mailDb.getMessage(messageId)
+    createMessagePopoutWindow(mainWindow, messageId, message ? message.subject || '(no subject)' : 'Message')
   })
 
   ipcMain.handle('scenario:pickPack', async (): Promise<PickScenarioPackResult> => {

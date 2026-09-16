@@ -222,6 +222,7 @@ function MessageListPane({
                 }${message.isRead ? '' : ' unread'}`}
                 onClick={(event) => handleMessageClick(message.id, event)}
                 onContextMenu={(event) => handleMessageContextMenu(message.id, event)}
+                onDoubleClick={() => window.api.messagePopout.open(message.id)}
               >
                 <span className="message-list-item-from">{message.fromName || message.fromEmail}</span>
                 <span className="message-list-item-subject">{message.subject || '(no subject)'}</span>

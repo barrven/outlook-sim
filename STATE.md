@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 041 (Double-click message opens a pop-out reading window)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,37 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) implemented: mirrors the existing compose pop-out pattern
+  (feature 004) exactly — new `window:openMessagePopout` IPC handler in
+  `main/index.ts` (looks up the message subject for the window title) plus
+  `createMessagePopoutWindow` in `main/windows.ts`; `main.tsx` routes a
+  `messagePopout=1&messageId=…` query string to a new
+  `MessagePopoutWindow.tsx`, a thin host rendering the *same* `ReadingPane`
+  component the main window uses (AC1). AC2 (live cross-window refresh)
+  needed no new plumbing — every create/update/delete already broadcasts
+  to every open window, so the pop-out just needed its own
+  `messagesVersion` bumped on the existing `onMessagesChanged` listener;
+  `ReadingPane`'s existing fetch-by-id effect does the rest, including for
+  the pop-out's own Delete/Restore/Mark-read/Flag actions. AC3 (closing
+  doesn't affect the main window) is structural — a wholly separate
+  `BrowserWindow`/renderer process with no shared React state. AC4 (works
+  with Reading Pane "Right" or "Off", feature 042): 042 doesn't exist yet,
+  but nothing here depends on the inline Reading Pane's visibility — the
+  double-click handler lives directly on the message row
+  (`MessageListPane.tsx`, calling `window.api.messagePopout.open`
+  directly, no new prop from `App.tsx`) and fires regardless. New
+  `MessagePopoutApi` in preload; each pop-out action (Reply/Forward/
+  Delete/etc.) is a small standalone `window.api` call, matching
+  `ComposeWindow.tsx`'s existing each-window-is-self-contained convention
+  rather than importing from `App.tsx`. Verified live: a throwaway 6-case
+  RTL suite confirmed real content rendering via the real `ReadingPane`,
+  refetch on the cross-window broadcast, Reply/Delete calling through
+  correctly, the Deleted-Items button set showing for an
+  already-deleted message, and the double-click wiring in
+  `MessageListPane`. lint/typecheck/build pass; existing suite unchanged
+  596/596 (test setup's mock API needed a `messagePopout` stub to satisfy
+  the type). Phase set to `test`.
 - 2026-09-15 — feature 040 (Message list right-click context menu)
   accepted by user; logged to CHANGELOG. Active feature set to 041
   (Double-click message opens a pop-out reading window, next in
