@@ -1,7 +1,7 @@
 ---
 id: 035
 title: File menu — About section
-status: testing
+status: validating
 priority: low
 ---
 
@@ -56,7 +56,34 @@ implement the new required `AppApi`, so `createMockApi()`'s return type
 no longer satisfies `Window['api']`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+656 → 661 net (+5, all passing; full suite re-run 2x, stable):
+
+- `src/renderer/src/test/mockApi.ts`: added the missing `app.getVersion`
+  mock (genuinely failing typecheck after `/implement`), resolving to a
+  fixed `'0.1.0'` so version-display assertions are deterministic.
+- `RibbonBar.test.tsx`, new `describe('About entry (035)')` (5 tests):
+  About is present but collapsed until clicked (AC1); clicking it calls
+  `window.api.app.getVersion()` and displays "Version 0.1.0" (AC2 — proves
+  it's sourced from the API, not a literal string in the component);
+  the GitHub URL renders as a `role="link"` with `href` exactly
+  `https://github.com/barrven/outlook-sim/` and `target="_blank"` (AC3,
+  and the `target="_blank"` half of AC4 — see below for what isn't
+  covered); clicking About again collapses it; closing the File menu
+  (Escape) and reopening it leaves About collapsed again (the "don't
+  leak state across menu opens" behavior from Implementation Notes, not
+  itself an AC but worth pinning since it's easy to silently regress).
+
+AC4's "opens in the OS's default browser, not inside the Electron window"
+is only partially covered here, deliberately: RTL/jsdom can assert the
+link has `target="_blank"` (done above), but jsdom doesn't run Electron's
+`webContents.setWindowOpenHandler` — that's what actually redirects the
+navigation to `shell.openExternal` instead of opening a real popup, and
+it lives in `windows.ts`, completely untouched by this feature (confirmed
+by diff) and already exercised by every other external-link case in this
+app (compose/popout windows). Re-testing Electron's own window-open
+routing here would just be re-proving pre-existing, unrelated behavior;
+the meaningful, feature-specific unit is "does this link have the shape
+that triggers it," which is what's tested.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

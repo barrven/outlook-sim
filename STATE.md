@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 035 (File menu — About section)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,13 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 035 (File menu — About section) tested:
+  `mockApi.ts` got the missing `app.getVersion` mock (fixed for real);
+  `RibbonBar.test.tsx` got a new `About entry (035)` block (5 tests)
+  covering the collapsed/expanded toggle, the version display sourced
+  from `window.api.app.getVersion()`, the GitHub link's href/target, and
+  About collapsing when the File menu closes. Full suite 656 → 661, all
+  passing, re-run stable. Phase set to `validate`.
 - 2026-09-16 — feature 035 (File menu — About section) implemented: the
   File menu (034) gets an About entry that expands an inline panel with
   the app version (via new `app:getVersion` IPC calling Electron's

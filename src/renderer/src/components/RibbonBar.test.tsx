@@ -120,6 +120,70 @@ describe('RibbonBar', () => {
     })
   })
 
+  // 035: File menu gains an About entry.
+  describe('About entry (035)', () => {
+    it('has an About entry that is collapsed until clicked', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      const aboutItem = screen.getByRole('menuitem', { name: 'About' })
+      expect(aboutItem).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+    })
+
+    it('clicking About shows the app version sourced from window.api.app.getVersion()', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+
+      expect(window.api.app.getVersion).toHaveBeenCalled()
+      expect(await screen.findByText('Version 0.1.0')).toBeInTheDocument()
+    })
+
+    it('shows the GitHub repo URL as an external link', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+
+      const link = await screen.findByRole('link', { name: 'https://github.com/barrven/outlook-sim/' })
+      expect(link).toHaveAttribute('href', 'https://github.com/barrven/outlook-sim/')
+      expect(link).toHaveAttribute('target', '_blank')
+    })
+
+    it('clicking About again collapses it', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      const aboutItem = screen.getByRole('menuitem', { name: 'About' })
+      await user.click(aboutItem)
+      expect(await screen.findByText(/^Version/)).toBeInTheDocument()
+
+      await user.click(aboutItem)
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+    })
+
+    it('closing the File menu collapses About, so it is not expanded the next time File opens', async () => {
+      const user = userEvent.setup()
+      render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+      await user.click(screen.getByRole('button', { name: 'File' }))
+      await user.click(screen.getByRole('menuitem', { name: 'About' }))
+      await screen.findByText(/^Version/)
+
+      await user.keyboard('{Escape}')
+      await user.click(screen.getByRole('button', { name: 'File' }))
+
+      expect(screen.queryByText(/^Version/)).not.toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: 'About' })).toHaveAttribute('aria-expanded', 'false')
+    })
+  })
+
   it('swaps to calendar actions when the calendar module is active', () => {
     render(<RibbonBar activeModule="calendar" {...tabProps()} />)
 

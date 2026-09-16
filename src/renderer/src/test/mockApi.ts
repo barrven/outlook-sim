@@ -35,6 +35,9 @@ export const DEFAULT_MOCK_CLOCK_STATE: ClockState = {
 
 export function createMockApi(): Window['api'] {
   return {
+    app: {
+      getVersion: vi.fn().mockResolvedValue('0.1.0')
+    },
     data: {
       folders: {
         list: vi.fn().mockResolvedValue(DEFAULT_MOCK_FOLDERS),
