@@ -1,7 +1,7 @@
 ---
 id: 032
 title: Settings — generate personas via LLM
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -64,7 +64,49 @@ list). lint/typecheck/build pass; existing suite unchanged 536/536 (only `ipc.te
 exhaustive channel-list test needed a content touch-up for the new channel).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 21 tests (536 → 557, all passing; re-run 3x, stable), all AC-traceable by number,
+across 3 layers:
+
+- `main/llm/generatePersonas.test.ts` (+10, new file, real `generatePersonas` against a
+  real `ConfigStore` and a stubbed `fetch`): AC1 — calls the provider/model/key read from
+  persisted Settings (not any caller-supplied value) and passes the free-text description
+  through as the user prompt; AC2 — a well-formed response parses into fully-populated
+  personas with `reportsTo` relationships preserved, including when the provider wraps the
+  JSON in a markdown code fence; AC4 — a network error, a provider auth error (bad key),
+  non-JSON output, and well-formed JSON missing a required field all resolve to a clear
+  `{ ok: false, error }` rather than throwing, and a failure is confirmed to leave
+  `config.getPersonas()` completely untouched (this call takes no dependency on the
+  persisted persona list at all).
+- `main/data/ipc.test.ts` (+4, new `llm:generatePersonas` describe block, real handlers):
+  AC1 — the handler reads settings from the real persisted `ConfigStore`, not a
+  caller-supplied value; AC4 — mirrors the existing 027-style durable-failure-log test
+  pattern (`llm:test`'s), asserting a failure appends exactly one `LlmFailureLogEntry` with
+  `source: 'generatePersonas'` and a success logs nothing; a malformed-JSON-response case
+  confirms the persona list stays untouched; and a dedicated test pins the structural
+  invariant that the IPC handler itself never calls `config.setPersonas` — persistence only
+  happens if/when the renderer's Accept flow explicitly does so (AC3/AC5 boundary).
+- `renderer/src/components/PersonasSettings.test.tsx` (+7): AC1 — Generate is disabled
+  until a description is entered, and clicking it invokes `llm.generatePersonas` with the
+  exact typed text; AC2 — a successful generation renders a review list (name/email/role/
+  reports-to) *before* `personas.set` is ever called, with explicit Add/Discard controls
+  still pending; AC3 — Accept appends the generated personas to the existing list (not
+  replacing it, unlike 031's Load Personas) and persists the full merged array with
+  generated ids, while Discard persists nothing and leaves the existing list/controls
+  exactly as they were; AC4 — a failed generation shows the exact error via the same
+  `role="alert"` convention every other LLM-failure surface in this app uses, without
+  touching `personas.set` or the existing list; AC5 — an accepted generated persona is
+  saved through the identical `personas.set` call manual create/edit and 031's Load
+  Personas already use, so restart persistence needed no new code and no new persistence
+  test — it's exercised by every existing `ConfigStore`/ `config:personas:set` coverage.
+
+Deliberately not covered: the exact wording/shape of the system prompt sent to the LLM
+(an implementation detail, not user-observable behavior); provider-specific response
+parsing for Anthropic/Gemini/xAI (already fully covered by `client.test.ts`, which
+`generatePersonas` delegates to unchanged); and a live end-to-end Electron GUI click-through
+(no attached display in this environment — same non-blocking gap noted on every prior
+feature's Validation Notes).
+
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

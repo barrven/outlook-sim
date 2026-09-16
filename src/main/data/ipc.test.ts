@@ -356,6 +356,155 @@ describe('registerDataIpcHandlers', () => {
       expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
     })
 
+    describe('llm:generatePersonas', () => {
+      it('AC1: reads provider/model/key from persisted settings', async () => {
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-persisted', anthropic: '', gemini: '', xai: '' }
+        })
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () =>
+            Promise.resolve({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify([
+                      {
+                        displayName: 'Alice Chen',
+                        email: 'alice@firm.com',
+                        role: 'Partner',
+                        bio: 'Senior partner.',
+                        writingStyleNotes: 'Formal.',
+                        extraPrompt: '',
+                        isClient: false,
+                        reportsTo: ''
+                      }
+                    ])
+                  }
+                }
+              ]
+            })
+        } as Response)
+
+        const result = (await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')) as {
+          ok: true
+          personas: unknown[]
+        }
+
+        expect(result.ok).toBe(true)
+        expect(result.personas).toHaveLength(1)
+        expect((fetchSpy.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBe(
+          'Bearer sk-persisted'
+        )
+      })
+
+      it('AC4: logs a failure durably with source generatePersonas, but logs nothing on success', async () => {
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
+
+        const result = await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
+        expect(config.getLlmFailureLog()).toEqual([
+          { timestamp: expect.any(Number), source: 'generatePersonas', error: 'Network error: fetch failed' }
+        ])
+
+        vi.restoreAllMocks()
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: '[]' } }] })
+        } as Response)
+        await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        // Still just the one entry from the earlier failure — success adds nothing.
+        expect(config.getLlmFailureLog()).toHaveLength(1)
+      })
+
+      it('AC4: malformed JSON output logs a failure and never touches the persisted persona list', async () => {
+        config.setPersonas([
+          {
+            id: 'p1',
+            displayName: 'Existing',
+            email: 'existing@x.com',
+            role: '',
+            bio: '',
+            writingStyleNotes: '',
+            extraPrompt: '',
+            isClient: false,
+            reportsTo: ''
+          }
+        ])
+        const before = config.getPersonas()
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve({ choices: [{ message: { content: 'not json' } }] })
+        } as Response)
+
+        const result = await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect((result as { ok: boolean }).ok).toBe(false)
+        expect(config.getLlmFailureLog()).toHaveLength(1)
+        expect(config.getLlmFailureLog()[0].source).toBe('generatePersonas')
+        expect(config.getPersonas()).toEqual(before)
+      })
+
+      it('never persists the generated personas itself — that only happens if/when the caller accepts', async () => {
+        const before = config.getPersonas()
+        config.setSettings({
+          provider: 'openai',
+          model: 'gpt-4o',
+          apiKeys: { openai: 'sk-test', anthropic: '', gemini: '', xai: '' }
+        })
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () =>
+            Promise.resolve({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify([
+                      {
+                        displayName: 'Alice Chen',
+                        email: 'alice@firm.com',
+                        role: '',
+                        bio: '',
+                        writingStyleNotes: '',
+                        extraPrompt: '',
+                        isClient: false,
+                        reportsTo: ''
+                      }
+                    ])
+                  }
+                }
+              ]
+            })
+        } as Response)
+
+        await handlers.get('llm:generatePersonas')!(fakeEvent, 'a small law firm')
+
+        expect(config.getPersonas()).toEqual(before)
+      })
+    })
+
     describe('llm:personaReply', () => {
       it('broadcasts data:messages-changed when the persona replies', async () => {
         config.setPersonas([

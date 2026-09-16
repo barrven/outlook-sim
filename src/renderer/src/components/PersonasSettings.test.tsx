@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import PersonasSettings from './PersonasSettings'
-import type { Persona } from '../../../shared/data-types'
+import type { Persona, PersonasFilePersona } from '../../../shared/data-types'
 
 const PERSONA: Persona = {
   id: 'p1',
@@ -385,5 +385,167 @@ describe('PersonasSettings', () => {
     expect(window.api.data.personas.set).not.toHaveBeenCalled()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+  })
+
+  // Generate personas via LLM (feature 032)
+
+  const GENERATED_CAST: PersonasFilePersona[] = [
+    {
+      displayName: 'Alice Chen',
+      email: 'alice@firm.com',
+      role: 'Partner',
+      bio: 'Senior partner.',
+      writingStyleNotes: 'Formal.',
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: ''
+    },
+    {
+      displayName: 'Bob Diaz',
+      email: 'bob@firm.com',
+      role: 'Associate',
+      bio: 'Junior associate.',
+      writingStyleNotes: 'Casual.',
+      extraPrompt: '',
+      isClient: false,
+      reportsTo: 'Alice Chen'
+    }
+  ]
+
+  it('032 AC1: Generate Personas is disabled until a description is entered', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+
+    render(<PersonasSettings />)
+    await screen.findByText('No personas yet.')
+
+    const generateButton = screen.getByRole('button', { name: 'Generate Personas' })
+    expect(generateButton).toBeDisabled()
+
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    expect(generateButton).toBeEnabled()
+  })
+
+  it('032 AC1: clicking Generate Personas invokes the LLM call with the entered free-text description', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({ ok: true, personas: GENERATED_CAST })
+
+    render(<PersonasSettings />)
+    await screen.findByText('No personas yet.')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm in Chicago')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+
+    await waitFor(() => expect(window.api.llm.generatePersonas).toHaveBeenCalledWith('a small law firm in Chicago'))
+  })
+
+  it('032 AC2: a successful generation is shown for review, with well-formed fields and reports-to structure, before anything is committed', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({ ok: true, personas: GENERATED_CAST })
+
+    render(<PersonasSettings />)
+    await screen.findByText('No personas yet.')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+
+    expect(await screen.findByText('Alice Chen')).toBeInTheDocument()
+    expect(screen.getByText('Bob Diaz')).toBeInTheDocument()
+    expect(screen.getByText('alice@firm.com · Partner')).toBeInTheDocument()
+    expect(screen.getByText(/Reports to Alice Chen/)).toBeInTheDocument()
+    // Not yet committed: personas.set hasn't been called, and there's an
+    // explicit Add/Discard choice still pending.
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Add 2 Personas' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeInTheDocument()
+  })
+
+  it('032 AC3: accepting a generation adds the generated personas to the existing list and persists the merged array', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({ ok: true, personas: GENERATED_CAST })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+    await screen.findByText('Alice Chen')
+
+    await user.click(screen.getByRole('button', { name: 'Add 2 Personas' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    const [saved] = vi.mocked(window.api.data.personas.set).mock.calls[0]
+    expect(saved).toHaveLength(3)
+    expect(saved[0]).toEqual(PERSONA)
+    expect(saved[1]).toMatchObject({ displayName: 'Alice Chen' })
+    expect(saved[2]).toMatchObject({ displayName: 'Bob Diaz', reportsTo: 'Alice Chen' })
+    expect(typeof saved[1].id).toBe('string')
+    expect(saved[1].id).not.toBe('')
+
+    // The review is gone and the newly accepted personas show up alongside
+    // the pre-existing one.
+    expect(screen.queryByRole('button', { name: 'Add 2 Personas' })).not.toBeInTheDocument()
+    expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+    expect(screen.getByText('Alice Chen')).toBeInTheDocument()
+  })
+
+  it('032 AC3: discarding a generation persists nothing and leaves the existing list untouched', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({ ok: true, personas: GENERATED_CAST })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+    await screen.findByText('Alice Chen')
+
+    await user.click(screen.getByRole('button', { name: 'Discard' }))
+
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+    expect(screen.queryByText('Alice Chen')).not.toBeInTheDocument()
+    expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+    // Back to the normal controls, ready to try again.
+    expect(screen.getByRole('button', { name: 'Generate Personas' })).toBeInTheDocument()
+  })
+
+  it('032 AC4: a failed generation shows a clear error and never touches the existing list or persistence', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({
+      ok: false,
+      error: 'No API key configured for openai.'
+    })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No API key configured for openai.')
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+    // Not crashed — the existing list and controls are still there.
+    expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '+ New Persona' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Add \d+ Persona/ })).not.toBeInTheDocument()
+  })
+
+  it('032 AC5: an accepted generated persona is saved through the same personas.set call manual create uses, so it persists like any other persona', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+    vi.mocked(window.api.llm.generatePersonas).mockResolvedValue({ ok: true, personas: [GENERATED_CAST[0]] })
+
+    render(<PersonasSettings />)
+    await screen.findByText('No personas yet.')
+    await user.type(screen.getByLabelText('Generate Personas'), 'a small law firm')
+    await user.click(screen.getByRole('button', { name: 'Generate Personas' }))
+    await screen.findByText('Alice Chen')
+    await user.click(screen.getByRole('button', { name: 'Add 1 Persona' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalledTimes(1))
+    // Same IPC call (config:personas:set under the hood) manual create/edit
+    // and 031's Load Personas already use for persistence — no separate,
+    // generation-specific persistence path exists.
+    expect(window.api.data.personas.set).toHaveBeenCalledWith([expect.objectContaining({ displayName: 'Alice Chen' })])
   })
 })

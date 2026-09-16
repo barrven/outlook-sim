@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 032 (Settings — generate personas via LLM)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,31 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM) tested:
+  added 21 tests (536 → 557, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 3 layers — `main/llm/generatePersonas.test.ts`
+  (+10, new file, real `ConfigStore` + stubbed `fetch`): AC1 provider/model/
+  key read from persisted Settings and the description passed through as
+  user prompt; AC2 well-formed parsing incl. reportsTo preserved and a
+  code-fence-wrapped response; AC4 network error/auth error/non-JSON/
+  missing-field all resolve to a clear error never a throw, persisted
+  personas confirmed untouched on failure. `main/data/ipc.test.ts` (+4,
+  new `llm:generatePersonas` block): AC1 settings read from real
+  ConfigStore; AC4 durable failure-log entry with `source:
+  'generatePersonas'` (mirroring 027's `llm:test` pattern), success logs
+  nothing, malformed response leaves personas untouched; a dedicated test
+  pins that the IPC handler itself never calls `setPersonas` — only the
+  renderer's Accept flow does. `PersonasSettings.test.tsx` (+7): AC1
+  Generate disabled until text entered, calls `llm.generatePersonas` with
+  the exact description; AC2 a successful generation renders a review
+  list before `personas.set` is ever called; AC3 Accept appends (not
+  replaces) to the existing list and persists the merged array, Discard
+  persists nothing; AC4 a failed generation shows the exact error via the
+  existing `role="alert"` convention without touching the list; AC5 an
+  accepted generated persona goes through the identical `personas.set`
+  call manual create/031's Load Personas already use, so no new
+  persistence test was needed. lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
 - 2026-09-15 — feature 032 (Settings — generate personas via LLM)
   implemented: new `main/llm/generatePersonas.ts` asks the configured LLM
   (via the existing provider-agnostic `generateText`) to return a JSON
