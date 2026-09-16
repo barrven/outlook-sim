@@ -1,7 +1,7 @@
 ---
 id: 031
 title: Settings — load personas from a JSON file
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -92,7 +92,51 @@ existing test needed updates, and no new tests added here — full
 coverage is `/test`'s job next). Phase set to `test`.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 21 tests across 2 files (515 → 536, all passing, re-run 3x stable),
+all AC-traceable by number:
+
+- **`personasFile.test.ts`** (+17, new file, real `validatePersonasFile`,
+  no mocking) — AC2: a fully-populated file, multiple entries, an empty
+  array (valid, empty result), and optional-field defaulting (`role`/
+  `bio`/`writingStyleNotes`/`extraPrompt`/`isClient`/`reportsTo` all
+  default correctly when omitted). AC3: a parameterized `it.each` covering
+  12 malformed shapes — non-array roots (`null`, a string, a number, a
+  wrapping object), non-object array entries (`null`, a string, a nested
+  array), missing required fields (`displayName`, `email`), and
+  wrong-typed optional fields (`role`, `isClient`, `reportsTo`) — each
+  asserting the exact clear per-field error and that the function never
+  throws; plus a dedicated test confirming a multi-entry file identifies
+  *which* entry is invalid by index (`personas[1]...`, not just
+  `personas[0]...`).
+- **`PersonasSettings.test.tsx`** (+4) — AC1: clicking "Load Personas…"
+  invokes `window.api.personasFile.pick()` (the closest testable proxy for
+  "opens a native file picker" — the actual dialog lives in
+  `main/index.ts` and isn't unit-testable without heavily mocking
+  Electron's `dialog` module, same gap already accepted for
+  `scenario:pickPack`/`savePack`). AC2/AC5: a valid file replaces the
+  current list (not merges — the prior persona is asserted gone) and
+  persists via the real `personas.set` call shape (a generated, non-empty
+  `id` plus the imported fields). AC3: an invalid file shows the specific
+  error text and the app stays fully usable afterward (existing list and
+  "+ New Persona" control still present, nothing crashed). Plus canceling
+  the dialog is confirmed to be a true no-op (no error, no change, no
+  `personas.set` call).
+
+Deliberately not covered by a new test: AC4 (scope stays personas-only —
+never touches mailbox/calendar/system prompt) is a structural guarantee,
+not a runtime behavior — `validatePersonasFile`'s only parameter is the
+raw JSON data (no `db`/`config`/`clock` reference exists to touch
+anything else), and `PersonasSettings.tsx`'s load handler only ever calls
+the existing `personas.set`. Confirmed correct by code inspection during
+`/implement`; there's no meaningful runtime assertion to add beyond what
+TypeScript's function signature already enforces. AC5's "persists across
+restarts" is exercised at the data layer for the underlying `personas.set`/
+`ConfigStore.setPersonas`/`getPersonas` round trip already, by
+`config.test.ts`'s existing persona-persistence tests — this feature adds
+no new persistence code, so no new restart-cycle test was needed. Real
+Electron IPC/contextBridge serialization untested (same non-blocking
+sandbox gap noted in every prior feature). Full suite re-run 3x, stable;
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

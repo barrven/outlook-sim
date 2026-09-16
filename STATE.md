@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 031 (Settings — load personas from a JSON file)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
+  tested: added 21 tests (515 → 536, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 2 files — new `personasFile.test.ts`
+  (+17, real `validatePersonasFile`): full/multi-entry/empty-array
+  acceptance, optional-field defaulting, a 12-case `it.each` covering
+  malformed root/entry shapes and wrong-typed fields with exact per-field
+  errors (never throwing), and a by-index error test for a multi-entry
+  file; `PersonasSettings.test.tsx` (+4): clicking "Load Personas…"
+  invokes the pick IPC call, a valid file replaces (not merges) the list
+  and persists with a generated id, an invalid file shows the specific
+  error while the app stays usable, and canceling is a true no-op. AC4
+  (personas-only scope) and part of AC5 (restart persistence) were
+  confirmed by code inspection / existing coverage rather than new tests,
+  since they're structural guarantees / already-tested shared code paths
+  with nothing new to assert. lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
 - 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
   implemented: new standalone file format (a bare JSON array of persona
   entries, distinct from a scenario pack's wrapping object) — new

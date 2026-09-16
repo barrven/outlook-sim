@@ -304,4 +304,86 @@ describe('PersonasSettings', () => {
     expect(await screen.findByText('Morgan Rivera')).toBeInTheDocument()
     expect(window.api.data.personas.get).toHaveBeenCalledTimes(1)
   })
+
+  // Load Personas from a JSON file (feature 031)
+
+  it('031 AC1: "Load Personas…" invokes the file-picker IPC call', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([])
+    vi.mocked(window.api.personasFile.pick).mockResolvedValue({ ok: false, canceled: true })
+
+    render(<PersonasSettings />)
+    await screen.findByText('No personas yet.')
+    await user.click(screen.getByRole('button', { name: 'Load Personas…' }))
+
+    expect(window.api.personasFile.pick).toHaveBeenCalledTimes(1)
+  })
+
+  it('031 AC2: a valid file replaces the current persona list, persisted via personas.set', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.personasFile.pick).mockResolvedValue({
+      ok: true,
+      personas: [
+        {
+          displayName: 'Salvatore Grillo',
+          email: 'sgrillo@grillo.ca',
+          role: 'Founder & Principal Lawyer',
+          bio: '',
+          writingStyleNotes: '',
+          extraPrompt: '',
+          isClient: false,
+          reportsTo: ''
+        }
+      ]
+    })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.click(screen.getByRole('button', { name: 'Load Personas…' }))
+
+    expect(await screen.findByText('Salvatore Grillo')).toBeInTheDocument()
+    // 031 AC2: replaced, not merged.
+    expect(screen.queryByText('Morgan Rivera')).not.toBeInTheDocument()
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalled())
+    const [saved] = vi.mocked(window.api.data.personas.set).mock.calls[0]
+    expect(saved).toHaveLength(1)
+    expect(saved[0]).toMatchObject({ displayName: 'Salvatore Grillo', email: 'sgrillo@grillo.ca' })
+    expect(typeof saved[0].id).toBe('string')
+    expect(saved[0].id).not.toBe('')
+  })
+
+  it('031 AC3: an invalid file shows a specific, readable error instead of crashing or silently doing nothing', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.personasFile.pick).mockResolvedValue({
+      ok: false,
+      error: 'personas[0].displayName must be a string'
+    })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.click(screen.getByRole('button', { name: 'Load Personas…' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('personas[0].displayName must be a string')
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+    // Not crashed — the existing list and controls are still there.
+    expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '+ New Persona' })).toBeInTheDocument()
+  })
+
+  it('031: canceling the file dialog does nothing (no error, no change)', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    vi.mocked(window.api.personasFile.pick).mockResolvedValue({ ok: false, canceled: true })
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+    await user.click(screen.getByRole('button', { name: 'Load Personas…' }))
+
+    expect(window.api.data.personas.set).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByText('Morgan Rivera')).toBeInTheDocument()
+  })
 })
