@@ -32,8 +32,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -51,8 +51,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -73,15 +73,15 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={onSelectMessage}
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectMessage}
         messagesVersion={0}
       />
     )
 
     await user.click(await screen.findByText('Click me'))
 
-    expect(onSelectMessage).toHaveBeenCalledWith('a')
+    expect(onSelectMessage).toHaveBeenCalledWith(['a'])
   })
 
   it('marks the selected message', async () => {
@@ -91,8 +91,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId="a"
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={['a']}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -113,8 +113,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={onSelectMessage}
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectMessage}
         messagesVersion={0}
       />
     )
@@ -141,8 +141,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -163,8 +163,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -195,8 +195,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -212,8 +212,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="drafts"
         selectedFolderName="Drafts"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -235,8 +235,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -267,8 +267,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -292,8 +292,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -318,8 +318,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -349,8 +349,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -374,8 +374,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -398,8 +398,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -419,8 +419,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -431,8 +431,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="drafts"
         selectedFolderName="Drafts"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -445,8 +445,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={0}
       />
     )
@@ -457,8 +457,8 @@ describe('MessageListPane', () => {
       <MessageListPane
         selectedFolderId="inbox"
         selectedFolderName="Inbox"
-        selectedMessageId={null}
-        onSelectMessage={vi.fn()}
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
         messagesVersion={1}
       />
     )

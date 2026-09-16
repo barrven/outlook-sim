@@ -3,6 +3,11 @@ import type { MailMessage } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
   selectedMessageId: string | null
+  // Total number of currently selected messages (feature 039) — used only
+  // to distinguish "nothing selected" from "multiple selected" in the
+  // empty state below; `selectedMessageId` itself is already `null` in
+  // both cases.
+  selectedCount: number
   messagesVersion: number
   onEditDraft: (message: MailMessage) => void
   onReply: (message: MailMessage) => void
@@ -15,6 +20,7 @@ interface ReadingPaneProps {
 
 function ReadingPane({
   selectedMessageId,
+  selectedCount,
   messagesVersion,
   onEditDraft,
   onReply,
@@ -71,7 +77,9 @@ function ReadingPane({
   if (!displayedMessage) {
     return (
       <div className="reading-pane">
-        <div className="reading-pane-empty">Select an item to read.</div>
+        <div className="reading-pane-empty">
+          {selectedCount > 1 ? `${selectedCount} selected` : 'Select an item to read.'}
+        </div>
       </div>
     )
   }

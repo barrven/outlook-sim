@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 039 (Message list multi-select)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,34 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 039 (Message list multi-select) implemented:
+  `App.tsx`'s single `selectedMessageId` state became `selectedMessageIds:
+  string[]`, with a derived `selectedMessageId` (non-null only when
+  exactly one is selected) keeping every existing single-message consumer
+  (Reading Pane actions, ribbon Delete, Reply/Forward, Restore/permanent-
+  delete) unchanged. `MessageListPane.tsx` owns the click semantics — a
+  local `anchorId` (last plain/Ctrl-clicked message, unmoved by Shift-
+  click) drives Ctrl-click toggle (AC1), Shift-click contiguous range
+  (AC2, computed against its own filtered/searched `visibleMessages`
+  order), and plain-click replace (AC3); the `.selected` class check
+  changed from `===` to `.includes()` so every selected row highlights.
+  `ReadingPane.tsx` gained a `selectedCount` prop (AC4) to distinguish
+  "nothing selected" from "multiple selected" in its empty state, both of
+  which leave `selectedMessageId` null. No bulk actions were added —
+  scoped strictly to selection state and its two visible effects.
+  Existing `MessageListPane.test.tsx`/`ReadingPane.test.tsx` needed
+  prop-shape touch-ups to keep compiling (one assertion's expected call
+  shape also changed, from a plain click now reporting an array);
+  `App.test.tsx` needed no changes. Verified live: a throwaway test
+  confirmed Ctrl-click add/remove without disturbing the rest of the
+  selection, Shift-click ranging both directions plus re-ranging from the
+  same anchor on a second Shift-click, a plain click clearing a 3-message
+  selection down to one, multiple rows simultaneously carrying the
+  `selected` class, and `ReadingPane` showing the single message /
+  "N selected" / the original empty state at counts 1/3/0 respectively.
+  lint/typecheck/build pass; existing suite unchanged 557/557 (only the
+  two component test files needed prop-shape touch-ups). Phase set to
+  `test`.
 - 2026-09-15 — feature 032 (Settings — generate personas via LLM)
   accepted by user; logged to CHANGELOG. Active feature set to 039
   (Message list multi-select, next in BACKLOG.md table order), phase set

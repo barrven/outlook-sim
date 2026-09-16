@@ -26,7 +26,17 @@ function App(): ReactElement {
   const [showSettings, setShowSettings] = useState(false)
   const [folders, setFolders] = useState<Folder[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState('inbox')
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
+  // Multi-select (feature 039) — order doesn't matter for rendering, only
+  // membership; the last-clicked "anchor" a Shift-click ranges from is
+  // tracked locally inside MessageListPane, since it's purely a click-
+  // handling detail nothing else needs to read.
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([])
+  // Reading Pane, Reply/Forward, and single-message delete/restore all
+  // operate on exactly one message — this is `null` both when nothing is
+  // selected and when multiple messages are (AC4: Reading Pane shows a
+  // neutral "N selected" state in that second case, not some arbitrary one
+  // of them).
+  const selectedMessageId = selectedMessageIds.length === 1 ? selectedMessageIds[0] : null
   const [messagesVersion, setMessagesVersion] = useState(0)
   const [llmBackgroundFailure, setLlmBackgroundFailure] = useState<LlmBackgroundFailure | null>(null)
   const [retryingLlmFailure, setRetryingLlmFailure] = useState(false)
@@ -98,7 +108,7 @@ function App(): ReactElement {
 
   function handleSelectFolder(folderId: string): void {
     setSelectedFolderId(folderId)
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
     setShowSettings(false)
     setShowFileVine(false)
   }
@@ -148,7 +158,7 @@ function App(): ReactElement {
       folderId: 'deleted',
       previousFolderId: currentFolderId
     })
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   async function handleDeleteMessage(message: MailMessage): Promise<void> {
@@ -169,12 +179,12 @@ function App(): ReactElement {
       folderId: message.previousFolderId ?? 'inbox',
       previousFolderId: null
     })
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   async function handlePermanentDeleteMessage(message: MailMessage): Promise<void> {
     await window.api.data.messages.delete(message.id)
-    setSelectedMessageId(null)
+    setSelectedMessageIds([])
   }
 
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId)
@@ -238,8 +248,8 @@ function App(): ReactElement {
         {showSettings ? (
           <SettingsView
             onClose={() => setShowSettings(false)}
-            onFreePlayStarted={() => setSelectedMessageId(null)}
-            onScenarioPackLoaded={() => setSelectedMessageId(null)}
+            onFreePlayStarted={() => setSelectedMessageIds([])}
+            onScenarioPackLoaded={() => setSelectedMessageIds([])}
           />
         ) : activeModule === 'mail' ? (
           showFileVine ? (
@@ -249,12 +259,13 @@ function App(): ReactElement {
               <MessageListPane
                 selectedFolderId={selectedFolderId}
                 selectedFolderName={selectedFolder?.name ?? ''}
-                selectedMessageId={selectedMessageId}
-                onSelectMessage={setSelectedMessageId}
+                selectedMessageIds={selectedMessageIds}
+                onSelectionChange={setSelectedMessageIds}
                 messagesVersion={messagesVersion}
               />
               <ReadingPane
                 selectedMessageId={selectedMessageId}
+                selectedCount={selectedMessageIds.length}
                 messagesVersion={messagesVersion}
                 onEditDraft={handleEditDraft}
                 onReply={handleReply}

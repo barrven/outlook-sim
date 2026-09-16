@@ -25,7 +25,7 @@ const MESSAGE: MailMessage = {
 
 describe('ReadingPane', () => {
   it('shows a placeholder when no message is selected', () => {
-    render(<ReadingPane selectedMessageId={null} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId={null} selectedCount={0} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
   })
@@ -33,7 +33,7 @@ describe('ReadingPane', () => {
   it('renders the fetched message content when a message is selected', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(await screen.findByText('Quarterly numbers')).toBeInTheDocument()
     expect(screen.getByText('See attached.')).toBeInTheDocument()
@@ -44,11 +44,11 @@ describe('ReadingPane', () => {
 
   it('goes back to the placeholder when the selection is cleared', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
-    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(await screen.findByText('Quarterly numbers')).toBeInTheDocument()
 
-    rerender(<ReadingPane selectedMessageId={null} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    rerender(<ReadingPane selectedMessageId={null} selectedCount={0} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
     expect(screen.queryByText('Quarterly numbers')).not.toBeInTheDocument()
@@ -57,7 +57,7 @@ describe('ReadingPane', () => {
   it('shows the placeholder if the message cannot be found', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(null)
 
-    render(<ReadingPane selectedMessageId="missing" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="missing" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await waitFor(() => expect(window.api.data.messages.get).toHaveBeenCalledWith('missing'))
     expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
@@ -69,7 +69,7 @@ describe('ReadingPane', () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(draftMessage)
     const onEditDraft = vi.fn()
 
-    render(<ReadingPane selectedMessageId="draft-1" messagesVersion={0} onEditDraft={onEditDraft} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="draft-1" selectedCount={1} messagesVersion={0} onEditDraft={onEditDraft} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     const editButton = await screen.findByRole('button', { name: 'Edit draft' })
     await user.click(editButton)
@@ -80,7 +80,7 @@ describe('ReadingPane', () => {
   it('does not show an Edit draft button for a message outside Drafts', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Quarterly numbers')
     expect(screen.queryByRole('button', { name: 'Edit draft' })).not.toBeInTheDocument()
@@ -95,7 +95,7 @@ describe('ReadingPane', () => {
 
     render(
       <ReadingPane
-        selectedMessageId="msg-1"
+        selectedMessageId="msg-1" selectedCount={1}
         messagesVersion={0}
         onEditDraft={vi.fn()}
         onReply={onReply}
@@ -123,7 +123,7 @@ describe('ReadingPane', () => {
 
     render(
       <ReadingPane
-        selectedMessageId="draft-1"
+        selectedMessageId="draft-1" selectedCount={1}
         messagesVersion={0}
         onEditDraft={vi.fn()}
         onReply={vi.fn()}
@@ -148,7 +148,7 @@ describe('ReadingPane', () => {
 
     render(
       <ReadingPane
-        selectedMessageId="msg-1"
+        selectedMessageId="msg-1" selectedCount={1}
         messagesVersion={0}
         onEditDraft={vi.fn()}
         onReply={vi.fn()}
@@ -172,7 +172,7 @@ describe('ReadingPane', () => {
 
     render(
       <ReadingPane
-        selectedMessageId="draft-1"
+        selectedMessageId="draft-1" selectedCount={1}
         messagesVersion={0}
         onEditDraft={vi.fn()}
         onReply={vi.fn()}
@@ -203,7 +203,7 @@ describe('ReadingPane', () => {
 
     render(
       <ReadingPane
-        selectedMessageId="deleted-1"
+        selectedMessageId="deleted-1" selectedCount={1}
         messagesVersion={0}
         onEditDraft={vi.fn()}
         onReply={vi.fn()}
@@ -236,7 +236,7 @@ describe('ReadingPane', () => {
     }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithCc)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(await screen.findByText(/Cc: Sam Lee/)).toBeInTheDocument()
   })
@@ -245,7 +245,7 @@ describe('ReadingPane', () => {
     const unreadMessage: MailMessage = { ...MESSAGE, isRead: false }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(unreadMessage)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Quarterly numbers')
     await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: true }))
@@ -254,7 +254,7 @@ describe('ReadingPane', () => {
   it('does not re-mark an already-read message as read', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Quarterly numbers')
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
@@ -264,7 +264,7 @@ describe('ReadingPane', () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     const toggle = await screen.findByRole('button', { name: 'Mark as unread' })
     await user.click(toggle)
@@ -277,7 +277,7 @@ describe('ReadingPane', () => {
     const unreadMessage: MailMessage = { ...MESSAGE, isRead: false }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(unreadMessage)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     const toggle = await screen.findByRole('button', { name: 'Mark as read' })
     await user.click(toggle)
@@ -289,7 +289,7 @@ describe('ReadingPane', () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true
 
-    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await user.click(await screen.findByRole('button', { name: 'Mark as unread' }))
     expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-1', { isRead: false })
@@ -300,7 +300,7 @@ describe('ReadingPane', () => {
     // fetch effect for this same still-open message — now reflecting the
     // isRead: false we just applied. It must not immediately flip it back.
     vi.mocked(window.api.data.messages.get).mockResolvedValue({ ...MESSAGE, isRead: false })
-    rerender(<ReadingPane selectedMessageId="msg-1" messagesVersion={1} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    rerender(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={1} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByRole('button', { name: 'Mark as read' })
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
@@ -308,12 +308,12 @@ describe('ReadingPane', () => {
 
   it('does re-auto-mark-read when a different, unread message is opened next', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isRead: true, msg-1
-    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
     await screen.findByText('Quarterly numbers')
 
     const otherUnread: MailMessage = { ...MESSAGE, id: 'msg-2', subject: 'Different message', isRead: false }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(otherUnread)
-    rerender(<ReadingPane selectedMessageId="msg-2" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    rerender(<ReadingPane selectedMessageId="msg-2" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Different message')
     await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalledWith('msg-2', { isRead: true }))
@@ -323,7 +323,7 @@ describe('ReadingPane', () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isFlagged: false
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await user.click(await screen.findByRole('button', { name: 'Flag' }))
 
@@ -335,7 +335,7 @@ describe('ReadingPane', () => {
     const flaggedMessage: MailMessage = { ...MESSAGE, isFlagged: true }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(flaggedMessage)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await user.click(await screen.findByRole('button', { name: 'Unflag' }))
 
@@ -347,7 +347,7 @@ describe('ReadingPane', () => {
     const categorizedMessage: MailMessage = { ...MESSAGE, categories: ['Urgent', 'Client'] }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(categorizedMessage)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Urgent')
     await screen.findByText('Client')
@@ -362,7 +362,7 @@ describe('ReadingPane', () => {
     const categorizedMessage: MailMessage = { ...MESSAGE, categories: ['Urgent'] }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(categorizedMessage)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     const input = await screen.findByLabelText('Add category')
 
@@ -384,7 +384,7 @@ describe('ReadingPane', () => {
     }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachments)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(await screen.findByRole('button', { name: /report\.pdf/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /photo\.jpg/ })).toBeInTheDocument()
@@ -399,7 +399,7 @@ describe('ReadingPane', () => {
     }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(sentMessageWithAttachment)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     expect(await screen.findByRole('button', { name: /contract\.pdf/ })).toBeInTheDocument()
   })
@@ -407,7 +407,7 @@ describe('ReadingPane', () => {
   it('shows no attachments row for a message with none', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // attachments: []
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Quarterly numbers')
     expect(screen.queryByText(/no file content/)).not.toBeInTheDocument()
@@ -418,7 +418,7 @@ describe('ReadingPane', () => {
     const messageWithAttachment: MailMessage = { ...MESSAGE, attachments: [{ filename: 'report.pdf' }] }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachment)
 
-    render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     const attachmentButton = await screen.findByRole('button', { name: /report\.pdf/ })
     await user.click(attachmentButton)
@@ -438,14 +438,14 @@ describe('ReadingPane', () => {
     const messageWithAttachment: MailMessage = { ...MESSAGE, attachments: [{ filename: 'report.pdf' }] }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithAttachment)
 
-    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await user.click(await screen.findByRole('button', { name: /report\.pdf/ }))
     expect(screen.getByText('Mock attachment — no file content.')).toBeInTheDocument()
 
     const otherMessage: MailMessage = { ...MESSAGE, id: 'msg-2', subject: 'Different message' }
     vi.mocked(window.api.data.messages.get).mockResolvedValue(otherMessage)
-    rerender(<ReadingPane selectedMessageId="msg-2" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    rerender(<ReadingPane selectedMessageId="msg-2" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Different message')
     expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
@@ -453,12 +453,12 @@ describe('ReadingPane', () => {
 
   it('refetches the message when messagesVersion changes', async () => {
     vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
-    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await screen.findByText('Quarterly numbers')
     expect(window.api.data.messages.get).toHaveBeenCalledTimes(1)
 
-    rerender(<ReadingPane selectedMessageId="msg-1" messagesVersion={1} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+    rerender(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={1} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
     await waitFor(() => expect(window.api.data.messages.get).toHaveBeenCalledTimes(2))
   })

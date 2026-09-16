@@ -1,19 +1,19 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useEffect, useState, type MouseEvent, type ReactElement } from 'react'
 import type { MailMessage } from '../../../shared/data-types'
 
 interface MessageListPaneProps {
   selectedFolderId: string
   selectedFolderName: string
-  selectedMessageId: string | null
-  onSelectMessage: (messageId: string) => void
+  selectedMessageIds: string[]
+  onSelectionChange: (messageIds: string[]) => void
   messagesVersion: number
 }
 
 function MessageListPane({
   selectedFolderId,
   selectedFolderName,
-  selectedMessageId,
-  onSelectMessage,
+  selectedMessageIds,
+  onSelectionChange,
   messagesVersion
 }: MessageListPaneProps): ReactElement {
   const [messages, setMessages] = useState<MailMessage[]>([])
@@ -21,13 +21,21 @@ function MessageListPane({
   const [categoryFilter, setCategoryFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchScope, setSearchScope] = useState<'folder' | 'all'>('folder')
-  // Reset the filter when the folder changes — done during render (React's
-  // recommended pattern for "adjusting state when a prop changes") rather
-  // than in an effect, since setState-in-effect triggers a lint error.
+  // The message a Shift-click range extends from — the most recently
+  // plain- or Ctrl-clicked message (feature 039 AC2). Purely a click-
+  // handling detail nothing outside this component needs, so it lives
+  // here rather than being lifted to the parent alongside the selection
+  // itself.
+  const [anchorId, setAnchorId] = useState<string | null>(null)
+  // Reset the filter (and selection anchor) when the folder changes — done
+  // during render (React's recommended pattern for "adjusting state when a
+  // prop changes") rather than in an effect, since setState-in-effect
+  // triggers a lint error.
   const [categoryFilterFolderId, setCategoryFilterFolderId] = useState(selectedFolderId)
   if (selectedFolderId !== categoryFilterFolderId) {
     setCategoryFilterFolderId(selectedFolderId)
     setCategoryFilter('')
+    setAnchorId(null)
   }
 
   useEffect(() => {
@@ -55,6 +63,38 @@ function MessageListPane({
 
   function handleToggleFlag(message: MailMessage): void {
     window.api.data.messages.update(message.id, { isFlagged: !message.isFlagged })
+  }
+
+  // Ctrl/Cmd-click toggles one message in/out of the selection (AC1);
+  // Shift-click selects the contiguous range between `anchorId` and the
+  // clicked message, replacing the current selection (AC2) — falling back
+  // to a plain click if there's no anchor yet, or the anchor has scrolled
+  // out of the current filtered/searched view; a plain click selects just
+  // that one message (AC3). The anchor itself only ever moves on a plain
+  // or Ctrl-click, so repeated Shift-clicks keep extending/contracting the
+  // same range.
+  function handleMessageClick(messageId: string, event: MouseEvent<HTMLButtonElement>): void {
+    if (event.shiftKey && anchorId) {
+      const ids = visibleMessages.map((message) => message.id)
+      const anchorIndex = ids.indexOf(anchorId)
+      const targetIndex = ids.indexOf(messageId)
+      if (anchorIndex !== -1 && targetIndex !== -1) {
+        const [start, end] = anchorIndex <= targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex]
+        onSelectionChange(ids.slice(start, end + 1))
+        return
+      }
+    }
+    if (event.ctrlKey || event.metaKey) {
+      setAnchorId(messageId)
+      onSelectionChange(
+        selectedMessageIds.includes(messageId)
+          ? selectedMessageIds.filter((id) => id !== messageId)
+          : [...selectedMessageIds, messageId]
+      )
+      return
+    }
+    setAnchorId(messageId)
+    onSelectionChange([messageId])
   }
 
   const query = searchQuery.trim().toLowerCase()
@@ -122,9 +162,9 @@ function MessageListPane({
               <button
                 type="button"
                 className={`message-list-item${
-                  message.id === selectedMessageId ? ' selected' : ''
+                  selectedMessageIds.includes(message.id) ? ' selected' : ''
                 }${message.isRead ? '' : ' unread'}`}
-                onClick={() => onSelectMessage(message.id)}
+                onClick={(event) => handleMessageClick(message.id, event)}
               >
                 <span className="message-list-item-from">{message.fromName || message.fromEmail}</span>
                 <span className="message-list-item-subject">{message.subject || '(no subject)'}</span>
