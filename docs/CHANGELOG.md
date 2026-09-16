@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Settings — load personas from a JSON file (features/031-load-personas-from-json.md)
+Settings' Personas section gains a "Load Personas…" button that imports a
+persona list from a standalone JSON file — its own schema (a bare array
+of persona entries), distinct from a full scenario pack — replacing the
+current persona list. An invalid or corrupted file shows a specific,
+readable error instead of crashing; loading this way never touches
+mailbox, calendar, or system prompt, and imported personas persist across
+restarts like manually-entered ones.
+
 ## 2026-09-15 — Settings panels refresh live after a scenario pack load (features/030-settings-live-refresh-after-pack-load.md)
 If Settings is open (on the Personas section, or the System Prompt
 section) when a scenario pack is loaded, it now reflects the newly loaded

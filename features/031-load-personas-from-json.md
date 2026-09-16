@@ -1,7 +1,7 @@
 ---
 id: 031
 title: Settings — load personas from a JSON file
-status: accept
+status: done
 priority: medium
 ---
 
@@ -185,4 +185,9 @@ display). The RTL test coverage plus the live check against real
 production persona data are the strongest available substitute.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC table and validation summary (lint/typecheck/
+build clean, full suite 536/536 re-run 3x stable, and an unusually strong
+AC2/AC3 check feeding the real 15-persona config through the validator
+directly) along with the implementation choice to duplicate a small
+validation-helper set rather than share it with `scenarioPack.ts`. User
+said **Accept**.
