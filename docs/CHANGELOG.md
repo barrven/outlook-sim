@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Element-level styling pass (features/037-styling-pass.md)
+Buttons, chips, panels, and other interactive elements now use a
+consistent, semantic color system (danger/warning/success/hover tokens)
+instead of scattered one-off colors, plus a modestly rounded, consistent
+border-radius. Flag indicators — in both the message list and the Reading
+Pane — now render in red. The classic-Outlook ribbon/pane layout and
+density are unchanged; only individual elements were restyled.
+
 ## 2026-09-16 — App icon uses email.png (features/036-app-icon.md)
 The app's window and taskbar icon is now the project's `email.png` art
 instead of the Electron default, applied consistently across the main

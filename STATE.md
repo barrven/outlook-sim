@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 037 (Element-level styling pass — semantic colors, border-radius, red flags)
+- **Phase:** implement
+- **Active feature:** 038 (Move mail search into the ribbon)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 037 (Element-level styling pass) accepted by user
+  (selected "Accept (Recommended)", no changes requested); logged to
+  CHANGELOG. Active feature set to 038 (Move mail search into the ribbon,
+  next in BACKLOG.md table order), phase set to `implement`.
 - 2026-09-16 — feature 037 (Element-level styling pass) validated:
   lint/typecheck/build pass; full suite (674/674) re-run 3x, stable;
   `git diff --stat` (0d14f1d..aac62a9) confirms `/test` touched only

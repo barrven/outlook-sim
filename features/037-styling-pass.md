@@ -1,7 +1,7 @@
 ---
 id: 037
 title: Element-level styling pass — semantic colors, border-radius, red flags
-status: accept
+status: done
 priority: low
 ---
 
@@ -149,4 +149,10 @@ every prior feature's GUI-click-through notes, not a defect found here.
 All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (semantic color tokens replacing
+every ad-hoc hex value, border-radius tokens applied to every element
+that already had some rounding, red flag indicators in both the message
+list and Reading Pane, ribbon/pane layout deliberately untouched), the
+AC-by-AC mapping, and the validation result (all checks pass). User
+selected "Accept (Recommended)", no changes requested. Decision:
+accepted.
