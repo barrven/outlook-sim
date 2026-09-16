@@ -1,7 +1,7 @@
 ---
 id: 040
 title: Message list right-click context menu
-status: accept
+status: done
 priority: medium
 ---
 
@@ -188,4 +188,7 @@ display; same non-blocking gap as every prior feature. All checks pass,
 no gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC-by-AC mapping and validation summary (596/596
+tests stable, no implementation drift, one non-blocking nit re: the flag
+button's native context menu). User selected "Accept" via the accept-stage
+decision prompt. Decision: **accepted**.

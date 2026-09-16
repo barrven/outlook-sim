@@ -7,6 +7,19 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Message list right-click context menu (features/040-message-list-context-menu.md)
+Right-clicking a message (or an existing multi-selection) in the message
+list now opens a context menu: Move to folder, Mark as read/unread,
+Flag/Unflag, Add to category, Reply/Reply All/Forward, and Delete —
+applying to the whole targeted selection. Right-clicking inside an
+existing selection keeps it; right-clicking outside one selects just that
+message first. Move to folder lists every folder and moves the whole
+selection there; Mark read/unread, Flag/Unflag, and Add to category apply
+to every selected message. Reply/Reply All/Forward stay enabled only when
+exactly one message is targeted; Delete works for any selection size, and
+permanently deletes instead of re-moving when the target is already in
+Deleted Items.
+
 ## 2026-09-15 — Message list multi-select (features/039-message-list-multiselect.md)
 The message list now supports selecting multiple messages at once:
 Ctrl-click (Cmd-click on Mac) toggles a message in or out of the
