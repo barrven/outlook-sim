@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 036 (App icon uses email.png)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 036 (App icon uses email.png) implemented: the
+  session flagged at the start that `email.png` (referenced by both this
+  feature and `docs/SPEC.md`) didn't exist anywhere in the repo or git
+  history; the user then supplied the file, which was moved to
+  `resources/email.png` (the standard electron-vite location, included in
+  the packaged app's files by default). `electron-builder.yml` gained
+  `win.icon: resources/email.png` — verified directly against
+  `app-builder-lib`'s own icon-conversion code that this auto-generates a
+  valid `.ico` at build time with no manual per-build step (AC3).
+  `src/main/windows.ts` passes the same icon path to all three
+  `BrowserWindow` constructors (main, compose, message pop-out) for
+  taskbar/title-bar consistency across every window (AC1, AC2). Full
+  Windows NSIS packaging wasn't run end-to-end (needs Wine on this Linux
+  dev box); the icon-conversion step itself — the new/risky part — was
+  verified in isolation instead. lint/typecheck/build all pass. Phase set
+  to `test`.
 - 2026-09-16 — feature 035 (File menu — About section) accepted by user
   (selected "Accept (Recommended)" against the validation summary, no
   changes requested); logged to CHANGELOG. Active feature set to 036 (App

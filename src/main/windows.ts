@@ -9,6 +9,8 @@ const COMPOSE_TITLES: Record<NonNullable<ComposeOpenOptions['intent']>, string> 
   forward: 'Forward'
 }
 
+const ICON_PATH = join(__dirname, '../../resources/email.png')
+
 function loadRenderer(window: BrowserWindow, query?: Record<string, string>): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     const url = new URL(process.env['ELECTRON_RENDERER_URL'])
@@ -39,6 +41,7 @@ export function createMainWindow(): BrowserWindow {
     autoHideMenuBar: true,
     title: 'Outlook Trainer',
     backgroundColor: '#ffffff',
+    icon: ICON_PATH,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -78,6 +81,7 @@ export function createComposeWindow(parent: BrowserWindow, options?: ComposeOpen
     autoHideMenuBar: true,
     title,
     backgroundColor: '#ffffff',
+    icon: ICON_PATH,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -106,6 +110,7 @@ export function createMessagePopoutWindow(parent: BrowserWindow, messageId: stri
     autoHideMenuBar: true,
     title,
     backgroundColor: '#ffffff',
+    icon: ICON_PATH,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
