@@ -1,7 +1,7 @@
 ---
 id: 041
 title: Double-click message opens a pop-out reading window
-status: accept
+status: done
 priority: medium
 ---
 
@@ -192,4 +192,7 @@ display; same non-blocking gap as every prior feature. All checks pass,
 no gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC-by-AC mapping and validation summary
+(604/604 tests stable, no implementation drift, AC4 noted as
+currently-vacuous pending feature 042). User selected "Accept" via the
+accept-stage decision prompt. Decision: **accepted**.

@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Double-click message opens a pop-out reading window (features/041-message-popout-window.md)
+Double-clicking a message in the list now opens it in its own separate
+window, showing the same content and action buttons (Reply/Reply
+All/Forward, Delete, Restore, Mark read/flag, categories) as the inline
+Reading Pane — mirroring the existing compose pop-out. The pop-out stays
+live: a change made anywhere (elsewhere in the app, or from within the
+pop-out itself) refreshes it in place, the same way every other window
+already stays in sync. Closing the pop-out never affects the main
+window's selection.
+
 ## 2026-09-15 — Message list right-click context menu (features/040-message-list-context-menu.md)
 Right-clicking a message (or an existing multi-selection) in the message
 list now opens a context menu: Move to folder, Mark as read/unread,
