@@ -50,6 +50,12 @@ npm install
 npm run dev
 ```
 
+`npm install` runs a `postinstall` script that downloads the Electron
+binary (`node node_modules/electron/install.js`). This version of the
+`electron` package doesn't declare that as a lifecycle script itself, so
+if you ever see an `Error: Electron uninstall` error on `npm run dev`,
+re-run `node node_modules/electron/install.js` manually.
+
 On Linux, `npm run dev` launches Electron with `--ozone-platform=x11`.
 
 Other scripts:

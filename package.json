@@ -5,6 +5,7 @@
   "description": "Windows desktop training sandbox styled after classic Outlook, for practicing email and calendar workflows against LLM-generated mock correspondents.",
   "main": "./out/main/index.js",
   "scripts": {
+    "postinstall": "node node_modules/electron/install.js",
     "dev": "electron-vite dev -- --ozone-platform=x11",
     "build": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && electron-vite build",
     "preview": "electron-vite preview -- --ozone-platform=x11",
