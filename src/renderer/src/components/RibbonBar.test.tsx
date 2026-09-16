@@ -4,14 +4,27 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
 
-// Home/FileVine are now real tabs (feature 047) — every render needs these,
-// even tests unrelated to them.
-function tabProps(overrides: Partial<{ showFileVine: boolean }> = {}): {
+// Home/FileVine/View are now real tabs (features 047/046) — every render
+// needs these, even tests unrelated to them.
+function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boolean; showTasksPanel: boolean }> = {}): {
   showFileVine: boolean
+  viewTabActive: boolean
+  showTasksPanel: boolean
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
+  onSelectViewTab: () => void
+  onToggleTasksPanel: () => void
 } {
-  return { showFileVine: false, onSelectHomeTab: vi.fn(), onSelectFileVineTab: vi.fn(), ...overrides }
+  return {
+    showFileVine: false,
+    viewTabActive: false,
+    showTasksPanel: false,
+    onSelectHomeTab: vi.fn(),
+    onSelectFileVineTab: vi.fn(),
+    onSelectViewTab: vi.fn(),
+    onToggleTasksPanel: vi.fn(),
+    ...overrides
+  }
 }
 
 describe('RibbonBar', () => {

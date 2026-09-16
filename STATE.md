@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,39 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 046 (Tasks side panel) implemented: new `tasks`
+  SQLite table + `MailDb` CRUD (mirrors `calendar_items` exactly),
+  `db:tasks:*` IPC channels, and `window.api.data.tasks`, deliberately
+  excluded from `resetMailboxAndCalendar`/free-play/scenario-pack resets
+  (freestanding tasks are the trainee's own list, not scenario data — a
+  judgment call). `RibbonBar`'s View tab is now real and clickable
+  (previously a disabled placeholder whose code comment already
+  anticipated this feature); it's tracked as its own `viewTabActive`
+  concern in `App.tsx`, independent of `showFileVine`/`activeModule`, so
+  selecting it only swaps the ribbon's action set (now showing a `Tasks`
+  toggle button, `aria-pressed` + new `.ribbon-action.active` style) and
+  never touches Mail/Calendar content (AC1). New `TasksPanel.tsx` renders
+  as an `app-body` sibling whenever `showTasksPanel` is true and Settings
+  isn't open: a "Flagged Mail" section refetches
+  `window.api.data.messages.list()` filtered by `isFlagged` on the same
+  `messagesVersion` bump every other live-updating pane already uses (AC2,
+  no new broadcast needed), and a "Tasks" section owns add/complete/remove
+  against the new store (AC3/AC4), refetching locally after each mutation
+  (AC5, confirmed via a standalone script: create → update → close and
+  reopen a fresh `MailDb` against the same directory → task survives with
+  its `done`/`text` intact). Neither `viewTabActive`/`showTasksPanel` nor
+  the tasks store is touched by folder/module-switch handlers, which is
+  what makes AC6 hold with no special-casing. Verified live: a throwaway
+  4-case RTL suite drove AC1 (toggle on/off), AC2 (flagged list plus a
+  live update via the messages-changed listener), AC3/AC4/AC5 (add via
+  Enter or the Add button, complete via checkbox, remove via the × button,
+  all calling through to the real store shape), and AC6 (panel stays open
+  across a Mail↔Calendar module switch). lint/typecheck/build pass.
+  Existing suite 606/608 (two pre-existing tests now genuinely fail on the
+  intentional behavior change — RibbonBar's "View is disabled" assertion
+  and ipc.test.ts's exhaustive-channel-list assertion — left for `/test`
+  to rewrite rather than papered over here, same convention as 043's
+  CalendarView tests). Phase set to `test`.
 - 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
   accepted by user; logged to CHANGELOG. First accept attempt surfaced that
   this session's isolated worktree branch

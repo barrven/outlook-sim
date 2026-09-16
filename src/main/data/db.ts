@@ -16,7 +16,10 @@ import type {
   NewFileVineNote,
   NewFolder,
   NewMailMessage,
-  RecurrenceFrequency
+  NewTask,
+  RecurrenceFrequency,
+  Task,
+  TaskPatch
 } from '../../shared/data-types'
 
 const DB_FILE_NAME = 'outlook-sim.db'
@@ -78,6 +81,14 @@ CREATE TABLE IF NOT EXISTS filevine_notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_filevine_notes_folder_id ON filevine_notes(folder_id);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  done INTEGER NOT NULL DEFAULT 0,
+  due_at INTEGER,
+  created_at INTEGER NOT NULL
+);
 `
 
 const DEFAULT_FOLDERS: NewFolder[] = [
@@ -140,6 +151,14 @@ interface FileVineNoteRow {
   content: string
 }
 
+interface TaskRow {
+  id: string
+  text: string
+  done: number
+  due_at: number | null
+  created_at: number
+}
+
 function folderFromRow(row: FolderRow): Folder {
   return { id: row.id, name: row.name, type: row.type as Folder['type'], sortOrder: row.sort_order }
 }
@@ -186,6 +205,10 @@ function fileVineFolderFromRow(row: FileVineFolderRow): FileVineFolder {
 
 function fileVineNoteFromRow(row: FileVineNoteRow): FileVineNote {
   return { id: row.id, folderId: row.folder_id, name: row.name, content: row.content }
+}
+
+function taskFromRow(row: TaskRow): Task {
+  return { id: row.id, text: row.text, done: row.done === 1, dueAt: row.due_at, createdAt: row.created_at }
 }
 
 function generateId(): string {
@@ -549,6 +572,44 @@ export class MailDb {
 
   deleteFileVineNote(id: string): void {
     this.db.prepare('DELETE FROM filevine_notes WHERE id = ?').run(id)
+  }
+
+  // Freestanding tasks (feature 046) — deliberately not touched by
+  // resetMailboxAndCalendar/free-play/scenario-pack loads below: these are
+  // the trainee's own to-do list, not scenario data, so they persist across
+  // a scenario reset the same way Settings/personas already do.
+
+  listTasks(): Task[] {
+    const rows = this.db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all() as unknown as TaskRow[]
+    return rows.map(taskFromRow)
+  }
+
+  getTask(id: string): Task | null {
+    const row = this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined
+    return row ? taskFromRow(row) : null
+  }
+
+  createTask(task: NewTask): Task {
+    const id = generateId()
+    const full: Task = { id, createdAt: Date.now(), ...task }
+    this.db
+      .prepare('INSERT INTO tasks (id, text, done, due_at, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(full.id, full.text, full.done ? 1 : 0, full.dueAt, full.createdAt)
+    return full
+  }
+
+  updateTask(id: string, patch: TaskPatch): Task | null {
+    const existing = this.getTask(id)
+    if (!existing) return null
+    const updated: Task = { ...existing, ...patch, id }
+    this.db
+      .prepare('UPDATE tasks SET text = ?, done = ?, due_at = ?, created_at = ? WHERE id = ?')
+      .run(updated.text, updated.done ? 1 : 0, updated.dueAt, updated.createdAt, id)
+    return updated
+  }
+
+  deleteTask(id: string): void {
+    this.db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
   }
 
   // Free-play session

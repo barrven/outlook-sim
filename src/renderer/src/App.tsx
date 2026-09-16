@@ -20,6 +20,7 @@ import ReadingPane from './components/ReadingPane'
 import CalendarView from './components/CalendarView'
 import FileVineView from './components/FileVineView'
 import SettingsView from './components/SettingsView'
+import TasksPanel from './components/TasksPanel'
 
 function App(): ReactElement {
   const [activeModule, setActiveModule] = useState<ModuleId>('mail')
@@ -43,6 +44,13 @@ function App(): ReactElement {
   const [showNewEventForm, setShowNewEventForm] = useState(false)
   const [firedReminders, setFiredReminders] = useState<FiredReminder[]>([])
   const [showFileVine, setShowFileVine] = useState(false)
+  // View ribbon tab (feature 046) — orthogonal to activeModule/showFileVine:
+  // selecting it only changes which ribbon action set is shown (the Tasks
+  // toggle), never the underlying Mail/Calendar content. showTasksPanel is
+  // its own independent on/off state (AC6: unaffected by folder/view nav) —
+  // nothing here resets it on folder/module changes.
+  const [viewTabActive, setViewTabActive] = useState(false)
+  const [showTasksPanel, setShowTasksPanel] = useState(false)
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -129,12 +137,22 @@ function App(): ReactElement {
     setActiveModule('mail')
     setShowSettings(false)
     setShowFileVine(false)
+    setViewTabActive(false)
   }
 
   function handleSelectFileVineTab(): void {
     setActiveModule('mail')
     setShowSettings(false)
     setShowFileVine(true)
+    setViewTabActive(false)
+  }
+
+  function handleSelectViewTab(): void {
+    setViewTabActive(true)
+  }
+
+  function handleToggleTasksPanel(): void {
+    setShowTasksPanel((prev) => !prev)
   }
 
   function handleEditDraft(message: MailMessage): void {
@@ -242,8 +260,12 @@ function App(): ReactElement {
       <RibbonBar
         activeModule={activeModule}
         showFileVine={showFileVine}
+        viewTabActive={viewTabActive}
+        showTasksPanel={showTasksPanel}
         onSelectHomeTab={handleSelectHomeTab}
         onSelectFileVineTab={handleSelectFileVineTab}
+        onSelectViewTab={handleSelectViewTab}
+        onToggleTasksPanel={handleToggleTasksPanel}
         onNewEmail={() => window.api.compose.open()}
         onDelete={canDeleteSelected ? handleRibbonDelete : undefined}
         onNewEvent={() => setShowNewEventForm(true)}
@@ -308,6 +330,7 @@ function App(): ReactElement {
             onCloseCreateForm={() => setShowNewEventForm(false)}
           />
         )}
+        {showTasksPanel && !showSettings && <TasksPanel messagesVersion={messagesVersion} />}
       </div>
     </div>
   )

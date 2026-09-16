@@ -114,6 +114,23 @@ export type NewCalendarItem = Omit<CalendarItem, 'id' | 'remindersFired' | 'recu
 
 export type CalendarItemPatch = Partial<Omit<CalendarItem, 'id'>>
 
+// A freestanding to-do item in the Tasks panel (feature 046) — distinct
+// from a flagged email, which the panel also shows but derives from
+// `MailMessage.isFlagged` rather than storing here. `dueAt` is an optional
+// due-date "indicator" per the spec, not a full scheduling feature.
+export interface Task {
+  id: string
+  text: string
+  done: boolean
+  dueAt: number | null
+  // Stable creation-order sort key — not otherwise user-facing.
+  createdAt: number
+}
+
+export type NewTask = Omit<Task, 'id' | 'createdAt'> & Partial<Pick<Task, 'createdAt'>>
+
+export type TaskPatch = Partial<Omit<Task, 'id'>>
+
 // A case-file/matter folder in the FileVine module (feature 047). Folders
 // nest via `parentId` (file-system-like, not the flat list mail folders
 // use); `clientPersonaId` optionally associates a folder with a configured

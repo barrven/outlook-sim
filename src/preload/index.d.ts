@@ -21,6 +21,7 @@ import type {
   NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
   PersonaReplyResult,
   PickPersonasFileResult,
@@ -30,6 +31,8 @@ import type {
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  Task,
+  TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
 
@@ -66,6 +69,13 @@ export interface DataApi {
     get: (id: string) => Promise<FileVineNote | null>
     create: (note: NewFileVineNote) => Promise<FileVineNote>
     update: (id: string, patch: FileVineNotePatch) => Promise<FileVineNote | null>
+    delete: (id: string) => Promise<void>
+  }
+  tasks: {
+    list: () => Promise<Task[]>
+    get: (id: string) => Promise<Task | null>
+    create: (task: NewTask) => Promise<Task>
+    update: (id: string, patch: TaskPatch) => Promise<Task | null>
     delete: (id: string) => Promise<void>
   }
   settings: {

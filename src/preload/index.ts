@@ -14,6 +14,7 @@ import type {
   NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
   PickPersonasFileResult,
   PickScenarioPackResult,
@@ -22,6 +23,7 @@ import type {
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
 
@@ -61,6 +63,13 @@ const api = {
       create: (note: NewFileVineNote) => ipcRenderer.invoke('db:fileVineNotes:create', note),
       update: (id: string, patch: FileVineNotePatch) => ipcRenderer.invoke('db:fileVineNotes:update', id, patch),
       delete: (id: string) => ipcRenderer.invoke('db:fileVineNotes:delete', id)
+    },
+    tasks: {
+      list: () => ipcRenderer.invoke('db:tasks:list'),
+      get: (id: string) => ipcRenderer.invoke('db:tasks:get', id),
+      create: (task: NewTask) => ipcRenderer.invoke('db:tasks:create', task),
+      update: (id: string, patch: TaskPatch) => ipcRenderer.invoke('db:tasks:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('db:tasks:delete', id)
     },
     settings: {
       get: () => ipcRenderer.invoke('config:settings:get'),

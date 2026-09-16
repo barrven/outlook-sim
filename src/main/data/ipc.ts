@@ -12,11 +12,13 @@ import type {
   NewFileVineNote,
   NewFolder,
   NewMailMessage,
+  NewTask,
   Persona,
   ScenarioPack,
   Settings,
   StartFreePlayResult,
   SystemPromptConfig,
+  TaskPatch,
   TraineeIdentity
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
@@ -100,6 +102,12 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     db.updateFileVineNote(id, patch)
   )
   ipcMain.handle('db:fileVineNotes:delete', (_event, id: string) => db.deleteFileVineNote(id))
+
+  ipcMain.handle('db:tasks:list', () => db.listTasks())
+  ipcMain.handle('db:tasks:get', (_event, id: string) => db.getTask(id))
+  ipcMain.handle('db:tasks:create', (_event, task: NewTask) => db.createTask(task))
+  ipcMain.handle('db:tasks:update', (_event, id: string, patch: TaskPatch) => db.updateTask(id, patch))
+  ipcMain.handle('db:tasks:delete', (_event, id: string) => db.deleteTask(id))
 
   ipcMain.handle('config:settings:get', () => config.getSettings())
   ipcMain.handle('config:settings:set', (_event, settings: Settings) => config.setSettings(settings))
