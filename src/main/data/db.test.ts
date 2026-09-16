@@ -420,6 +420,45 @@ describe('MailDb', () => {
     expect(db.getCalendarItem(item.id)).toBeNull()
   })
 
+  it('046: creates, updates, and deletes freestanding tasks', () => {
+    const task = db.createTask({ text: 'Call client', done: false, dueAt: null })
+
+    expect(task.done).toBe(false)
+    expect(task.dueAt).toBeNull()
+    expect(db.listTasks().map((t) => t.id)).toEqual([task.id])
+
+    const updated = db.updateTask(task.id, { done: true, dueAt: 5000 })
+    expect(updated?.done).toBe(true)
+    expect(updated?.dueAt).toBe(5000)
+
+    db.deleteTask(task.id)
+    expect(db.getTask(task.id)).toBeNull()
+  })
+
+  it('046: returns null when getting or updating a task that does not exist', () => {
+    expect(db.getTask('missing')).toBeNull()
+    expect(db.updateTask('missing', { done: true })).toBeNull()
+  })
+
+  it('046: persists tasks across a close/reopen cycle', () => {
+    const task = db.createTask({ text: 'Persisted task', done: false, dueAt: 9000 })
+    db.close()
+
+    const reopened = new MailDb(baseDir)
+    expect(reopened.getTask(task.id)).toEqual(task)
+    reopened.close()
+    // reassign so the outer afterEach's db.close() doesn't double-close
+    db = new MailDb(baseDir)
+  })
+
+  it('046 (regression): resetMailboxAndCalendar does not clear freestanding tasks', () => {
+    const task = db.createTask({ text: 'Survives a scenario reset', done: false, dueAt: null })
+
+    db.resetMailboxAndCalendar()
+
+    expect(db.listTasks().map((t) => t.id)).toEqual([task.id])
+  })
+
   it('persists folders, messages, and calendar items across a close/reopen cycle', () => {
     const message = db.createMessage({
       folderId: 'inbox',

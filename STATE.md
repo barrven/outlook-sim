@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 046 (Tasks side panel) tested: 608 → 631 net (+23,
+  all passing; re-run 3x, stable) across 5 files. Both pre-existing tests
+  that `/implement` left genuinely failing (RibbonBar's "View disabled"
+  assertion, ipc.test.ts's exhaustive channel list) were fixed for real,
+  not patched around. New coverage: `db.test.ts` CRUD/persistence/missing-id
+  plus a regression test pinning tasks survive `resetMailboxAndCalendar`;
+  `ipc.test.ts` a tasks round-trip mirroring the calendar-item one;
+  `RibbonBar.test.tsx` a new View-tab describe block (active-tab tracking,
+  action-row swap, Tasks button aria-pressed/active/click); new
+  `TasksPanel.test.tsx` (12 unit tests, AC2-AC4); `App.test.tsx` (+3
+  integration tests, AC1/AC6, plus Settings hiding the panel). lint/
+  typecheck/build all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 046 (Tasks side panel) implemented: new `tasks`
   SQLite table + `MailDb` CRUD (mirrors `calendar_items` exactly),
   `db:tasks:*` IPC channels, and `window.api.data.tasks`, deliberately

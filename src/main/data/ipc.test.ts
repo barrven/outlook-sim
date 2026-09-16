@@ -12,7 +12,8 @@ import type {
   LlmGenerateResult,
   MailMessage,
   ScenarioPack,
-  Settings
+  Settings,
+  Task
 } from '../../shared/data-types'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
@@ -85,6 +86,11 @@ describe('registerDataIpcHandlers', () => {
         'db:fileVineNotes:create',
         'db:fileVineNotes:update',
         'db:fileVineNotes:delete',
+        'db:tasks:list',
+        'db:tasks:get',
+        'db:tasks:create',
+        'db:tasks:update',
+        'db:tasks:delete',
         'config:settings:get',
         'config:settings:set',
         'config:systemPrompt:get',
@@ -151,6 +157,23 @@ describe('registerDataIpcHandlers', () => {
     expect((handlers.get('db:calendarItems:list')!(fakeEvent) as CalendarItem[]).map((i) => i.id)).toEqual([
       created.id
     ])
+  })
+
+  it('046: creates, lists, updates, and deletes a task through the IPC channels', () => {
+    const created = handlers.get('db:tasks:create')!(fakeEvent, {
+      text: 'Call client',
+      done: false,
+      dueAt: null
+    }) as Task
+
+    expect((handlers.get('db:tasks:list')!(fakeEvent) as Task[]).map((t) => t.id)).toEqual([created.id])
+    expect(handlers.get('db:tasks:get')!(fakeEvent, created.id)).toMatchObject({ text: 'Call client', done: false })
+
+    const updated = handlers.get('db:tasks:update')!(fakeEvent, created.id, { done: true }) as Task
+    expect(updated.done).toBe(true)
+
+    handlers.get('db:tasks:delete')!(fakeEvent, created.id)
+    expect(handlers.get('db:tasks:list')!(fakeEvent) as Task[]).toEqual([])
   })
 
   it('047: creates, nests, updates, and deletes a FileVine folder through the IPC channels', () => {

@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -74,7 +74,43 @@ persisted — the AC only requires freestanding *tasks* to survive a
 restart, not the panel's visibility.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+608 → 631 net (+23, all passing; re-run 3x, stable), across 5 files:
+
+- `main/data/db.test.ts` (+4): CRUD round-trip, `getTask`/`updateTask`
+  returning `null` for a missing id, persistence across a close/reopen
+  cycle (AC5), and a regression test pinning that `resetMailboxAndCalendar`
+  leaves tasks untouched (the judgment call from Implementation Notes).
+- `main/data/ipc.test.ts`: the exhaustive channel-list assertion updated
+  with the 5 new `db:tasks:*` entries (this is the test that was failing
+  after `/implement`, now fixed for real rather than patched to compile),
+  plus a new IPC round-trip test mirroring the existing calendar-item one.
+- `RibbonBar.test.tsx`: the "View tab is disabled" assertion (also
+  genuinely failing after `/implement`) rewritten to reflect that View is
+  now real — a new `describe('View tab (046)')` block covers View becoming
+  active (not Home/FileVine) when selected, the action row swapping to
+  just `Tasks` regardless of mail/calendar module, and the Tasks button's
+  `aria-pressed`/`.active` state tracking `showTasksPanel` and calling
+  `onToggleTasksPanel` on click.
+- New `TasksPanel.test.tsx` (unit-level, 12 tests): AC2 flagged-only
+  filtering plus a live refetch on a `messagesVersion` bump (both empty
+  and non-empty transitions), the "(no subject)" fallback; AC3 Add sends
+  the typed text + a real due-date timestamp (or `null` when the due-date
+  field is left blank), Enter is equivalent to clicking Add, blank text
+  disables Add and makes Enter a no-op; AC4 the checkbox toggles `done`
+  via the real store shape and applies the `done` class, Remove calls
+  delete and the item disappears; empty-state text for both sections.
+- `App.test.tsx` (+3, integration-level, real ribbon click-through): AC1
+  View → Tasks shows/hides the panel without touching the underlying Mail
+  content; AC6 the panel and a freestanding task both stay visible across
+  a real Mail↔Calendar module switch (not just a re-render); Settings
+  hides the panel (a design decision from Implementation Notes, not an
+  AC — worth a test since it's the one place the panel deliberately
+  doesn't show).
+
+Deliberately not covered: real multi-window Electron behavior (there's
+only ever one Tasks panel, no pop-out) and the toggle's on/off state
+surviving a restart (Implementation Notes: intentionally not persisted,
+only the AC5 task data itself is).
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

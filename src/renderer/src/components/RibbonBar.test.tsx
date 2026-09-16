@@ -28,12 +28,13 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
 }
 
 describe('RibbonBar', () => {
-  it('renders ribbon tabs and mail actions, with only Home/FileVine/New Email interactive', () => {
+  it('renders ribbon tabs and mail actions, with only Home/FileVine/View/New Email interactive', () => {
     render(<RibbonBar activeModule="mail" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'Home' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'FileVine' })).toBeEnabled()
-    for (const tab of ['File', 'Send / Receive', 'Folder', 'View']) {
+    expect(screen.getByRole('button', { name: 'View' })).toBeEnabled()
+    for (const tab of ['File', 'Send / Receive', 'Folder']) {
       expect(screen.getByRole('button', { name: tab })).toBeDisabled()
     }
     expect(screen.getByRole('button', { name: 'New Email' })).toBeDisabled()
@@ -133,5 +134,56 @@ describe('RibbonBar', () => {
     rerender(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} />)
     expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
     expect(screen.getByRole('button', { name: 'FileVine' })).not.toHaveClass('active')
+  })
+
+  // 046 AC1: View tab has a Tasks toggle.
+  describe('View tab (046)', () => {
+    it('clicking View calls onSelectViewTab, and marks View (not Home/FileVine) active', () => {
+      const onSelectViewTab = vi.fn()
+      const { rerender } = render(
+        <RibbonBar activeModule="mail" {...tabProps()} onSelectViewTab={onSelectViewTab} />
+      )
+      expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
+
+      rerender(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} onSelectViewTab={onSelectViewTab} />)
+      expect(screen.getByRole('button', { name: 'View' })).toHaveClass('active')
+      expect(screen.getByRole('button', { name: 'Home' })).not.toHaveClass('active')
+    })
+
+    it('swaps the ribbon actions to just Tasks when View is active, regardless of mail/calendar module', () => {
+      render(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} onNewEvent={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: 'Tasks' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'New Email' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument()
+    })
+
+    it('the Tasks button reflects showTasksPanel via aria-pressed and an active class, and toggles it on click', async () => {
+      const user = userEvent.setup()
+      const onToggleTasksPanel = vi.fn()
+      const { rerender } = render(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps({ viewTabActive: true, showTasksPanel: false })}
+          onToggleTasksPanel={onToggleTasksPanel}
+        />
+      )
+      const button = screen.getByRole('button', { name: 'Tasks' })
+      expect(button).toHaveAttribute('aria-pressed', 'false')
+      expect(button).not.toHaveClass('active')
+
+      await user.click(button)
+      expect(onToggleTasksPanel).toHaveBeenCalledTimes(1)
+
+      rerender(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps({ viewTabActive: true, showTasksPanel: true })}
+          onToggleTasksPanel={onToggleTasksPanel}
+        />
+      )
+      expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Tasks' })).toHaveClass('active')
+    })
   })
 })

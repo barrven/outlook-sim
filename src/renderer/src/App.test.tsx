@@ -722,4 +722,60 @@ describe('App shell', () => {
       expect.objectContaining({ folderId: 'deleted' })
     )
   })
+
+  describe('Tasks panel (feature 046)', () => {
+    // AC1
+    it('the View ribbon tab exposes a Tasks toggle that shows/hides the panel, without switching modules', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      expect(screen.queryByText('Flagged Mail')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      expect(screen.getByRole('button', { name: 'View' })).toHaveClass('active')
+      // Still on Mail underneath — View only swapped the ribbon's own actions.
+      expect(screen.getByRole('button', { name: 'Inbox' })).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Tasks' }))
+      expect(await screen.findByText('Flagged Mail')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Tasks' }))
+      expect(screen.queryByText('Flagged Mail')).not.toBeInTheDocument()
+    })
+
+    // AC6
+    it('the panel stays open, and freestanding tasks stay listed, across a Mail/Calendar module switch', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+        { id: 't1', text: 'Persistent task', done: false, dueAt: null, createdAt: 0 }
+      ])
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      await user.click(screen.getByRole('button', { name: 'Tasks' }))
+      await screen.findByText('Persistent task')
+
+      await user.click(screen.getByRole('tab', { name: 'Calendar' }))
+      expect(screen.getByText('My Calendars')).toBeInTheDocument()
+      expect(screen.getByText('Persistent task')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('tab', { name: 'Mail' }))
+      expect(screen.getByText('Persistent task')).toBeInTheDocument()
+    })
+
+    it('hides the Tasks panel while Settings is open', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      await user.click(screen.getByRole('button', { name: 'Tasks' }))
+      await screen.findByText('Flagged Mail')
+
+      await user.click(screen.getByRole('button', { name: 'Settings' }))
+      expect(screen.queryByText('Flagged Mail')).not.toBeInTheDocument()
+    })
+  })
 })
