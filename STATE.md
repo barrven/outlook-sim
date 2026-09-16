@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 046 (Tasks side panel)
+- **Phase:** implement
+- **Active feature:** 049 (FileVine content feeds persona LLM context)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 046 (Tasks side panel) accepted by user; logged to
+  CHANGELOG. Active feature set to 049 (FileVine content feeds persona LLM
+  context, next in BACKLOG.md table order — 033-045 excluding 043/046 are
+  lower `low`-priority rows further down the table), phase set to
+  `implement`.
 - 2026-09-16 — feature 046 (Tasks side panel) validated (requested-changes
   round): lint/typecheck/build pass; full suite (632/632) re-run 3x,
   stable; `git diff --stat` (2eceff4..7d5c3dc) confirms `/test` touched

@@ -7,6 +7,17 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Tasks side panel (features/046-tasks-panel.md)
+A new View ribbon tab exposes a Tasks toggle: turning it on shows a
+right-hand column panel with two sections. Flagged Mail lists every
+currently-flagged email and updates live as flags change anywhere else in
+the app. Tasks lets you add a freestanding to-do (text plus an optional
+due date), mark it complete, or remove it — freestanding tasks persist
+across restarts in their own store. Each item in both lists is separated
+by a divider line, and the add-task controls stay fixed at the top of the
+Tasks section as the list grows. The panel's visibility and its tasks are
+unaffected by which Mail folder or Calendar view is active.
+
 ## 2026-09-15 — Calendar item view-mode and single-open swap (features/043-calendar-view-edit-mode.md)
 Clicking a calendar item now opens it in a read-only view first — fields
 visible but not editable, so a stray click can't accidentally change

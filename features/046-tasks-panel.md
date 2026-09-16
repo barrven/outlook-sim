@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: accept
+status: done
 priority: medium
 ---
 
@@ -216,3 +216,9 @@ separator treatment for each item in the Flagged Mail list; (3) move the
 add-task input row to the top of the Tasks section so it stays fixed in
 place rather than being pushed down as tasks are added. Decision:
 **changes requested**.
+
+2026-09-16 — Implemented, tested, and validated the requested changes
+(divider borders on every task/flagged-mail row; add-task row moved above
+the list). Presented the updated summary and validation result (632/632
+tests stable). User selected "Accept" via the accept-stage decision
+prompt. Decision: **accepted**.
