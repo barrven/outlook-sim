@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 033 (Ribbon — hide Send/Receive and Folder tabs)
+- **Phase:** implement
+- **Active feature:** 034 (Move Settings into the File menu)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  accepted by user (selected "Accept (Recommended)" against the validation
+  summary and diff, no changes requested); logged to CHANGELOG. Active
+  feature set to 034 (Move Settings into the File menu, next in
+  BACKLOG.md table order), phase set to `implement`.
 - 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
   validated: lint/typecheck/build pass; full suite 649/649, re-run 3x,
   stable. All 4 ACs re-checked directly against current source and pass —

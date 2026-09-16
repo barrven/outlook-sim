@@ -1,7 +1,7 @@
 ---
 id: 033
 title: Ribbon — hide Send/Receive and Folder tabs
-status: accept
+status: done
 priority: low
 ---
 
@@ -79,4 +79,6 @@ All 4 acceptance criteria pass. No regressions found elsewhere (full suite
 green, `App.test.tsx` untouched and still passing).
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — user accepted, selecting "Accept (Recommended)" when presented
+with the validation summary (lint/typecheck/build clean, full suite
+649/649 stable, all 4 ACs pass) and the diff. No changes requested.

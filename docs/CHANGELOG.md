@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Ribbon — hide Send/Receive and Folder tabs (features/033-hide-unused-ribbon-tabs.md)
+The ribbon's Send/Receive and Folder tabs — placeholders since the app's
+first version, never wired to any functionality — are now hidden entirely
+instead of showing as permanently-disabled, empty tabs. File, Home,
+FileVine, and View are unaffected.
+
 ## 2026-09-16 — FileVine content feeds persona LLM context (features/049-filevine-llm-context.md)
 Personas with an associated FileVine folder now have that folder's notes
 (name and content) woven into their LLM prompt context when generating a
