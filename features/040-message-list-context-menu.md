@@ -1,7 +1,7 @@
 ---
 id: 040
 title: Message list right-click context menu
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -121,7 +121,71 @@ same structural gap as every prior feature, substituted here by
 the real component tree).
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (596/596) re-run 3x, stable.
+`git diff` between the `/implement` and `/test` commits (72f30ec..d586ac8)
+touched only test files and docs (`STATE.md`, the feature file,
+`BACKLOG.md`, `App.test.tsx`, `MessageListPane.test.tsx`, and the new
+`MessageContextMenu.test.tsx`) — no implementation drift.
+
+All 5 ACs re-verified directly against the current source (not just by
+re-reading the prior stages' notes):
+
+- **AC1** (menu shows all listed actions): `MessageContextMenu.tsx`
+  renders all 8 action items (Reply, Reply All, Forward, Mark as
+  read/unread, Flag/Unflag, Add to category, Move to folder, Delete) as
+  soon as it mounts — "Add to category" and "Move to folder" are
+  themselves immediately-visible top-level menu items; only their
+  sub-panels (the category input, the folder list) need an extra click to
+  expand, which still satisfies "shows a context menu with all listed
+  actions." Confirmed by `MessageContextMenu.test.tsx`'s render check plus
+  direct code inspection.
+- **AC2** (selection scoping): `MessageListPane.tsx`'s
+  `handleMessageContextMenu` computes `targetIds` from the *existing*
+  `selectedMessageIds` when the right-clicked row is already in it (no
+  `onSelectionChange` call — selection genuinely untouched), and falls
+  back to `[messageId]` plus an `onSelectionChange([messageId])` call
+  otherwise — including the empty-selection case, correctly treated as
+  "outside." Confirmed by code inspection and by the two dedicated
+  `MessageListPane.test.tsx` cases.
+- **AC3** (Move to folder): the submenu lists every folder from the new
+  `folders` prop (threaded from `App.tsx`'s already-fetched folder list,
+  no new IPC), and choosing one calls `window.api.data.messages.update`
+  once per id in the target set, then clears the selection since those
+  messages leave the current-folder view. Confirmed by code inspection
+  and the dedicated test.
+- **AC4** (Mark read/unread, Flag/Unflag, Add to category apply to every
+  selected message): `handleBulkMarkRead`/`handleBulkToggleFlag` iterate
+  every id in the target set; `handleBulkAddCategory` iterates every
+  *message object* in the target set and skips only the ones that already
+  carry the category (not all-or-nothing skip) — each gets its own
+  `update` call with the merged category array. Confirmed by code
+  inspection and tests at both the unit (label/value logic) and
+  integration (actual per-id `update` calls) layers.
+- **AC5** (Reply/Reply All/Forward single-only, Delete any size): enforced
+  twice — the `disabled` attribute in `MessageContextMenu.tsx`
+  (`canActOnOne = targetMessages.length === 1`) and a second guard in
+  `MessageListPane.tsx`'s callback wrappers themselves
+  (`if (contextMenuMessages.length === 1) onReply(...)`). Delete has no
+  such guard and calls `onDeleteMessages` with the full target regardless
+  of size. `App.tsx`'s new `handleDeleteMessages` correctly branches per
+  message — move-to-Deleted-Items normally, permanent delete if a
+  message is already there — verified end-to-end by the dedicated
+  `App.test.tsx` case (the one path nothing else exercised).
+
+One non-blocking nit found by fresh inspection, not previously noted:
+right-clicking the per-row flag button (⚑/⚐) does not open the context
+menu (it has no `onContextMenu` handler, only the sibling message button
+does), so it falls through to the browser's native menu instead. This
+mirrors the existing, intentional design for left-clicks (the flag button
+already `stopPropagation`s to avoid selecting the message) — the flag
+button is treated as a separate control, not part of "the message" for
+selection purposes, and the ACs only require right-clicking *a message*
+to work. Not a defect against any AC; flagging for `/retro`'s awareness
+only.
+
+No live multi-window Electron GUI click-through attempted — no attached
+display; same non-blocking gap as every prior feature. All checks pass,
+no gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

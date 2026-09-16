@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 040 (Message list right-click context menu)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,30 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 040 (Message list right-click context menu)
+  validated: lint/typecheck/build pass; full test suite (596/596) re-run
+  3x, stable; confirmed via `git diff` (72f30ec..d586ac8) that `/test`
+  touched only test files/docs, no implementation drift. All 5 ACs
+  re-verified directly against current source: AC1 all 8 action items
+  render immediately (Move to folder/Add to category's own sub-panels
+  need an extra click, the top-level items don't); AC2 `targetIds`
+  correctly preserves the existing selection when the right-clicked row
+  is already in it (no `onSelectionChange` call) vs. selecting just that
+  row otherwise, including the empty-selection case; AC3 Move to folder
+  lists every folder and moves every targeted id, clearing selection
+  after; AC4 Mark read/unread and Flag/Unflag iterate every targeted id,
+  Add to category iterates every targeted *message* and skips only ones
+  that already carry it; AC5 Reply/Reply All/Forward gated single-only by
+  both the `disabled` attribute and a second callback-level guard, Delete
+  ungated and its `App.tsx` handler correctly branches move-to-Deleted vs.
+  permanent-delete per message (verified end-to-end). One non-blocking nit
+  found by fresh inspection: right-clicking the per-row flag button falls
+  through to the native menu (no `onContextMenu` there) — intentional,
+  mirrors the flag button's existing left-click `stopPropagation`
+  treatment as a separate control, not a defect against any AC. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
 - 2026-09-15 — feature 040 (Message list right-click context menu) tested:
   added 22 tests (574 → 596, all passing; re-run 3x, stable), all
   AC-traceable by number, across 3 layers — new `MessageContextMenu.test.tsx`
