@@ -1,7 +1,7 @@
 ---
 id: 035
 title: File menu — About section
-status: accept
+status: done
 priority: low
 ---
 
@@ -125,4 +125,6 @@ suite green; every other RibbonBar/App test still passes unmodified
 aside from the new mock and About-specific additions).
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — user accepted, selecting "Accept (Recommended)" when presented
+with the validation summary (lint/typecheck/build clean, full suite
+661/661 stable, all 4 ACs pass). No changes requested.

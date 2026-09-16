@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — File menu — About section (features/035-file-menu-about.md)
+The File menu gains an About entry showing the app's current version
+(read straight from `package.json`, never hardcoded) and a link to its
+GitHub repo, https://github.com/barrven/outlook-sim/, which opens in your
+default browser rather than inside the app.
+
 ## 2026-09-16 — Move Settings into the File menu (features/034-settings-in-file-menu.md)
 Settings is no longer a nav-rail button; it's opened from a new File menu
 on the ribbon (a dropdown, matching classic Outlook's File > Options

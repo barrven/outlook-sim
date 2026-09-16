@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 035 (File menu — About section)
+- **Phase:** implement
+- **Active feature:** 036 (App icon uses email.png)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 035 (File menu — About section) accepted by user
+  (selected "Accept (Recommended)" against the validation summary, no
+  changes requested); logged to CHANGELOG. Active feature set to 036 (App
+  icon uses email.png, next in BACKLOG.md table order), phase set to
+  `implement`.
 - 2026-09-16 — feature 035 (File menu — About section) validated:
   lint/typecheck/build pass; full suite 661/661, re-run 3x, stable. All 4
   ACs re-checked directly against current source and pass — AC1 (About
