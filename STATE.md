@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 049 (FileVine content feeds persona LLM context)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  validated: lint/typecheck/build pass; full test suite (648/648) re-run
+  3x, stable; confirmed via `git diff --stat` (7ebd663..a8dd074) that
+  `/test` touched only test/doc files, no implementation drift. All 4 ACs
+  re-verified directly against current source: AC1 the helper's
+  folder/note assembly and its wiring into both `buildSystemPrompt`
+  functions; AC2 the no-folder `null` return runs through the exact same
+  `.filter(Boolean)` every other optional prompt section already relies
+  on, confirmed no other line in either `buildSystemPrompt` changed; AC3
+  re-confirmed as inherently a live/manual check (a stubbed `fetch` can't
+  prove a real model chooses to reference content) — flagged for the
+  user's own confirmation, not treated as a gap blocking acceptance; AC4
+  the helper has no cache at all, structurally and by test. No live
+  multi-window Electron GUI click-through attempted — same non-blocking
+  gap as every prior feature. All checks pass; the one open item (AC3) is
+  inherently manual, not a defect. Phase set to `accept`.
 - 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
   tested: 632 → 648 net (+16, all passing; re-run 3x, stable), across new
   `fileVineContext.test.ts` (+9, unit-level: null cases, name+content

@@ -1,7 +1,7 @@
 ---
 id: 049
 title: FileVine content feeds persona LLM context
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -98,7 +98,41 @@ reaches the prompt) but can't demonstrate the LLM *choosing* to reference
 it — that's the part AC3 itself calls "live/manual."
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (648/648) re-run 3x,
+stable. Confirmed via `git diff --stat` (7ebd663..a8dd074) that `/test`
+touched only test/doc files, no implementation drift.
+
+All 4 ACs re-verified directly against current source:
+- AC1: `buildFileVineContextPrompt` (called with `persona.id` from both
+  `personaReply.ts` and `scheduler.ts`) reads every `FileVineFolder` whose
+  `clientPersonaId` matches, and for each one lists its notes' name +
+  content (or an explicit "no notes/files yet" line for an empty folder,
+  so nothing is silently skipped), with a 4000-char per-note truncation
+  standing in for "a reasonable summary if very large." Wired into both
+  `buildSystemPrompt` functions right where `persona.bio`/`extraPrompt`
+  already sit.
+- AC2: the helper returns `null` for a persona with no associated folder,
+  and both `buildSystemPrompt` arrays run through the same
+  `.filter(Boolean)` every other optional section (bio, writing-style
+  notes, extraPrompt) already relies on — so a no-folder persona's prompt
+  is structurally identical to pre-049 code, not just conventionally so.
+  Confirmed by tests plus by re-reading the diff: no other line in either
+  `buildSystemPrompt` changed.
+- AC3: inherently a live/manual check per its own wording — re-confirmed
+  this can't be automated (a stubbed `fetch` can prove content *reaches*
+  the prompt, never that a real model *chooses* to reference it). Flagged
+  clearly in Implementation/Test Notes for the user's own confirmation
+  against their configured provider; same category of gap as this
+  project's recurring no-attached-display note.
+- AC4: `buildFileVineContextPrompt` has no cache of any kind — it's a
+  plain function that calls `db.listFileVineFolders()`/`listFileVineNotes()`
+  fresh on every invocation, both structurally (there's nothing that could
+  go stale) and by test (an update between two calls is reflected on the
+  very next one, old content absent).
+
+No live multi-window Electron GUI click-through attempted — no attached
+display; same non-blocking gap as every prior feature. All checks pass;
+the one open item is the inherently-manual AC3, not a defect.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
