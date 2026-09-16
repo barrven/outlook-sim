@@ -1,7 +1,7 @@
 ---
 id: 033
 title: Ribbon — hide Send/Receive and Folder tabs
-status: validating
+status: accept
 priority: low
 ---
 
@@ -51,7 +51,32 @@ it (this repo's established convention per feature 046).
   not runtime behavior.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+- `npm run lint` — clean, no errors/warnings.
+- `npm run typecheck` — clean.
+- `npm run build` — succeeds (main/preload/renderer all bundle).
+- `npx vitest run` (full suite) — 649/649 passing, re-run 3x, stable.
+
+Acceptance criteria, checked against current source
+(`src/renderer/src/components/RibbonBar.tsx`):
+- **AC1 (Send/Receive not rendered anywhere)** — `TABS` (line 5) no longer
+  contains `'Send / Receive'`; confirmed by test
+  `does not render the Send/Receive or Folder tabs`. `RibbonBar` is the
+  only component that ever rendered ribbon tabs, so there's no other
+  render path to check. Pass.
+- **AC2 (Folder not rendered anywhere)** — same `TABS` change, same test.
+  Pass.
+- **AC3 (Home/View/FileVine unaffected)** — all three remain in `TABS`,
+  still wired via `tabHandlers`/`ClickableTab` (lines 10, 61-65),
+  unchanged by this diff. Covered by the pre-existing enabled/interactive/
+  active-tab tests, all still passing. Pass.
+- **AC4 (no dead code referencing removed tabs)** — `grep -rn "Send /
+  Receive|Send/Receive|'Folder'|\"Folder\""` across `src/` returns only
+  the explanatory code comment in `RibbonBar.tsx` and the new test's
+  name/assertions in `RibbonBar.test.tsx` — no leftover logic, styles, or
+  handlers reference the removed tabs. Pass.
+
+All 4 acceptance criteria pass. No regressions found elsewhere (full suite
+green, `App.test.tsx` untouched and still passing).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

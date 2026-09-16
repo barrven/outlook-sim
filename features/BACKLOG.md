@@ -47,7 +47,7 @@
 | 043 | Calendar item view-mode and single-open swap | done | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | done | medium | 046-tasks-panel.md |
 | 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
-| 033 | Ribbon — hide Send/Receive and Folder tabs | validating | low | 033-hide-unused-ribbon-tabs.md |
+| 033 | Ribbon — hide Send/Receive and Folder tabs | accept | low | 033-hide-unused-ribbon-tabs.md |
 | 034 | Move Settings into the File menu | backlog | low | 034-settings-in-file-menu.md |
 | 035 | File menu — About section | backlog | low | 035-file-menu-about.md |
 | 036 | App icon uses email.png | backlog | low | 036-app-icon.md |
