@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 043 (Calendar item view-mode and single-open swap)
+- **Phase:** implement
+- **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-15
 
 ## Phases
@@ -18,6 +18,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  accepted by user; logged to CHANGELOG. First accept attempt surfaced that
+  this session's isolated worktree branch
+  (`worktree-feature-043-calendar-view-mode`) hadn't reached the user's
+  local `master` — user chose to merge/pull it themselves rather than have
+  it pushed to `master` directly. After merging and testing locally, user
+  accepted. Active feature set to 046 (Tasks side panel, next in
+  BACKLOG.md table order — 049/033-045 are lower priority or later in the
+  table), phase set to `implement`.
 - 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
   validated: lint/typecheck/build pass; full test suite (608/608) re-run
   3x, stable; confirmed via `git diff` (d84187d..7c578b0) that `/test`

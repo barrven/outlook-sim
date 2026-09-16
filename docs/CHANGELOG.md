@@ -7,6 +7,17 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Calendar item view-mode and single-open swap (features/043-calendar-view-edit-mode.md)
+Clicking a calendar item now opens it in a read-only view first — fields
+visible but not editable, so a stray click can't accidentally change
+anything — with an explicit "Edit" button to switch into the existing
+editable form. Clicking a different calendar item while one is open
+closes the current one and opens the new one in its place (never two
+open at once). Cancelling out of editing (or out of the recurring
+this-event/whole-series choice) returns to the read-only view rather than
+closing the panel outright. Creating a new item is unaffected — it still
+opens directly into an empty, editable form.
+
 ## 2026-09-15 — Double-click message opens a pop-out reading window (features/041-message-popout-window.md)
 Double-clicking a message in the list now opens it in its own separate
 window, showing the same content and action buttons (Reply/Reply

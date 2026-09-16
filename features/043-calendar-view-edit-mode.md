@@ -1,7 +1,7 @@
 ---
 id: 043
 title: Calendar item view-mode and single-open swap
-status: accept
+status: done
 priority: medium
 ---
 
@@ -133,4 +133,12 @@ display; same non-blocking gap as every prior feature. All checks pass, no
 gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the AC-by-AC mapping and validation summary
+(608/608 tests stable, no implementation drift, plus the Cancel-returns-
+to-view design decision flagged as a judgment call beyond the literal AC
+text). First accept attempt surfaced that the work was on an isolated
+worktree branch (`worktree-feature-043-calendar-view-mode`), not merged
+into `master`, so the user's local `npm run dev` didn't show it; user
+chose to merge/pull it themselves rather than have it pushed to `master`
+automatically. After merging and testing, user selected "Accept" via the
+accept-stage decision prompt. Decision: **accepted**.
