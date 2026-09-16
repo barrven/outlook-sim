@@ -1,7 +1,7 @@
 ---
 id: 038
 title: Move mail search into the ribbon
-status: accept
+status: done
 priority: low
 ---
 
@@ -152,4 +152,10 @@ non-blocking gap as every prior feature. All checks pass, no gaps found.
 Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (search state lifted to
+`App.tsx`, the search box now rendered in the ribbon between the tab
+strip and the clock, filtering logic unchanged, visibility mirroring the
+old gate exactly) and the validation result (all checks pass), including
+the flagged non-blocking side effect (search text persists across
+FileVine/Settings toggles instead of resetting). User selected "Accept
+(Recommended)", no changes requested. Decision: accepted.

@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 038 (Move mail search into the ribbon)
+- **Phase:** implement
+- **Active feature:** 042 (View tab — Reading Pane Right/Off toggle)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 038 (Move mail search into the ribbon) accepted by
+  user (selected "Accept (Recommended)", no changes requested); logged to
+  CHANGELOG. Active feature set to 042 (View tab — Reading Pane Right/Off
+  toggle, next in BACKLOG.md table order — 039-041/043/046/049/033-037
+  are all done, 044/045 remain lower in the table), phase set to
+  `implement`.
 - 2026-09-16 — feature 038 (Move mail search into the ribbon) validated:
   lint/typecheck/build pass; full suite (681/681) re-run 3x, stable;
   `git diff --stat` (60dce6f..650727e) confirms `/test` touched only

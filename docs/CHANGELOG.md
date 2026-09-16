@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Move mail search into the ribbon (features/038-search-in-ribbon.md)
+The mail search box moved from the message-list header into the ribbon
+itself, between the tab strip and the clock display. It still filters
+live, still supports "This folder" vs. "All folders" scope, and still
+shows/hides in exactly the same circumstances as before — just relocated.
+
 ## 2026-09-16 — Element-level styling pass (features/037-styling-pass.md)
 Buttons, chips, panels, and other interactive elements now use a
 consistent, semantic color system (danger/warning/success/hover tokens)
