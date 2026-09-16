@@ -1,7 +1,7 @@
 ---
 id: 038
 title: Move mail search into the ribbon
-status: testing
+status: validating
 priority: low
 ---
 
@@ -76,7 +76,42 @@ and disappears behind Settings — matching all 4 ACs end-to-end.
 lint/typecheck/build pass.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+674 → 681 net (+7, all passing; re-run 3x, stable), across 3 files:
+
+- `MessageListPane.test.tsx`: the 7 pre-existing search tests
+  `/implement` left genuinely failing (they typed into an input that no
+  longer lives here) were rewritten to drive `searchQuery`/`searchScope`
+  as props and `rerender` instead of typing — same behaviors covered
+  (case-insensitive subject/body/sender match, folder-vs-all-folders
+  scope including the "only fetches all-folders once selected" IPC-call
+  assertion, live updates on query change, clearing, the no-results vs.
+  empty-folder distinction, combining with the category filter), just
+  driven the way the component is actually invoked now (AC3, no
+  behavioral fallout — same filtering logic, only the trigger mechanism
+  changed). Added one new test (+1): AC1, `MessageListPane` renders no
+  `Search mail`/`Search scope` controls of its own.
+- `RibbonBar.test.tsx` (+2, AC1/AC2/AC3): the search box only renders
+  when `showMailSearch` is true; when it does, it sits between the tab
+  strip (`role="tablist"`) and `OfficeClock` in DOM order within
+  `.ribbon-tabs` (checked via child-index comparison, not just "both are
+  present"); reflects the current `searchQuery`/`searchScope` prop values
+  and reports changes via the two callbacks.
+- `App.test.tsx` (+4, AC1/AC2/AC4): this is where the real regression
+  risk lives — `showMailSearch`'s formula in `App.tsx` — so these are
+  full-`<App/>` integration tests: no search input inside the
+  message-list header's own DOM subtree (AC1); present for the default
+  Inbox view and survives a real folder switch to Drafts (AC2/AC4);
+  hidden behind Settings and while FileVine is open, reappearing on
+  return to Home — matching exactly where the search box used to
+  disappear before this feature (AC4); and unaffected by the View
+  tab/Tasks panel toggle, confirming the visibility formula is
+  independent of that orthogonal state (AC4).
+
+Deliberately not covered: the flagged side effect from Implementation
+Notes (search text persisting across FileVine/Settings toggles instead of
+resetting) — not a regression against any AC, and pinning today's
+incidental behavior in a test would make a future intentional change to
+it look like a broken test. lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

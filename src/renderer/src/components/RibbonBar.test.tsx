@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
 
@@ -337,6 +337,55 @@ describe('RibbonBar', () => {
       )
       expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-pressed', 'true')
       expect(screen.getByRole('button', { name: 'Tasks' })).toHaveClass('active')
+    })
+  })
+
+  describe('Mail search (038)', () => {
+    it('AC1/AC2: only renders when showMailSearch is true, positioned between the tab strip and the clock', async () => {
+      const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps()} showMailSearch={false} />)
+
+      expect(screen.queryByLabelText('Search mail')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Search scope')).not.toBeInTheDocument()
+
+      rerender(<RibbonBar activeModule="mail" {...tabProps()} showMailSearch />)
+
+      const searchInput = screen.getByLabelText('Search mail')
+      const clock = await screen.findByLabelText('Simulation speed')
+      const tabsRow = screen.getByRole('tablist', { name: 'Ribbon tabs' }).closest('.ribbon-tabs')
+      expect(tabsRow).not.toBeNull()
+      const rowChildren = Array.from(tabsRow!.children)
+      const tabsListIndex = rowChildren.findIndex((el) => el.getAttribute('role') === 'tablist')
+      const searchIndex = rowChildren.findIndex((el) => el.contains(searchInput))
+      const clockIndex = rowChildren.findIndex((el) => el.contains(clock))
+      expect(tabsListIndex).toBeGreaterThanOrEqual(0)
+      expect(searchIndex).toBeGreaterThan(tabsListIndex)
+      expect(clockIndex).toBeGreaterThan(searchIndex)
+    })
+
+    it('AC3: reflects the current query/scope and reports changes via the provided callbacks', () => {
+      const onSearchQueryChange = vi.fn()
+      const onSearchScopeChange = vi.fn()
+      render(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps()}
+          showMailSearch
+          searchQuery="budget"
+          searchScope="all"
+          onSearchQueryChange={onSearchQueryChange}
+          onSearchScopeChange={onSearchScopeChange}
+        />
+      )
+
+      const searchInput = screen.getByLabelText('Search mail')
+      expect(searchInput).toHaveValue('budget')
+      expect(screen.getByLabelText('Search scope')).toHaveValue('all')
+
+      fireEvent.change(searchInput, { target: { value: 'travel' } })
+      expect(onSearchQueryChange).toHaveBeenCalledWith('travel')
+
+      fireEvent.change(screen.getByLabelText('Search scope'), { target: { value: 'folder' } })
+      expect(onSearchScopeChange).toHaveBeenCalledWith('folder')
     })
   })
 })

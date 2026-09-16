@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 038 (Move mail search into the ribbon)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 038 (Move mail search into the ribbon) tested: 674
+  → 681 net (+7, all passing; re-run 3x, stable) across 3 files. The 7
+  pre-existing `MessageListPane.test.tsx` search tests `/implement` left
+  failing were rewritten to drive `searchQuery`/`searchScope` via
+  props/rerender instead of typing into a removed input — same behaviors
+  covered, no fallout beyond the trigger mechanism (AC3); +1 new test
+  there confirms no search input renders locally (AC1).
+  `RibbonBar.test.tsx` (+2) confirms the search box's conditional
+  rendering, DOM position between the tab strip and the clock, and
+  prop/callback wiring (AC1/AC2/AC3). `App.test.tsx` (+4) covers the real
+  regression surface — `showMailSearch`'s visibility formula — end to
+  end: absent from the message-list header, present across a real folder
+  switch, hidden behind Settings/FileVine and restored on Home, and
+  unaffected by the View tab/Tasks toggle (AC1/AC2/AC4). lint/typecheck/
+  build all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 038 (Move mail search into the ribbon) implemented:
   search state (`searchQuery`/`searchScope`) lifted from `MessageListPane`
   up to `App.tsx`, which now passes it to `RibbonBar` (new search

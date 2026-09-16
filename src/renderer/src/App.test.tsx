@@ -792,4 +792,57 @@ describe('App shell', () => {
       expect(screen.queryByText('Flagged Mail')).not.toBeInTheDocument()
     })
   })
+
+  describe('Mail search (038)', () => {
+    it('AC1: no longer renders in the message-list header', async () => {
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      const header = screen.getByText('Inbox', { selector: '.message-list-header' })
+      expect(within(header.parentElement!).queryByLabelText('Search mail')).not.toBeInTheDocument()
+    })
+
+    it('AC2/AC4: renders in the ribbon for every mail folder, and stays usable across a folder switch', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Drafts' }))
+      expect(await screen.findByText('Drafts', { selector: '.message-list-header' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+    })
+
+    it('AC4: hidden behind Settings and while FileVine is open, matching where the search box used to live', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+
+      await openSettings(user)
+      expect(screen.queryByLabelText('Search mail')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Home' }))
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'FileVine' }))
+      await screen.findByRole('heading', { name: 'FileVine' })
+      expect(screen.queryByLabelText('Search mail')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Home' }))
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+    })
+
+    it('AC4: not affected by the View tab/Tasks panel toggle', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      await user.click(screen.getByRole('button', { name: 'Tasks' }))
+      await screen.findByText('Flagged Mail')
+
+      expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
+    })
+  })
 })
