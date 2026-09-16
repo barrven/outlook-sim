@@ -2,10 +2,11 @@ import type { ReactElement } from 'react'
 import type { ModuleId } from '../types'
 import OfficeClock from './OfficeClock'
 
-const TABS = ['File', 'Home', 'Send / Receive', 'Folder', 'FileVine', 'View']
-// Home, FileVine, and View are real, clickable tabs — the rest stay
-// disabled placeholders (File/Send-Receive/Folder have no wired-up content
-// yet).
+const TABS = ['File', 'Home', 'FileVine', 'View']
+// Home, FileVine, and View are real, clickable tabs — File stays a
+// disabled placeholder (no wired-up content yet). Send/Receive and Folder
+// were placeholders too, but never wired to anything and are now hidden
+// entirely rather than shown as permanently-disabled tabs (feature 033).
 type ClickableTab = 'Home' | 'FileVine' | 'View'
 
 const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']

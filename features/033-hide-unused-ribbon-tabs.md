@@ -1,7 +1,7 @@
 ---
 id: 033
 title: Ribbon — hide Send/Receive and Folder tabs
-status: backlog
+status: testing
 priority: low
 ---
 
@@ -19,7 +19,16 @@ as permanently-disabled/empty tabs.
       content
 
 ## Implementation Notes
-_Filled in during `/implement` — approach taken, files touched, tradeoffs._
+`RibbonBar.tsx`: `TABS` shrunk from `['File', 'Home', 'Send / Receive',
+'Folder', 'FileVine', 'View']` to `['File', 'Home', 'FileVine', 'View']`.
+Send/Receive and Folder had no entry in `ClickableTab`/`tabHandlers`
+already — they were purely decorative disabled buttons — so removing them
+from `TABS` is the entire change; no other logic (active-tab detection,
+action sets, handlers) referenced them. File remains as the one disabled
+placeholder tab, matching the AC (only Send/Receive and Folder are hidden).
+No other file referenced these tabs by name outside `RibbonBar.test.tsx`,
+which still asserts on them and is expected to fail until `/test` updates
+it (this repo's established convention per feature 046).
 
 ## Test Notes
 _Filled in during `/test` — what's covered, what's deliberately not._

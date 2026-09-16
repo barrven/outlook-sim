@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 033 (Ribbon — hide Send/Receive and Folder tabs)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  implemented: `RibbonBar.tsx`'s `TABS` array shrunk to drop Send/Receive
+  and Folder, which were always-disabled placeholders with no other wired
+  logic to remove. `RibbonBar.test.tsx` still asserts on the removed tabs
+  and is expected to fail until `/test` updates it, per this repo's
+  established convention. Phase set to `test`.
 - 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
   accepted by user; logged to CHANGELOG. AC3 (live LLM referencing
   specific content) flagged as inherently manual and accepted with that
