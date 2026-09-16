@@ -49,7 +49,7 @@
 | 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
 | 033 | Ribbon — hide Send/Receive and Folder tabs | done | low | 033-hide-unused-ribbon-tabs.md |
 | 034 | Move Settings into the File menu | done | low | 034-settings-in-file-menu.md |
-| 035 | File menu — About section | backlog | low | 035-file-menu-about.md |
+| 035 | File menu — About section | testing | low | 035-file-menu-about.md |
 | 036 | App icon uses email.png | backlog | low | 036-app-icon.md |
 | 037 | Element-level styling pass — semantic colors, border-radius, red flags | backlog | low | 037-styling-pass.md |
 | 038 | Move mail search into the ribbon | backlog | low | 038-search-in-ribbon.md |

@@ -57,16 +57,30 @@ function RibbonBar({
   onNewEvent
 }: RibbonBarProps): ReactElement {
   const [fileMenuOpen, setFileMenuOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
   const fileMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    window.api.app.getVersion().then(setAppVersion)
+  }, [])
+
+  // Closes the whole File menu, including its About panel — used by every
+  // close path (click-outside, Escape, re-clicking File) so About never
+  // stays expanded into the next time the menu opens.
+  function closeFileMenu(): void {
+    setFileMenuOpen(false)
+    setAboutOpen(false)
+  }
 
   // Mirrors MessageContextMenu's click-outside/Escape-to-close pattern.
   useEffect(() => {
     if (!fileMenuOpen) return
     function handlePointerDown(event: MouseEvent): void {
-      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) setFileMenuOpen(false)
+      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) closeFileMenu()
     }
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') setFileMenuOpen(false)
+      if (event.key === 'Escape') closeFileMenu()
     }
     document.addEventListener('mousedown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
@@ -100,7 +114,7 @@ function RibbonBar({
               className="ribbon-tab"
               aria-haspopup="menu"
               aria-expanded={fileMenuOpen}
-              onClick={() => setFileMenuOpen((open) => !open)}
+              onClick={() => (fileMenuOpen ? closeFileMenu() : setFileMenuOpen(true))}
             >
               File
             </button>
@@ -110,12 +124,29 @@ function RibbonBar({
                   type="button"
                   role="menuitem"
                   onClick={() => {
-                    setFileMenuOpen(false)
+                    closeFileMenu()
                     onOpenSettings()
                   }}
                 >
                   Settings
                 </button>
+                <div className="file-menu-divider" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-expanded={aboutOpen}
+                  onClick={() => setAboutOpen((open) => !open)}
+                >
+                  About
+                </button>
+                {aboutOpen && (
+                  <div className="file-menu-about">
+                    <div>Version {appVersion}</div>
+                    <a href="https://github.com/barrven/outlook-sim/" target="_blank" rel="noreferrer">
+                      https://github.com/barrven/outlook-sim/
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>

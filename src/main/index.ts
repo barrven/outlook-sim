@@ -49,6 +49,8 @@ app.whenReady().then(() => {
 
   const mainWindow = createMainWindow()
 
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+
   ipcMain.handle('window:openCompose', (_event, options?: ComposeOpenOptions) => {
     createComposeWindow(mainWindow, options)
   })

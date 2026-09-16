@@ -103,6 +103,10 @@ export interface DataApi {
   }
 }
 
+export interface AppApi {
+  getVersion: () => Promise<string>
+}
+
 export interface ComposeApi {
   open: (options?: ComposeOpenOptions) => Promise<void>
 }
@@ -138,6 +142,7 @@ export {}
 declare global {
   interface Window {
     api: {
+      app: AppApi
       data: DataApi
       compose: ComposeApi
       messagePopout: MessagePopoutApi

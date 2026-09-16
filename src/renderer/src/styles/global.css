@@ -160,6 +160,24 @@ body {
   background: #eaeaea;
 }
 
+.file-menu-divider {
+  margin: 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+.file-menu-about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 12px 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.file-menu-about a {
+  color: var(--accent);
+}
+
 .ribbon-actions {
   display: flex;
   gap: 4px;

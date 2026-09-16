@@ -28,6 +28,9 @@ import type {
 } from '../shared/data-types'
 
 const api = {
+  app: {
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')
+  },
   data: {
     folders: {
       list: () => ipcRenderer.invoke('db:folders:list'),
