@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 038 (Move mail search into the ribbon)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 038 (Move mail search into the ribbon) validated:
+  lint/typecheck/build pass; full suite (681/681) re-run 3x, stable;
+  `git diff --stat` (60dce6f..650727e) confirms `/test` touched only
+  docs/test files, no implementation drift. All 4 ACs re-verified
+  directly against current source: AC1 no search JSX remains in
+  `MessageListPane.tsx`; AC2 `.ribbon-tabs`'s DOM order is tabs-list →
+  `.ribbon-search` → `OfficeClock`, exactly as specified; AC3 the
+  filtering pipeline itself is byte-for-byte unchanged, only the state
+  declarations moved to props; AC4 `App.tsx`'s `showMailSearch` formula
+  is identical to the pre-existing render condition that used to gate
+  `MessageListPane`. One flagged-not-blocking item for `/retro`: search
+  text now persists across FileVine/Settings toggles instead of
+  resetting, a side effect of the relocation, not a regression against
+  any AC. All checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-16 — feature 038 (Move mail search into the ribbon) tested: 674
   → 681 net (+7, all passing; re-run 3x, stable) across 3 files. The 7
   pre-existing `MessageListPane.test.tsx` search tests `/implement` left

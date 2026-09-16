@@ -1,7 +1,7 @@
 ---
 id: 038
 title: Move mail search into the ribbon
-status: validating
+status: accept
 priority: low
 ---
 
@@ -114,7 +114,42 @@ incidental behavior in a test would make a future intentional change to
 it look like a broken test. lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (681/681) re-run 3x,
+stable. `git diff --stat` (60dce6f..650727e) confirms `/test` touched
+only `STATE.md`/feature/backlog docs plus the three test files — no
+implementation drift.
+
+All 4 ACs re-verified directly against current source (not just trusting
+prior notes):
+- AC1 (no longer in the message-list header): grepped
+  `MessageListPane.tsx` — no `<input>`/`<select>` JSX for search remains,
+  only `searchQuery`/`searchScope` prop reads used for filtering.
+- AC2 (renders in the ribbon, between View tab and clock): read
+  `RibbonBar.tsx`'s JSX directly — inside `.ribbon-tabs`, the DOM order is
+  `.ribbon-tabs-list` (File/Home/FileVine/View) → `.ribbon-search`
+  (conditional) → `<OfficeClock />`, exactly the requested position.
+- AC3 (search behavior unchanged): diffed `MessageListPane.tsx` — the
+  filtering pipeline itself (`matchesQuery`, `searchedMessages`, the
+  folder-vs-all-folders `allMessages` fetch effect) is byte-for-byte
+  unchanged; only the two `useState` declarations were removed in favor
+  of the same-named props.
+- AC4 (visible/usable regardless of folder/view, same as before): read
+  `App.tsx`'s `showMailSearch = activeModule === 'mail' && !showFileVine
+  && !showSettings` against the pre-existing render ternary for
+  `MessageListPane` (`showSettings ? ... : activeModule === 'mail' ? (
+  showFileVine ? <FileVineView/> : <MessageListPane/> ) : ...`) — the two
+  conditions are identical, so the search box appears/disappears in
+  exactly the same circumstances the search box (via `MessageListPane`)
+  used to.
+
+One flagged-not-blocking item for `/retro` (documented in Implementation/
+Test Notes): search text now persists across FileVine/Settings toggles
+instead of resetting, since it moved out of a component that used to
+unmount. Not a regression against any AC — worth a sentence in `/retro`
+to confirm it matches intended UX, similar in spirit to 043's Cancel
+behavior note. No live GUI click-through (no attached display), same
+non-blocking gap as every prior feature. All checks pass, no gaps found.
+Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
