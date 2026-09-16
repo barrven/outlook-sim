@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 043 (Calendar item view-mode and single-open swap)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
+  tested: `CalendarView.test.tsx` net +4 (604 → 608, all passing; re-run 3x,
+  stable). Several existing "click an item" tests genuinely asserted the
+  old click-opens-edit-directly behavior and were rewritten (not just
+  patched to compile) to click through view mode first — a deliberate
+  fix-the-test-to-match-intended-behavior change, not weakening. AC1: new
+  test confirms a click opens a read-only view with zero
+  `textbox`/`checkbox` roles, for both a plain and a recurring item (🔁
+  indicator, no chooser yet). AC2: new test confirms Edit reaches the
+  pre-filled editable form directly for a plain item; the pre-existing
+  scope-chooser tests (recurring shows chooser / non-recurring skips it)
+  now trigger via an Edit click rather than the item click itself. AC3: new
+  test opens one item into edit, clicks a second item, and asserts exactly
+  one dialog exists afterward (the second item's view) — the first is
+  fully gone, never both. AC4 needed no new tests — the create-flow
+  ternary branch is untouched and its existing coverage (unchanged) already
+  covers it. Also added, as a documented design decision beyond the literal
+  AC text: two tests confirming Cancel (from the edit form, and from the
+  this-event/whole-series chooser) returns to the read-only view rather
+  than closing the panel outright, with no API calls either way.
+  lint/typecheck/build all pass; full suite 608/608 (30 files), re-run 3x
+  stable. Test Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 043 (Calendar item view-mode and single-open swap)
   implemented: `CalendarView.tsx` gained a `panelMode: 'view' | 'edit'`
   alongside its existing `openOccurrence`/`editScope` state. Clicking any

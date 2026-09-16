@@ -381,13 +381,37 @@ describe('CalendarView', () => {
       })
     }
 
-    it('clicking an existing item opens it for editing, pre-filled with its current fields', async () => {
+    // AC1: clicking a calendar item opens it in a read-only view — fields
+    // visible, but no inputs to accidentally edit via a stray click.
+    it('clicking an existing item opens a read-only view of its current fields, not an editable form', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Team sync'))
+
+      const dialog = await screen.findByRole('dialog', { name: 'View Calendar Item' })
+      expect(within(dialog).getByText('Team sync')).toBeInTheDocument()
+      expect(within(dialog).getByText('Event')).toBeInTheDocument()
+      expect(within(dialog).getByText('30 minutes before')).toBeInTheDocument()
+      // No form controls at all in view mode.
+      expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument()
+      expect(within(dialog).queryByRole('checkbox')).not.toBeInTheDocument()
+      expect(within(dialog).getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+    })
+
+    // AC2: an explicit "Edit" action switches that same panel into the
+    // existing editable form.
+    it('clicking Edit switches the panel into the editable form, pre-filled with the item\'s current fields', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
 
       const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
       expect(within(dialog).getByLabelText('Title')).toHaveValue('Team sync')
@@ -396,6 +420,23 @@ describe('CalendarView', () => {
       expect(within(dialog).getByLabelText('Reminder')).toHaveValue('30')
       expect(within(dialog).getByRole('button', { name: 'Save' })).toBeInTheDocument()
       expect(within(dialog).getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'View Calendar Item' })).not.toBeInTheDocument()
+    })
+
+    it('Cancel from the edit form returns to the read-only view rather than closing the panel', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+      await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(await screen.findByRole('dialog', { name: 'View Calendar Item' })).toBeInTheDocument()
+      expect(window.api.data.calendarItems.update).not.toHaveBeenCalled()
     })
 
     it('saving an edit calls update with the item id and the new fields, then reflects the change', async () => {
@@ -410,6 +451,7 @@ describe('CalendarView', () => {
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
       const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
 
       const titleInput = within(dialog).getByLabelText('Title')
@@ -424,10 +466,11 @@ describe('CalendarView', () => {
         )
       )
       expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'View Calendar Item' })).not.toBeInTheDocument()
       expect(await screen.findByText('Team sync (moved)')).toBeInTheDocument()
     })
 
-    it('clicking Delete removes the item via the delete IPC and closes the form', async () => {
+    it('clicking Delete removes the item via the delete IPC and closes the panel entirely', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       const original = existingItem()
@@ -436,16 +479,18 @@ describe('CalendarView', () => {
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
       const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
 
       await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
       await waitFor(() => expect(window.api.data.calendarItems.delete).toHaveBeenCalledWith(original.id))
       expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'View Calendar Item' })).not.toBeInTheDocument()
       await waitFor(() => expect(screen.queryByText('Team sync')).not.toBeInTheDocument())
     })
 
-    it('opening "New Event" while editing an item closes the edit form in favor of the create form', async () => {
+    it('opening "New Event" while viewing or editing an item closes that panel in favor of the create form', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem()])
@@ -464,12 +509,39 @@ describe('CalendarView', () => {
 
       render(<EditThenCreateHarness />)
       await user.click(await screen.findByText('Team sync'))
-      expect(await screen.findByRole('dialog', { name: 'Edit Calendar Item' })).toBeInTheDocument()
+      expect(await screen.findByRole('dialog', { name: 'View Calendar Item' })).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Open New Event' }))
 
-      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'View Calendar Item' })).not.toBeInTheDocument()
       expect(await screen.findByRole('dialog', { name: 'New Event' })).toBeInTheDocument()
+    })
+
+    // AC3: while one item's panel is open, clicking a different calendar
+    // item closes the first and opens the second instead — never two open
+    // at once.
+    it('clicking a different calendar item closes the first panel and opens the second, in view mode', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const other = makeItem({
+        id: 'evt-other',
+        title: 'Client call',
+        startTime: ANCHOR_MS + 2 * 60 * 60 * 1000,
+        endTime: ANCHOR_MS + 3 * 60 * 60 * 1000
+      })
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([existingItem(), other])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
+      await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
+
+      await user.click(screen.getByText('Client call'))
+
+      expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
+      const dialog = await screen.findByRole('dialog', { name: 'View Calendar Item' })
+      expect(within(dialog).getByText('Client call')).toBeInTheDocument()
+      expect(screen.queryAllByRole('dialog')).toHaveLength(1)
     })
   })
 
@@ -596,40 +668,58 @@ describe('CalendarView', () => {
       expect(within(button).getByText('🔁', { exact: false })).toBeInTheDocument()
     })
 
-    it('clicking a recurring occurrence shows a scope chooser instead of opening the edit form directly', async () => {
+    it('clicking a recurring occurrence opens the read-only view first, indicator and all', async () => {
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
+      const user = userEvent.setup()
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(await screen.findByText('Standup'))
+
+      const dialog = await screen.findByRole('dialog', { name: 'View Calendar Item' })
+      expect(within(dialog).getByText('🔁', { exact: false })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Edit Recurring Item' })).not.toBeInTheDocument()
+    })
+
+    it('clicking Edit on a recurring occurrence shows a scope chooser instead of opening the edit form directly', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Standup'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
 
       expect(await screen.findByRole('dialog', { name: 'Edit Recurring Item' })).toBeInTheDocument()
       expect(screen.getByText(/is part of a recurring series/)).toBeInTheDocument()
       expect(screen.queryByRole('dialog', { name: 'Edit Calendar Item' })).not.toBeInTheDocument()
     })
 
-    it('Cancel in the scope chooser closes without any API calls', async () => {
+    it('Cancel in the scope chooser returns to the read-only view, without any API calls', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([recurringItem()])
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Standup'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
+      await screen.findByRole('dialog', { name: 'Edit Recurring Item' })
       await user.click(await screen.findByRole('button', { name: 'Cancel' }))
 
       expect(screen.queryByRole('dialog', { name: 'Edit Recurring Item' })).not.toBeInTheDocument()
+      expect(await screen.findByRole('dialog', { name: 'View Calendar Item' })).toBeInTheDocument()
       expect(window.api.data.calendarItems.update).not.toHaveBeenCalled()
       expect(window.api.data.calendarItems.delete).not.toHaveBeenCalled()
     })
 
-    it('clicking a non-recurring item still opens straight into editing, with no scope chooser', async () => {
+    it('clicking Edit on a non-recurring item goes straight into editing, with no scope chooser', async () => {
       const user = userEvent.setup()
       setAnchorClock(ANCHOR_MS)
       vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([makeItem({ title: 'Team sync' })])
 
       render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
       await user.click(await screen.findByText('Team sync'))
+      await user.click(await screen.findByRole('button', { name: 'Edit' }))
 
       expect(screen.queryByRole('dialog', { name: 'Edit Recurring Item' })).not.toBeInTheDocument()
       expect(await screen.findByRole('dialog', { name: 'Edit Calendar Item' })).toBeInTheDocument()
@@ -645,6 +735,7 @@ describe('CalendarView', () => {
 
         render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
         await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'Edit' }))
         await user.click(await screen.findByRole('button', { name: 'This event' }))
 
         const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
@@ -677,6 +768,7 @@ describe('CalendarView', () => {
 
         render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
         await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'Edit' }))
         await user.click(await screen.findByRole('button', { name: 'This event' }))
         const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
         await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
@@ -702,6 +794,7 @@ describe('CalendarView', () => {
 
         render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
         await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'Edit' }))
         await user.click(await screen.findByRole('button', { name: 'The whole series' }))
 
         const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
@@ -729,6 +822,7 @@ describe('CalendarView', () => {
 
         render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
         await user.click(await screen.findByText('Standup'))
+        await user.click(await screen.findByRole('button', { name: 'Edit' }))
         await user.click(await screen.findByRole('button', { name: 'The whole series' }))
         const dialog = await screen.findByRole('dialog', { name: 'Edit Calendar Item' })
         await user.click(within(dialog).getByRole('button', { name: 'Delete' }))

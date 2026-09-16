@@ -1,7 +1,7 @@
 ---
 id: 043
 title: Calendar item view-mode and single-open swap
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -57,7 +57,37 @@ checked first in the render ternary and untouched by any of this — still
 opens `CalendarItemForm` directly with no initial item (AC4).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+All in `src/renderer/src/components/CalendarView.test.tsx` (604 → 608 net;
+re-run 3x, stable): several existing "click an item" tests genuinely
+asserted the old click-opens-edit-directly behavior and were rewritten in
+place (not just touched-up) to click through view mode first, rather than
+weakened. AC-by-AC:
+
+- AC1: new "clicking an existing item opens a read-only view..." test —
+  fields render as text, zero `textbox`/`checkbox` roles present, an Edit
+  button, and no Edit Calendar Item dialog. Also covers the recurring case
+  (view opens first, 🔁 indicator present, no scope chooser yet).
+- AC2: new "clicking Edit switches the panel into the editable form..."
+  test (pre-filled fields, same as the old direct-open test used to assert)
+  plus the pre-existing recurring/non-recurring scope-chooser tests, now
+  reached via an Edit click rather than the item click itself — a
+  non-recurring item's Edit still skips the chooser, a recurring item's
+  doesn't.
+- AC3: new "clicking a different calendar item closes the first panel and
+  opens the second, in view mode" — opens one item into edit, clicks a
+  second item, and asserts exactly one dialog exists (the second item's
+  view), the first is fully gone.
+- AC4: unaffected by this feature's existing extensive create-flow
+  coverage (unchanged) — the create ternary branch is untouched code.
+
+Also added, as a documented design decision beyond the literal AC text: two
+tests confirming Cancel (from the edit form, and from the this-event/series
+chooser) returns to the read-only view rather than closing the panel
+outright, with no API calls made either way.
+
+Deliberately not covered: real multi-window/Electron behavior (this is a
+single in-window panel, nothing new there) and any visual/CSS assertion
+beyond class names already implicit in existing conventions.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
