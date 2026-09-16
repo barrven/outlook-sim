@@ -1,7 +1,7 @@
 ---
 id: 036
 title: App icon uses email.png
-status: validating
+status: accept
 priority: low
 ---
 
@@ -78,7 +78,34 @@ non-blocking gap as every prior feature's manual-verification notes.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (665/665) re-run 4x total
+across this session, stable. `git diff --stat` (1c42de4..5c73fcf) confirms
+`/test` touched only `STATE.md`/feature/backlog docs plus the two new test
+files — no implementation drift.
+
+All 3 ACs re-verified directly against current source (not just trusting
+prior notes):
+- AC1 (window icon generated from `email.png`): `src/main/windows.ts`'s
+  `ICON_PATH` constant resolves to `resources/email.png`, confirmed on
+  disk as a real 512x512 RGBA PNG via `file`, and is passed as `icon:` on
+  every `BrowserWindow` constructor.
+- AC2 (taskbar icon matches): all three window-creation functions (main,
+  compose, message pop-out) pass the exact same `ICON_PATH` constant —
+  structurally impossible for them to diverge.
+- AC3 (build handles the platform icon format without a manual step):
+  `electron-builder.yml`'s `win.icon: resources/email.png` points at a
+  `.png` source, not a hand-built `.ico`. Independently re-ran
+  `app-builder-lib`'s real `convertIcon` (not just re-reading the
+  `/implement` notes) against this exact config and confirmed it produces
+  a valid `.ico` (correct `00 00 01 00` ICO header, 18588 bytes, 3
+  embedded resolutions) with zero manual conversion step.
+
+Not independently re-verified: the actual rendered icon in a live
+taskbar/title bar (no attached display) and a full `npm run dist:win`
+NSIS build (needs Wine, not installed on this Linux box) — both flagged
+already in Implementation/Test Notes as the same class of gap every prior
+feature has had for GUI/packaging verification, not a defect found here.
+All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

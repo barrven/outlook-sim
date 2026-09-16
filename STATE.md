@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 036 (App icon uses email.png)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 036 (App icon uses email.png) validated:
+  lint/typecheck/build pass; full suite (665/665) re-run 4x total, stable;
+  `git diff --stat` (1c42de4..5c73fcf) confirms `/test` touched only
+  docs/test files, no implementation drift. All 3 ACs re-verified directly
+  against current source: AC1 `ICON_PATH` resolves to the real
+  `resources/email.png` (confirmed a genuine 512x512 RGBA PNG) and is
+  passed to every `BrowserWindow`; AC2 all three window-creation functions
+  share the identical `ICON_PATH` value, structurally guaranteeing match;
+  AC3 independently re-ran `app-builder-lib`'s real `convertIcon` against
+  the current `electron-builder.yml` config and got back a valid `.ico`
+  (correct header, 3 embedded resolutions) with no manual conversion step.
+  Not independently re-verified: live taskbar rendering (no attached
+  display) and a full `npm run dist:win` NSIS build (needs Wine) — same
+  non-blocking gap class as every prior feature. All checks pass, no gaps
+  found. Phase set to `accept`.
 - 2026-09-16 — feature 036 (App icon uses email.png) tested: 661 → 665 net
   (+4, all passing; re-run 3x, stable), across new `windows.test.ts` (+3,
   AC1/AC2: mocks `electron`'s `BrowserWindow` to verify the main window's
