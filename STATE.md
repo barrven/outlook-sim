@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 036 (App icon uses email.png)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 036 (App icon uses email.png) tested: 661 → 665 net
+  (+4, all passing; re-run 3x, stable), across new `windows.test.ts` (+3,
+  AC1/AC2: mocks `electron`'s `BrowserWindow` to verify the main window's
+  icon resolves to the real `resources/email.png` on disk, and that the
+  compose and message-pop-out windows get the identical icon value) and
+  `buildIcon.test.ts` (+1, AC3: reads the real `electron-builder.yml`,
+  confirms its `icon:` config points at a `.png` — not a hand-built `.ico`
+  — with a valid PNG signature). Deliberately not covered: running the
+  actual electron-builder icon conversion or `npm run dist:win`
+  end-to-end (network/Wine dependency, avoided per this project's
+  no-network-in-tests convention; conversion itself was verified by hand
+  during `/implement`). lint/typecheck/build all pass. Test Notes filled
+  in; phase set to `validate`.
 - 2026-09-16 — feature 036 (App icon uses email.png) implemented: the
   session flagged at the start that `email.png` (referenced by both this
   feature and `docs/SPEC.md`) didn't exist anywhere in the repo or git
