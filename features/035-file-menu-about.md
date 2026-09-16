@@ -1,7 +1,7 @@
 ---
 id: 035
 title: File menu — About section
-status: validating
+status: accept
 priority: low
 ---
 
@@ -86,7 +86,43 @@ the meaningful, feature-specific unit is "does this link have the shape
 that triggers it," which is what's tested.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+- `npm run lint` — clean, no errors/warnings.
+- `npm run typecheck` — clean.
+- `npm run build` — succeeds (main/preload/renderer all bundle).
+- `npx vitest run` (full suite) — 661/661 passing, re-run 3x, stable.
+
+Acceptance criteria, checked against current source:
+- **AC1 (File menu has an "About" entry)** — `RibbonBar.tsx`'s File
+  dropdown renders a `role="menuitem"` "About" button below a divider,
+  after Settings. Covered by the `About entry (035)` test block. Pass.
+- **AC2 (selecting it shows the app's current version, sourced from
+  package.json rather than hardcoded)** — clicking About calls
+  `window.api.app.getVersion()` (`RibbonBar.tsx` line 65), which invokes
+  the `app:getVersion` IPC channel (`main/index.ts` line 52) returning
+  Electron's own `app.getVersion()` — that reads the `version` field
+  straight out of this project's `package.json` (currently `0.1.0`),
+  not a string duplicated anywhere in the renderer. Covered by the test
+  asserting `window.api.app.getVersion` was called and "Version 0.1.0"
+  renders. Pass.
+- **AC3 (shows/links the GitHub repo URL exactly as
+  https://github.com/barrven/outlook-sim/)** — the About panel's `<a>`
+  has both `href` and visible text set to that exact string (`RibbonBar.tsx`
+  lines 145-146), byte-for-byte. Covered directly by test. Pass.
+- **AC4 (clicking the link opens it in the OS's default browser, not
+  inside the Electron window)** — the link carries `target="_blank"`;
+  the main window (`windows.ts`'s `createMainWindow`, unmodified by this
+  feature) already installs `setWindowOpenHandler` that denies every
+  window-open request and routes it through `shell.openExternal` instead
+  — pre-existing behavior this feature relies on rather than duplicates.
+  `target="_blank"` is verified by test; the actual OS-handoff isn't
+  (and can't be) exercised under jsdom — see Test Notes for why that gap
+  is acceptable (Electron's window-open routing is untouched, existing,
+  and already exercised elsewhere in the app for compose/popout windows).
+  Pass by inspection + partial test coverage.
+
+All 4 acceptance criteria pass. No regressions found elsewhere (full
+suite green; every other RibbonBar/App test still passes unmodified
+aside from the new mock and About-specific additions).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 035 (File menu — About section)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,16 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 035 (File menu — About section) validated:
+  lint/typecheck/build pass; full suite 661/661, re-run 3x, stable. All 4
+  ACs re-checked directly against current source and pass — AC1 (About
+  menuitem present), AC2 (version sourced via `app:getVersion` IPC ->
+  Electron's `app.getVersion()` -> `package.json`, not hardcoded), AC3
+  (link href/text exactly match the required GitHub URL), AC4 (target=
+  "_blank" plus the main window's pre-existing, unmodified
+  `setWindowOpenHandler`/`shell.openExternal` routing — verified by
+  inspection since jsdom can't exercise Electron's own window-open
+  handling). Phase set to `accept`.
 - 2026-09-16 — feature 035 (File menu — About section) tested:
   `mockApi.ts` got the missing `app.getVersion` mock (fixed for real);
   `RibbonBar.test.tsx` got a new `About entry (035)` block (5 tests)
