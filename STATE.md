@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 039 (Message list multi-select)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 039 (Message list multi-select) tested: added 14
+  tests (557 → 571, all passing; re-run 3x, stable), all AC-traceable by
+  number, across 3 layers — `MessageListPane.test.tsx` (+10, using
+  `fireEvent` for precise modifier keys): AC1 Ctrl-click add/remove
+  without disturbing the rest of the selection plus Cmd/Meta-click
+  parity, AC2 Shift-click ranging both directions, a second Shift-click
+  re-ranging from the same anchor rather than the previous Shift-click's
+  target, and a Shift-click with no prior anchor falling back to plain
+  single-select, AC3 a plain click replacing a multi-selection, plus
+  structural checks that every selected row highlights and the anchor
+  resets on folder change; `ReadingPane.test.tsx` (+3): AC4 the
+  "N selected" neutral state, confirming the 0-selected and N>1-selected
+  cases (both `selectedMessageId === null`) are genuinely distinguished;
+  `App.test.tsx` (+1, integration-level through the real component
+  wiring): a full plain→Ctrl→plain→Shift click sequence checked against
+  the Reading Pane's visible state at each step. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 039 (Message list multi-select) implemented:
   `App.tsx`'s single `selectedMessageId` state became `selectedMessageIds:
   string[]`, with a derived `selectedMessageId` (non-null only when

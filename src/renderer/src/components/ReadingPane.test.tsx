@@ -462,4 +462,47 @@ describe('ReadingPane', () => {
 
     await waitFor(() => expect(window.api.data.messages.get).toHaveBeenCalledTimes(2))
   })
+
+  // Multi-select neutral state (feature 039 AC4)
+
+  it('039 AC4: shows a neutral "N selected" state instead of the single message when multiple are selected', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
+
+    const { rerender } = render(
+      <ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />
+    )
+    expect(await screen.findByText('Quarterly numbers')).toBeInTheDocument()
+
+    rerender(
+      <ReadingPane selectedMessageId={null} selectedCount={3} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />
+    )
+
+    expect(screen.getByText('3 selected')).toBeInTheDocument()
+    expect(screen.queryByText('Quarterly numbers')).not.toBeInTheDocument()
+    expect(screen.queryByText('Select an item to read.')).not.toBeInTheDocument()
+  })
+
+  it('039 AC4: still shows "Select an item to read." when nothing is selected (selectedCount 0)', () => {
+    render(
+      <ReadingPane selectedMessageId={null} selectedCount={0} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />
+    )
+
+    expect(screen.getByText('Select an item to read.')).toBeInTheDocument()
+  })
+
+  it('039 AC4: going from multiple selected back to exactly one shows that single message again', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
+
+    const { rerender } = render(
+      <ReadingPane selectedMessageId={null} selectedCount={2} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />
+    )
+    expect(screen.getByText('2 selected')).toBeInTheDocument()
+
+    rerender(
+      <ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />
+    )
+
+    expect(await screen.findByText('Quarterly numbers')).toBeInTheDocument()
+    expect(screen.queryByText('2 selected')).not.toBeInTheDocument()
+  })
 })

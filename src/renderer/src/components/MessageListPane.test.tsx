@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MessageListPane from './MessageListPane'
 import type { MailMessage } from '../../../shared/data-types'
@@ -130,6 +130,239 @@ describe('MessageListPane', () => {
     expect(window.api.data.messages.update).toHaveBeenCalledWith('b', { isFlagged: false })
 
     expect(onSelectMessage).not.toHaveBeenCalled()
+  })
+
+  // Multi-select (feature 039)
+
+  const ABCD = [
+    makeMessage({ id: 'a', subject: 'Alpha' }),
+    makeMessage({ id: 'b', subject: 'Bravo' }),
+    makeMessage({ id: 'c', subject: 'Charlie' }),
+    makeMessage({ id: 'd', subject: 'Delta' })
+  ]
+
+  it('039 AC1: Ctrl-click adds a message to the selection without clearing the rest', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a']}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Bravo'), { ctrlKey: true })
+
+    expect(onSelectionChange).toHaveBeenCalledWith(['a', 'b'])
+  })
+
+  it('039 AC1: Cmd/Meta-click also toggles (Mac equivalent of Ctrl-click)', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a']}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Bravo'), { metaKey: true })
+
+    expect(onSelectionChange).toHaveBeenCalledWith(['a', 'b'])
+  })
+
+  it('039 AC1: Ctrl-clicking an already-selected message removes just that one, keeping the rest', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a', 'b', 'c']}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Bravo'), { ctrlKey: true })
+
+    expect(onSelectionChange).toHaveBeenCalledWith(['a', 'c'])
+  })
+
+  it('039 AC2: Shift-click selects the contiguous range from the last-clicked message forward', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    // Establish the anchor with a plain click, then Shift-click two rows down.
+    fireEvent.click(screen.getByText('Alpha'))
+    fireEvent.click(screen.getByText('Charlie'), { shiftKey: true })
+
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b', 'c'])
+  })
+
+  it('039 AC2: Shift-click selects the contiguous range when the target is before the anchor', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Delta'))
+    fireEvent.click(screen.getByText('Bravo'), { shiftKey: true })
+
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b', 'c', 'd'])
+  })
+
+  it('039 AC2: a second Shift-click re-ranges from the same anchor, not the previous Shift-click target', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Alpha'))
+    fireEvent.click(screen.getByText('Delta'), { shiftKey: true })
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b', 'c', 'd'])
+
+    // Shift-clicking Bravo next should re-range from Alpha (the anchor),
+    // not from Delta (the last Shift-click target) — a shorter range, not
+    // an extension of the previous one.
+    fireEvent.click(screen.getByText('Bravo'), { shiftKey: true })
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b'])
+  })
+
+  it('039 AC2: a Shift-click with no prior selection falls back to a plain single-select', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Charlie'), { shiftKey: true })
+
+    expect(onSelectionChange).toHaveBeenCalledWith(['c'])
+  })
+
+  it('039 AC3: a plain click selects only that message, clearing a prior multi-selection', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a', 'b', 'c']}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    fireEvent.click(screen.getByText('Delta'))
+
+    expect(onSelectionChange).toHaveBeenCalledWith(['d'])
+  })
+
+  it('039: every selected row is highlighted, not just one', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a', 'c']}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+
+    expect(screen.getByText('Alpha').closest('.message-list-item')).toHaveClass('selected')
+    expect(screen.getByText('Charlie').closest('.message-list-item')).toHaveClass('selected')
+    expect(screen.getByText('Bravo').closest('.message-list-item')).not.toHaveClass('selected')
+    expect(screen.getByText('Delta').closest('.message-list-item')).not.toHaveClass('selected')
+  })
+
+  it('039: the selection anchor resets when the folder changes, so a stale anchor cannot leak into a new folder', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+    const onSelectionChange = vi.fn()
+
+    const { rerender } = render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Alpha')
+    fireEvent.click(screen.getByText('Alpha'))
+
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([makeMessage({ id: 'e', subject: 'Echo' })])
+    rerender(
+      <MessageListPane
+        selectedFolderId="drafts"
+        selectedFolderName="Drafts"
+        selectedMessageIds={[]}
+        onSelectionChange={onSelectionChange}
+        messagesVersion={0}
+      />
+    )
+    await screen.findByText('Echo')
+
+    // A Shift-click here has no valid anchor from the old folder to range
+    // from, so it must fall back to a plain single-select rather than
+    // erroring or silently doing nothing.
+    fireEvent.click(screen.getByText('Echo'), { shiftKey: true })
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['e'])
   })
 
   it('shows each message\'s categories, and no filter select when none have any', async () => {

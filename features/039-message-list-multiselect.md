@@ -1,7 +1,7 @@
 ---
 id: 039
 title: Message list multi-select
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -71,7 +71,39 @@ lint/typecheck/build pass; existing suite unchanged 557/557 (only the two compon
 files needed the prop-shape touch-ups described above).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 14 tests (557 → 571, all passing; re-run 3x, stable), all AC-traceable by number,
+across 3 layers:
+
+- `MessageListPane.test.tsx` (+10, unit-level, `fireEvent` for precise modifier keys): AC1 —
+  Ctrl-click adds a message without clearing the rest, Cmd/Meta-click does the same (Mac
+  equivalent), and Ctrl-clicking an already-selected message removes just that one; AC2 —
+  Shift-click ranges forward and backward from the anchor, a second Shift-click re-ranges
+  from the *same* anchor rather than the previous Shift-click's target (the case that would
+  silently break if the anchor were wrongly updated on every click), and a Shift-click with
+  no prior click falls back to a plain single-select; AC3 — a plain click replaces a
+  3-message selection with just the clicked one; plus two structural checks: every selected
+  row (not just one) carries the `selected` class, and the anchor resets when the folder
+  changes so a stale anchor from a previous folder can't leak into a Shift-click range in a
+  new one (falls back to plain-select instead).
+- `ReadingPane.test.tsx` (+3): AC4 — a `selectedCount` of 3 shows "3 selected" instead of the
+  single message (and instead of the original empty-selection message), `selectedCount={0}`
+  still shows "Select an item to read." (proving the two null-`selectedMessageId` cases are
+  genuinely distinguished, not accidentally merged), and going from multiple back to exactly
+  one re-shows that single message.
+- `App.test.tsx` (+1, integration-level, real clicks through the real
+  App/MessageListPane/ReadingPane wiring rather than the components in isolation): a single
+  scenario chains plain-click → Ctrl-click → plain-click → Shift-click and checks the Reading
+  Pane's visible state after each step, proving the wiring between the two components (not
+  just each component's own prop contract) is correct end-to-end.
+
+Deliberately not covered: keyboard-based selection (arrow keys, Ctrl+A) — not in scope, no AC
+mentions it; bulk actions on a multi-selection (delete/flag/mark-read many at once) — the
+feature description and ACs are scoped to selection state and its two visible effects only,
+not new bulk operations; and a live end-to-end Electron GUI click-through with real mouse
+modifier keys (no attached display in this environment — same non-blocking gap noted on
+every prior feature's Validation Notes).
+
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import type { FiredReminder, MailMessage } from '../../shared/data-types'
@@ -240,6 +240,54 @@ describe('App shell', () => {
       previousFolderId: 'inbox'
     })
     expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
+  })
+
+  // Message list multi-select (feature 039), end-to-end through the real
+  // App/MessageListPane/ReadingPane wiring, not just the components in
+  // isolation.
+  it('039: Ctrl-click and Shift-click build a multi-selection, and the Reading Pane shows a neutral "N selected" state for it', async () => {
+    const messages: MailMessage[] = ['a', 'b', 'c'].map((id, index) => ({
+      id,
+      folderId: 'inbox',
+      previousFolderId: null,
+      subject: ['Alpha', 'Bravo', 'Charlie'][index],
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: true,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }))
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(messages)
+    vi.mocked(window.api.data.messages.get).mockImplementation(
+      async (id) => messages.find((message) => message.id === id) ?? null
+    )
+
+    render(<App />)
+    await screen.findByText('Alpha')
+
+    // Plain click selects Alpha alone; Reading Pane shows it.
+    fireEvent.click(screen.getByText('Alpha'))
+    expect(await screen.findByText('Body text')).toBeInTheDocument()
+
+    // Ctrl-click adds Bravo — now 2 selected, neutral state.
+    fireEvent.click(screen.getByText('Bravo'), { ctrlKey: true })
+    expect(await screen.findByText('2 selected')).toBeInTheDocument()
+    expect(screen.queryByText('Body text')).not.toBeInTheDocument()
+
+    // A plain click on Charlie clears the multi-selection back to one.
+    fireEvent.click(screen.getByText('Charlie'))
+    expect(await screen.findByText('Body text')).toBeInTheDocument()
+    expect(screen.queryByText('2 selected')).not.toBeInTheDocument()
+
+    // Shift-click back to Alpha ranges across all three.
+    fireEvent.click(screen.getByText('Alpha'), { shiftKey: true })
+    expect(await screen.findByText('3 selected')).toBeInTheDocument()
   })
 
   it('ribbon Delete stays disabled while viewing Deleted Items even with a message selected', async () => {
