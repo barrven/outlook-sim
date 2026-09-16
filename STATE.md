@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 046 (Tasks side panel)
-- **Last updated:** 2026-09-15
+- **Last updated:** 2026-09-16
 
 ## Phases
 
@@ -18,6 +18,35 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 046 (Tasks side panel) validated: lint/typecheck/
+  build pass; full test suite (631/631) re-run 3x, stable; confirmed via
+  `git diff --stat` (f52357e..b210896) that `/test` touched only test/doc
+  files, no implementation drift. Mid-validation detour: the session's
+  original worktree (`.claude/worktrees/feature-043-calendar-view-mode`)
+  had been cleaned up — its git registration and tracked files were gone,
+  leaving only a stray `node_modules`, most likely the user's own cleanup
+  after fast-forward-merging the branch into their local `master` (per
+  their "you merge/pull it" answer at 043's accept gate) and then removing
+  the now-redundant worktree/branch. No work was lost: the local `master`
+  already had all 6 commits through this feature's `Test 046` commit
+  (`b210896`), confirmed via `git log` in the user's own checkout before
+  touching anything. Re-entered a fresh worktree
+  (`.claude/worktrees/feature-046-tasks-panel`), fast-forwarded it to that
+  same `master` tip, `npm install`, and re-ran lint/typecheck/build/full
+  suite there — identical green results — before resuming validation. All
+  6 ACs re-verified directly against current source (not just tests): AC1
+  the View tab's Tasks toggle and `TasksPanel`'s render condition; AC2 the
+  flagged-mail effect shares the exact `messagesVersion` mechanism every
+  other live pane uses; AC3/AC4 add/complete/remove call through to the
+  real store with independent, explicit actions; AC5 independently
+  re-verified live via a standalone `esbuild`-bundled script — create a
+  task, mark it done, close the `MailDb`, open a *second* one against the
+  same directory (a real restart) — it came back intact; AC6 the folder/
+  module-switch handlers touch neither the toggle state nor the tasks
+  store, and `TasksPanel` takes no folder/module prop at all. No live
+  multi-window Electron GUI click-through attempted — no attached display;
+  same non-blocking gap as every prior feature. All checks pass, no gaps
+  found. Phase set to `accept`.
 - 2026-09-15 — feature 046 (Tasks side panel) tested: 608 → 631 net (+23,
   all passing; re-run 3x, stable) across 5 files. Both pre-existing tests
   that `/implement` left genuinely failing (RibbonBar's "View disabled"

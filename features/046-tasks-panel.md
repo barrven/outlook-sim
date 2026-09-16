@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -113,7 +113,48 @@ surviving a restart (Implementation Notes: intentionally not persisted,
 only the AC5 task data itself is).
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (631/631) re-run 3x, stable
+(re-verified in a freshly recovered worktree after the original one was
+cleaned up mid-session — see the History entry on `STATE.md` for that
+detour; the recovered worktree's commits, tests, build, and full suite
+were all re-confirmed identical/green before writing this). Confirmed via
+`git diff --stat` (f52357e..b210896) that `/test` touched only test/doc
+files, no implementation drift.
+
+All 6 ACs re-verified directly against current source:
+- AC1: `RibbonBar.tsx`'s View tab is a real, clickable tab
+  (`tabHandlers.View`); its action row swaps to `['Tasks']` when active, a
+  toggle button (`aria-pressed`/`.active` tracking `showTasksPanel`) wired
+  to `App.tsx`'s `handleToggleTasksPanel`. `TasksPanel` is rendered only
+  when `showTasksPanel` is true, as a right-hand `app-body` sibling
+  (`flex: 0 0 260px`, `border-left`).
+- AC2: `TasksPanel.tsx`'s flagged-mail effect depends on the
+  `messagesVersion` prop, which `App.tsx` bumps inside the exact same
+  `onMessagesChanged` listener every other live-updating pane
+  (MessageListPane/ReadingPane) already uses — so a flag toggled from the
+  ribbon, context menu, or Reading Pane anywhere in the app reaches this
+  panel through the identical mechanism, not a bespoke one.
+- AC3/AC4: `handleAddTask`/`handleToggleDone`/`handleRemoveTask` call
+  `window.api.data.tasks.create/update/delete` and refetch locally — a
+  freestanding task is created with `text` + an optional `dueAt` (the
+  spec's "due indicator"), can be toggled `done` independent of removal,
+  and removal is a separate, explicit action.
+- AC5: `main/data/db.ts`'s `tasks` table + CRUD methods persist to the
+  same on-disk SQLite file every other entity uses. Independently
+  re-verified live (beyond the test suite) via a standalone script:
+  bundled `db.ts` with esbuild, created a task, marked it done, closed
+  the `MailDb`, opened a *second* `MailDb` against the same directory (a
+  real restart, not a mock) — the task came back with `done: true` and
+  its text intact.
+- AC6: `App.tsx`'s `handleSelectFolder`/`handleSelectModule` — the two
+  handlers that fire on Mail-folder and Calendar-view navigation — touch
+  neither `showTasksPanel` nor `viewTabActive`, and `TasksPanel` itself
+  takes no folder/module prop at all, so there's structurally nothing
+  for folder/view navigation to affect.
+
+No live multi-window Electron GUI click-through attempted — no attached
+display; same non-blocking gap as every prior feature. All checks pass,
+no gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
