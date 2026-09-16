@@ -43,7 +43,7 @@
 | 032 | Settings — generate personas via LLM | done | medium | 032-generate-personas-via-llm.md |
 | 039 | Message list multi-select | done | medium | 039-message-list-multiselect.md |
 | 040 | Message list right-click context menu | done | medium | 040-message-list-context-menu.md |
-| 041 | Double-click message opens a pop-out reading window | validating | medium | 041-message-popout-window.md |
+| 041 | Double-click message opens a pop-out reading window | accept | medium | 041-message-popout-window.md |
 | 043 | Calendar item view-mode and single-open swap | backlog | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | backlog | medium | 046-tasks-panel.md |
 | 049 | FileVine content feeds persona LLM context | backlog | medium | 049-filevine-llm-context.md |

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 041 (Double-click message opens a pop-out reading window)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,26 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) validated: lint/typecheck/build pass; full test suite (604/604)
+  re-run 3x, stable; confirmed via `git diff` (90fd23a..6b3b05c) that
+  `/test` touched only test files/docs, no implementation drift. All 4
+  ACs re-verified directly against current source: AC1 confirmed
+  end-to-end across every layer (double-click → preload → IPC handler →
+  `createMessagePopoutWindow` → routed renderer → real `ReadingPane`);
+  AC2 confirmed structurally (`broadcastMessagesChanged` sends to every
+  `BrowserWindow` with no window-type distinction, and the pop-out bumps
+  its own `messagesVersion` on that same broadcast, same pattern as
+  `App.tsx`); AC3 confirmed by inspection (`MessagePopoutWindow`'s only
+  prop is `messageId`, no reference to `App.tsx`'s selection state, a
+  genuinely separate window/process); AC4 confirmed feature 042 is still
+  `backlog` (no "Off" state exists to fail against yet) and that nothing
+  in this feature's code reads any Reading-Pane-visibility flag, so
+  there's nothing to regress — flagged for `/retro`'s awareness that 042
+  should re-confirm this pop-out still works once built. No live
+  multi-window Electron GUI click-through attempted — no attached
+  display; same non-blocking gap as every prior feature. All checks pass,
+  no gaps found. Phase set to `accept`.
 - 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
   window) tested: added 8 tests (596 → 604, all passing; re-run 3x,
   stable), all AC-traceable by number, across 2 files — new

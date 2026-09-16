@@ -1,7 +1,7 @@
 ---
 id: 041
 title: Double-click message opens a pop-out reading window
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -141,7 +141,55 @@ Deliberately not covered:
   a component this feature doesn't modify.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (604/604) re-run 3x,
+stable. `git diff` between the `/implement` and `/test` commits
+(90fd23a..6b3b05c) touched only test files and docs (`STATE.md`, the
+feature file, `BACKLOG.md`, the new `MessagePopoutWindow.test.tsx`, and
+`MessageListPane.test.tsx`) — no implementation drift.
+
+All 4 ACs re-verified directly against current source:
+
+- **AC1** (double-click opens a window with full content): confirmed
+  end-to-end across every layer — `MessageListPane.tsx`'s row button has
+  `onDoubleClick={() => window.api.messagePopout.open(message.id)}`;
+  preload's `messagePopout.open` invokes `window:openMessagePopout`;
+  `main/index.ts`'s handler looks up the message via `mailDb.getMessage`
+  (for the window title) and calls `createMessagePopoutWindow`
+  (`main/windows.ts`), a `BrowserWindow` built identically to
+  `createComposeWindow`, loaded with a `messagePopout=1&messageId=…`
+  query string; `main.tsx` routes that to `MessagePopoutWindow.tsx`,
+  which renders the real `ReadingPane` fixed to that message id. Content
+  is genuinely "the same" as the inline pane because it's the same
+  component, not a parallel implementation.
+- **AC2** (live cross-window refresh): confirmed structurally —
+  `main/data/ipc.ts`'s `broadcastMessagesChanged` sends
+  `data:messages-changed` to *every* `BrowserWindow.getAllWindows()` on
+  every create/update/delete, with no window-type distinction, so it
+  reaches the pop-out automatically. `MessagePopoutWindow.tsx` bumps its
+  own `messagesVersion` on that same event (identical to `App.tsx`'s
+  pattern), and `ReadingPane`'s existing fetch-by-id effect does the
+  refetch — including for the pop-out's *own* actions (Delete/Restore/
+  Mark-read/Flag), since those go through the same IPC path.
+- **AC3** (closing the pop-out doesn't affect the main window):
+  confirmed by inspection — `MessagePopoutWindow`'s only prop is
+  `messageId`; it holds no reference to `App.tsx`'s `selectedMessageIds`
+  or any other main-window state, and is a separate `BrowserWindow`/
+  renderer process by construction. Not independently testable at the
+  unit layer (correctly not attempted — see Test Notes).
+- **AC4** (works with the Reading Pane "Right" or "Off", feature 042):
+  confirmed feature 042 is still `backlog` in `features/BACKLOG.md` — no
+  "Off" state exists to fail against yet. Re-confirmed by inspection that
+  `App.tsx` renders `ReadingPane` unconditionally (no visibility flag of
+  any kind) and that the double-click handler in `MessageListPane.tsx`
+  reads no such flag either, so this AC has nothing it could currently
+  regress against and will keep holding once 042 lands. This is a
+  legitimate forward-looking AC, not a defect — flagging for `/retro`'s
+  awareness that 042, when built, should re-confirm this pop-out still
+  opens correctly with the Reading Pane set to "Off".
+
+No live multi-window Electron GUI click-through attempted — no attached
+display; same non-blocking gap as every prior feature. All checks pass,
+no gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
