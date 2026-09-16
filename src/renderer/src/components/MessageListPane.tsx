@@ -9,6 +9,10 @@ interface MessageListPaneProps {
   onSelectionChange: (messageIds: string[]) => void
   messagesVersion: number
   folders: Folder[]
+  // Search (feature 038) — the input itself now lives in the ribbon; this
+  // component only reads the current query/scope to filter its list.
+  searchQuery: string
+  searchScope: 'folder' | 'all'
   onReply: (message: MailMessage) => void
   onReplyAll: (message: MailMessage) => void
   onForward: (message: MailMessage) => void
@@ -22,6 +26,8 @@ function MessageListPane({
   onSelectionChange,
   messagesVersion,
   folders,
+  searchQuery,
+  searchScope,
   onReply,
   onReplyAll,
   onForward,
@@ -30,8 +36,6 @@ function MessageListPane({
   const [messages, setMessages] = useState<MailMessage[]>([])
   const [allMessages, setAllMessages] = useState<MailMessage[]>([])
   const [categoryFilter, setCategoryFilter] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchScope, setSearchScope] = useState<'folder' | 'all'>('folder')
   // The message a Shift-click range extends from — the most recently
   // plain- or Ctrl-clicked message (feature 039 AC2). Purely a click-
   // handling detail nothing outside this component needs, so it lives
@@ -191,23 +195,6 @@ function MessageListPane({
             ))}
           </select>
         )}
-      </div>
-      <div className="message-list-search">
-        <input
-          type="search"
-          aria-label="Search mail"
-          placeholder="Search mail"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-        />
-        <select
-          aria-label="Search scope"
-          value={searchScope}
-          onChange={(event) => setSearchScope(event.target.value as 'folder' | 'all')}
-        >
-          <option value="folder">This folder</option>
-          <option value="all">All folders</option>
-        </select>
       </div>
       {visibleMessages.length === 0 ? (
         <div className="message-list-empty">{query ? 'No results found.' : 'No items to show.'}</div>

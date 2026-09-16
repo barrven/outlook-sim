@@ -127,6 +127,28 @@ body {
   display: flex;
 }
 
+/* Mail search (feature 038) — sits between the tab strip and the clock;
+   .ribbon-tabs' justify-content: space-between spaces the three apart. */
+.ribbon-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ribbon-search input {
+  width: 160px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.ribbon-search select {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
 .ribbon-tab {
   padding: 6px 14px;
   background: transparent;
@@ -662,28 +684,6 @@ body {
 
 .message-list-filter {
   font-weight: normal;
-  font-size: 11px;
-  padding: 2px 4px;
-}
-
-.message-list-search {
-  display: flex;
-  gap: 6px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.message-list-search input {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 12px;
-}
-
-.message-list-search select {
-  flex: 0 0 auto;
   font-size: 11px;
   padding: 2px 4px;
 }

@@ -32,6 +32,17 @@ interface RibbonBarProps {
   // displays.
   viewTabActive: boolean
   showTasksPanel: boolean
+  // Mail search (feature 038) — whether the search box should render at
+  // all (App.tsx computes this from the same conditions that used to gate
+  // rendering the search box inside MessageListPane: Mail module, not
+  // FileVine, not Settings), plus its current value/scope and change
+  // handlers. The actual filtering happens in MessageListPane; this
+  // component only owns the input.
+  showMailSearch: boolean
+  searchQuery: string
+  searchScope: 'folder' | 'all'
+  onSearchQueryChange: (query: string) => void
+  onSearchScopeChange: (scope: 'folder' | 'all') => void
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
   onSelectViewTab: () => void
@@ -47,6 +58,11 @@ function RibbonBar({
   showFileVine,
   viewTabActive,
   showTasksPanel,
+  showMailSearch,
+  searchQuery,
+  searchScope,
+  onSearchQueryChange,
+  onSearchScopeChange,
   onSelectHomeTab,
   onSelectFileVineTab,
   onSelectViewTab,
@@ -165,6 +181,25 @@ function RibbonBar({
             )
           })}
         </div>
+        {showMailSearch && (
+          <div className="ribbon-search">
+            <input
+              type="search"
+              aria-label="Search mail"
+              placeholder="Search mail"
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+            />
+            <select
+              aria-label="Search scope"
+              value={searchScope}
+              onChange={(event) => onSearchScopeChange(event.target.value as 'folder' | 'all')}
+            >
+              <option value="folder">This folder</option>
+              <option value="all">All folders</option>
+            </select>
+          </div>
+        )}
         <OfficeClock />
       </div>
       <div className="ribbon-actions">

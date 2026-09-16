@@ -51,6 +51,14 @@ function App(): ReactElement {
   // nothing here resets it on folder/module changes.
   const [viewTabActive, setViewTabActive] = useState(false)
   const [showTasksPanel, setShowTasksPanel] = useState(false)
+  // Mail search (feature 038) — lifted up from MessageListPane so the ribbon
+  // (which renders above it) can own the input, while MessageListPane still
+  // does the actual filtering. Visible in exactly the same circumstances the
+  // search box was before it moved: the Mail module, its own message list
+  // (not FileVine), and not behind Settings.
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchScope, setSearchScope] = useState<'folder' | 'all'>('folder')
+  const showMailSearch = activeModule === 'mail' && !showFileVine && !showSettings
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -262,6 +270,11 @@ function App(): ReactElement {
         showFileVine={showFileVine}
         viewTabActive={viewTabActive}
         showTasksPanel={showTasksPanel}
+        showMailSearch={showMailSearch}
+        searchQuery={searchQuery}
+        searchScope={searchScope}
+        onSearchQueryChange={setSearchQuery}
+        onSearchScopeChange={setSearchScope}
         onSelectHomeTab={handleSelectHomeTab}
         onSelectFileVineTab={handleSelectFileVineTab}
         onSelectViewTab={handleSelectViewTab}
@@ -303,6 +316,8 @@ function App(): ReactElement {
                 onSelectionChange={setSelectedMessageIds}
                 messagesVersion={messagesVersion}
                 folders={folders}
+                searchQuery={searchQuery}
+                searchScope={searchScope}
                 onReply={handleReply}
                 onReplyAll={handleReplyAll}
                 onForward={handleForward}

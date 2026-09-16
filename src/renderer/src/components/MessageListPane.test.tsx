@@ -29,6 +29,8 @@ function makeMessage(overrides: Partial<MailMessage> = {}): MailMessage {
 describe('MessageListPane', () => {
   const defaultProps = {
     folders: [],
+    searchQuery: '',
+    searchScope: 'folder' as const,
     onReply: vi.fn(),
     onReplyAll: vi.fn(),
     onForward: vi.fn(),

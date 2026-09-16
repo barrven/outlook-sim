@@ -10,6 +10,11 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
   showFileVine: boolean
   viewTabActive: boolean
   showTasksPanel: boolean
+  showMailSearch: boolean
+  searchQuery: string
+  searchScope: 'folder' | 'all'
+  onSearchQueryChange: () => void
+  onSearchScopeChange: () => void
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
   onSelectViewTab: () => void
@@ -20,6 +25,11 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
     showFileVine: false,
     viewTabActive: false,
     showTasksPanel: false,
+    showMailSearch: false,
+    searchQuery: '',
+    searchScope: 'folder',
+    onSearchQueryChange: vi.fn(),
+    onSearchScopeChange: vi.fn(),
     onSelectHomeTab: vi.fn(),
     onSelectFileVineTab: vi.fn(),
     onSelectViewTab: vi.fn(),

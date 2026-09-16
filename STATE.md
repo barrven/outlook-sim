@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 038 (Move mail search into the ribbon)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 038 (Move mail search into the ribbon) implemented:
+  search state (`searchQuery`/`searchScope`) lifted from `MessageListPane`
+  up to `App.tsx`, which now passes it to `RibbonBar` (new search
+  input/select rendered in `.ribbon-tabs`, between the tab strip and the
+  clock) and to `MessageListPane` (read-only, filtering logic unchanged).
+  Visibility gated on the exact same condition that used to control
+  whether `MessageListPane` rendered at all (`activeModule === 'mail' &&
+  !showFileVine && !showSettings`), preserving AC4. Side effect flagged
+  for `/retro`: search text now persists across FileVine/Settings toggles
+  instead of resetting, since it no longer lives inside a component that
+  unmounts — not locked in by any test, read as a minor improvement not a
+  regression. Fixed the two test files' shared prop-default helpers for
+  the new required props (compile-shape only, per feature 040's
+  precedent), which resolved all but 7 pre-existing `MessageListPane`
+  tests that genuinely test the old in-component search UI and need a
+  real rewrite, left for `/test`. Verified live via a throwaway full-App
+  RTL check (DOM placement, live filter, scope, folder-switch survival,
+  hidden behind Settings). lint/typecheck/build pass. Phase set to `test`.
 - 2026-09-16 — feature 037 (Element-level styling pass) accepted by user
   (selected "Accept (Recommended)", no changes requested); logged to
   CHANGELOG. Active feature set to 038 (Move mail search into the ribbon,
