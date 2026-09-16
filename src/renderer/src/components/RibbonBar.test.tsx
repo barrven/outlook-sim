@@ -34,11 +34,18 @@ describe('RibbonBar', () => {
     expect(screen.getByRole('button', { name: 'Home' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'FileVine' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'View' })).toBeEnabled()
-    for (const tab of ['File', 'Send / Receive', 'Folder']) {
-      expect(screen.getByRole('button', { name: tab })).toBeDisabled()
-    }
+    expect(screen.getByRole('button', { name: 'File' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'New Email' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'New Event' })).not.toBeInTheDocument()
+  })
+
+  // 033 AC1/AC2: Send/Receive and Folder are placeholders that were never
+  // wired to anything — hidden entirely rather than shown disabled.
+  it('does not render the Send/Receive or Folder tabs', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+    expect(screen.queryByRole('button', { name: 'Send / Receive' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Folder' })).not.toBeInTheDocument()
   })
 
   it('swaps to calendar actions when the calendar module is active', () => {
@@ -118,7 +125,7 @@ describe('RibbonBar', () => {
     const onSelectFileVineTab = vi.fn()
     render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} onSelectFileVineTab={onSelectFileVineTab} />)
 
-    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|Send \/ Receive|Folder|FileVine|View)$/ }).map((b) => b.textContent)
+    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|FileVine|View)$/ }).map((b) => b.textContent)
     expect(tabNames.indexOf('FileVine')).toBeGreaterThan(tabNames.indexOf('Home'))
     expect(tabNames.indexOf('FileVine')).toBeLessThan(tabNames.indexOf('View'))
 

@@ -1,7 +1,7 @@
 ---
 id: 033
 title: Ribbon — hide Send/Receive and Folder tabs
-status: testing
+status: validating
 priority: low
 ---
 
@@ -31,7 +31,24 @@ which still asserts on them and is expected to fail until `/test` updates
 it (this repo's established convention per feature 046).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+648 → 649 net (+1, all passing; full suite re-run once, stable), in
+`RibbonBar.test.tsx`:
+- Existing "renders ribbon tabs" test (genuinely failing after
+  `/implement`, since it asserted Send/Receive and Folder were rendered-
+  but-disabled) rewritten to only assert `File` is the remaining disabled
+  placeholder.
+- New test: Send/Receive and Folder are not in the document at all (AC1,
+  AC2).
+- FileVine-ordering test's tab-name regex updated to drop Send/Receive and
+  Folder from the expected set (it enumerated all tab labels to check
+  relative order).
+- Home/View/FileVine enabled-and-interactive assertions (AC3) were already
+  covered by existing tests and untouched.
+- AC4 ("no leftover dead code") isn't unit-testable — confirmed instead by
+  `grep`ing the codebase for the removed tabs' labels during `/implement`:
+  the only reference outside `RibbonBar.tsx`'s `TABS` array was this test
+  file, now updated. Not re-verified here since it's a static-code check,
+  not runtime behavior.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

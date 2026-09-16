@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 033 (Ribbon — hide Send/Receive and Folder tabs)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
+  tested: `RibbonBar.test.tsx` updated for the removed tabs (the
+  previously-failing assertions fixed for real, plus a new explicit
+  not-rendered test for AC1/AC2); full suite 648 → 649, all passing,
+  re-run stable. Phase set to `validate`.
 - 2026-09-16 — feature 033 (Ribbon — hide Send/Receive and Folder tabs)
   implemented: `RibbonBar.tsx`'s `TABS` array shrunk to drop Send/Receive
   and Folder, which were always-disabled placeholders with no other wired
