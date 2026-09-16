@@ -15,6 +15,12 @@ function makeFiredReminder(overrides: Partial<FiredReminder> = {}): FiredReminde
   }
 }
 
+// 034: Settings moved off the nav rail into the ribbon's File menu.
+async function openSettings(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'File' }))
+  await user.click(screen.getByRole('menuitem', { name: 'Settings' }))
+}
+
 describe('App shell', () => {
   it('renders the classic three-pane layout with a ribbon on launch', async () => {
     render(<App />)
@@ -393,13 +399,13 @@ describe('App shell', () => {
     expect(await screen.findByText('Select an item to read.')).toBeInTheDocument()
   })
 
-  it('opens Settings from the nav rail, replacing the mail panes, and returns to Mail when that tab is clicked', async () => {
+  it('opens Settings from the File menu, replacing the mail panes, and returns to Mail when that tab is clicked', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await openSettings(user)
 
     expect(await screen.findByLabelText('Provider')).toBeInTheDocument()
     expect(screen.queryByText('Inbox', { selector: '.message-list-header' })).not.toBeInTheDocument()
@@ -412,6 +418,14 @@ describe('App shell', () => {
 
     expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
     expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
+  })
+
+  // 034 AC1: Settings is reached via the ribbon's File menu now, not a nav rail button.
+  it('034 AC1: the nav rail has no Settings button', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Inbox' })
+
+    expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument()
   })
 
   it('047 AC2: clicking the FileVine ribbon tab swaps the center/right content area, keeping the mail folder pane visible', async () => {
@@ -491,7 +505,7 @@ describe('App shell', () => {
     await user.click(await screen.findByText('Hello there'))
     await screen.findByText('Body text')
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await openSettings(user)
     await user.click(screen.getByRole('button', { name: 'Start Free-Play' }))
     await screen.findByText(/fresh and empty/)
 
@@ -673,7 +687,7 @@ describe('App shell', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(await screen.findByRole('button', { name: 'Settings' }))
+    await openSettings(user)
     await screen.findByLabelText('Provider')
 
     await user.click(screen.getByRole('tab', { name: 'Calendar' }))
@@ -774,7 +788,7 @@ describe('App shell', () => {
       await user.click(screen.getByRole('button', { name: 'Tasks' }))
       await screen.findByText('Flagged Mail')
 
-      await user.click(screen.getByRole('button', { name: 'Settings' }))
+      await openSettings(user)
       expect(screen.queryByText('Flagged Mail')).not.toBeInTheDocument()
     })
   })

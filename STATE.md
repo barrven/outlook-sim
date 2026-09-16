@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 034 (Move Settings into the File menu)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 034 (Move Settings into the File menu) tested:
+  `RibbonBar.test.tsx` and `App.test.tsx` updated for the new File-menu
+  path (the previously-failing assertions fixed for real, plus 6 new File
+  menu tests and a new AC1 nav-rail test); full suite 649 → 656, all
+  passing, re-run stable. Phase set to `validate`.
 - 2026-09-16 — feature 034 (Move Settings into the File menu) implemented:
   `RibbonBar.tsx`'s File tab is now a clickable dropdown (`role="menu"`)
   with a Settings entry, mirroring `MessageContextMenu`'s click-outside/

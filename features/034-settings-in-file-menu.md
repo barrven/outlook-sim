@@ -1,7 +1,7 @@
 ---
 id: 034
 title: Move Settings into the File menu
-status: testing
+status: validating
 priority: low
 ---
 
@@ -58,7 +58,39 @@ disabled" assertion is now wrong (File is enabled and clickable). In
 requires opening the File menu first.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+649 → 656 net (+7, all passing; full suite re-run 2x, stable), across two
+files:
+
+- `RibbonBar.test.tsx`: existing "renders ribbon tabs" test (genuinely
+  failing after `/implement`, since it asserted File was disabled)
+  rewritten to assert File is enabled. New `describe('File menu (034)')`
+  block (6 tests, AC2/AC3): menu isn't in the document until File is
+  clicked; clicking File opens a `role="menu"` with a `role="menuitem"`
+  Settings entry and flips `aria-expanded`; clicking Settings calls
+  `onOpenSettings` and closes the menu; clicking File again toggles it
+  closed; clicking outside closes it; Escape closes it (the last two
+  cover the click-outside/Escape behavior copied from
+  `MessageContextMenu`, not spelled out in the AC but load-bearing enough
+  to regress silently otherwise). `tabProps()` test helper extended with
+  `onOpenSettings: vi.fn()`.
+- `App.test.tsx`: every test that opened Settings via
+  `getByRole('button', { name: 'Settings' })` (also genuinely failing —
+  that button no longer exists in the nav rail) now goes through a new
+  `openSettings(user)` helper that clicks File then the Settings
+  menuitem, matching the new UI path (AC2/AC3 end-to-end: File > Settings
+  opens the same `SettingsView`). New test `034 AC1: the nav rail has no
+  Settings button` added directly for that criterion. The renamed test
+  "opens Settings from the File menu..." (was "...from the nav rail...")
+  keeps covering AC3 (same SettingsView, all sections/behavior unchanged)
+  and, via its return-to-Mail step, AC4 indirectly (Settings only closes
+  through the ✕/tab navigation already covered elsewhere — see below).
+
+AC4 (existing ✕ close affordance still works) is deliberately not
+re-tested here: `SettingsView.test.tsx` already covers the ✕ button
+calling `onClose` at the component level, and `App.tsx`'s wiring of that
+prop wasn't touched by this feature (confirmed by diff) — writing a new
+end-to-end test for a path this change provably didn't touch would just
+be reprinting existing coverage.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
