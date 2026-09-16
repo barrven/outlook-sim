@@ -505,4 +505,48 @@ describe('ReadingPane', () => {
     expect(await screen.findByText('Quarterly numbers')).toBeInTheDocument()
     expect(screen.queryByText('2 selected')).not.toBeInTheDocument()
   })
+
+  it('037 AC3: an unflagged message shows the Flag toggle without the "flagged" class', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE) // isFlagged: false
+
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const flagButton = await screen.findByRole('button', { name: 'Flag' })
+    expect(flagButton.className.split(' ')).toEqual(['reading-pane-flag-toggle'])
+  })
+
+  it('037 AC3: a flagged message in the default (Inbox-like) view shows the Flag toggle with the "flagged" class', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue({ ...MESSAGE, isFlagged: true })
+
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const unflagButton = await screen.findByRole('button', { name: 'Unflag' })
+    expect(unflagButton.className.split(' ')).toEqual(expect.arrayContaining(['reading-pane-flag-toggle', 'flagged']))
+  })
+
+  it('037 AC3: a flagged message in Drafts shows the Flag toggle with the "flagged" class', async () => {
+    const flaggedDraft: MailMessage = { ...MESSAGE, id: 'draft-1', folderId: 'drafts', isFlagged: true }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(flaggedDraft)
+
+    render(<ReadingPane selectedMessageId="draft-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const unflagButton = await screen.findByRole('button', { name: 'Unflag' })
+    expect(unflagButton.className.split(' ')).toEqual(expect.arrayContaining(['reading-pane-flag-toggle', 'flagged']))
+  })
+
+  it('037 AC3: a flagged message in Deleted Items shows the Flag toggle with the "flagged" class', async () => {
+    const flaggedDeleted: MailMessage = {
+      ...MESSAGE,
+      id: 'deleted-1',
+      folderId: 'deleted',
+      previousFolderId: 'inbox',
+      isFlagged: true
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(flaggedDeleted)
+
+    render(<ReadingPane selectedMessageId="deleted-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const unflagButton = await screen.findByRole('button', { name: 'Unflag' })
+    expect(unflagButton.className.split(' ')).toEqual(expect.arrayContaining(['reading-pane-flag-toggle', 'flagged']))
+  })
 })

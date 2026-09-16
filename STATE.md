@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 037 (Element-level styling pass — semantic colors, border-radius, red flags)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 037 (Element-level styling pass) tested: 665 → 674
+  net (+9, all passing; re-run 3x, stable), across new
+  `src/main/globalCssStyling.test.ts` (+5, AC1/AC2/AC3: reads the real
+  `global.css` off disk and asserts no hardcoded hex color exists outside
+  `:root`, every `border-radius` uses a radius token, and both flag rules
+  resolve to `--danger` — placed under `src/main/` since
+  `tsconfig.web.json` has no Node types for `fs`/`path`) and
+  `ReadingPane.test.tsx` (+4, AC3: the new flagged-class behavior verified
+  across all 3 of its render branches — default, Drafts, Deleted Items).
+  Deliberately not covered: actual computed styles in a live browser
+  (jsdom doesn't load external stylesheets, a documented pre-existing
+  gap) and AC4, verified by `git diff` inspection during `/implement`
+  rather than a test. lint/typecheck/build all pass. Test Notes filled
+  in; phase set to `validate`.
 - 2026-09-16 — feature 037 (Element-level styling pass) implemented:
   scoped entirely to `src/renderer/src/styles/global.css` plus one small
   JSX change. AC1: every ad-hoc hex color replaced with new semantic
