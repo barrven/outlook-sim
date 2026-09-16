@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Message list multi-select (features/039-message-list-multiselect.md)
+The message list now supports selecting multiple messages at once:
+Ctrl-click (Cmd-click on Mac) toggles a message in or out of the
+selection without disturbing the rest, and Shift-click selects the
+contiguous range between the last-clicked message and the shift-clicked
+one. A plain click still selects just that one message, clearing any
+prior multi-selection, exactly as before. The Reading Pane shows the
+single message when exactly one is selected, and a neutral "N selected"
+state when multiple are.
+
 ## 2026-09-15 — Settings — generate personas via LLM (features/032-generate-personas-via-llm.md)
 Settings' Personas section gains a "Generate Personas" control — enter a
 short company/industry description and the configured LLM drafts a full

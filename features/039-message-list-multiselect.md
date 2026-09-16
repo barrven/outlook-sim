@@ -1,7 +1,7 @@
 ---
 id: 039
 title: Message list multi-select
-status: accept
+status: done
 priority: medium
 ---
 
@@ -153,4 +153,6 @@ driving real clicks through the real component tree with `fireEvent`'s modifier-
 All checks pass — no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the feature summary (what it does, per-AC validation results,
+checks, diff) via AskUserQuestion with three options (Accept / Request changes / Reject).
+User selected **Accept**. No changes requested.
