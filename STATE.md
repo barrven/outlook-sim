@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 037 (Element-level styling pass — semantic colors, border-radius, red flags)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 037 (Element-level styling pass) implemented:
+  scoped entirely to `src/renderer/src/styles/global.css` plus one small
+  JSX change. AC1: every ad-hoc hex color replaced with new semantic
+  `:root` tokens (`--hover-bg`, `--danger`/`-bg`/`-border`,
+  `--warning`/`-bg`/`-border`, `--success`), consolidating 3 near-
+  duplicate reds and 2 near-duplicate yellows into one value each. AC2:
+  all 39 existing `border-radius` declarations converted to new
+  `--radius`/`--radius-pill` tokens — a mechanical upgrade of elements
+  that already had some radius (buttons/inputs/chips/dropdowns/cards);
+  elements with none (ribbon tabs, nav-switcher, list rows, pane/column
+  chrome) deliberately left alone per Core Requirement 2. AC3:
+  `.message-list-flag-btn.flagged` recolored from accent-blue to
+  `--danger`; `ReadingPane.tsx`'s Flag/Unflag button (all 3 branches, and
+  by extension its pop-out reuse) gained a `flagged` class styled the
+  same red, since it had no distinct flagged styling before. AC4: `git
+  diff` confirms zero layout-affecting properties (padding/margin/width/
+  height/flex/gap/position/display) changed anywhere, only
+  color/background/border-color/border-radius values. lint/typecheck/
+  build pass; full suite unchanged at 665/665 (jsdom doesn't load the
+  external stylesheet, so no existing test could regress from a CSS-only
+  change; the one markup change — a new className — isn't asserted by any
+  existing test). Phase set to `test`.
 - 2026-09-16 — feature 036 (App icon uses email.png) accepted by user
   (selected "Accept (Recommended)" against the validation summary and
   diff, no changes requested); logged to CHANGELOG. Active feature set to

@@ -51,7 +51,7 @@
 | 034 | Move Settings into the File menu | done | low | 034-settings-in-file-menu.md |
 | 035 | File menu — About section | done | low | 035-file-menu-about.md |
 | 036 | App icon uses email.png | done | low | 036-app-icon.md |
-| 037 | Element-level styling pass — semantic colors, border-radius, red flags | backlog | low | 037-styling-pass.md |
+| 037 | Element-level styling pass — semantic colors, border-radius, red flags | testing | low | 037-styling-pass.md |
 | 038 | Move mail search into the ribbon | backlog | low | 038-search-in-ribbon.md |
 | 042 | View tab — Reading Pane Right/Off toggle | backlog | low | 042-reading-pane-toggle.md |
 | 044 | Double-click calendar item opens a pop-out window | backlog | low | 044-calendar-popout-window.md |

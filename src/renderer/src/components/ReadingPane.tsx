@@ -121,6 +121,7 @@ function ReadingPane({
 
   const readToggleLabel = displayedMessage.isRead ? 'Mark as unread' : 'Mark as read'
   const flagToggleLabel = displayedMessage.isFlagged ? 'Unflag' : 'Flag'
+  const flagToggleClassName = `reading-pane-flag-toggle${displayedMessage.isFlagged ? ' flagged' : ''}`
 
   return (
     <div className="reading-pane">
@@ -138,7 +139,7 @@ function ReadingPane({
               <button type="button" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
-              <button type="button" onClick={handleToggleFlag}>
+              <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>
                 {flagToggleLabel}
               </button>
             </div>
@@ -153,7 +154,7 @@ function ReadingPane({
               <button type="button" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
-              <button type="button" onClick={handleToggleFlag}>
+              <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>
                 {flagToggleLabel}
               </button>
             </div>
@@ -174,7 +175,7 @@ function ReadingPane({
               <button type="button" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
-              <button type="button" onClick={handleToggleFlag}>
+              <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>
                 {flagToggleLabel}
               </button>
             </div>
