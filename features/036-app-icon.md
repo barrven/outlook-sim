@@ -1,7 +1,7 @@
 ---
 id: 036
 title: App icon uses email.png
-status: accept
+status: done
 priority: low
 ---
 
@@ -108,4 +108,9 @@ feature has had for GUI/packaging verification, not a defect found here.
 All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (icon moved to
+`resources/email.png`, wired into all 3 `BrowserWindow`s, `electron-builder.yml`'s
+`win.icon` auto-generating the `.ico`), the AC-by-AC mapping, and the
+validation result (all checks pass). User selected "Accept
+(Recommended)" against the validation summary and diff, no changes
+requested. Decision: accepted.

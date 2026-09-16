@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — App icon uses email.png (features/036-app-icon.md)
+The app's window and taskbar icon is now the project's `email.png` art
+instead of the Electron default, applied consistently across the main
+window, the compose pop-out, and the message pop-out. The Windows build
+generates the required `.ico` automatically from that PNG — no manual
+per-build icon-conversion step.
+
 ## 2026-09-16 — File menu — About section (features/035-file-menu-about.md)
 The File menu gains an About entry showing the app's current version
 (read straight from `package.json`, never hardcoded) and a link to its

@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 036 (App icon uses email.png)
+- **Phase:** implement
+- **Active feature:** 037 (Element-level styling pass — semantic colors, border-radius, red flags)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 036 (App icon uses email.png) accepted by user
+  (selected "Accept (Recommended)" against the validation summary and
+  diff, no changes requested); logged to CHANGELOG. Active feature set to
+  037 (Element-level styling pass, next in BACKLOG.md table order), phase
+  set to `implement`.
 - 2026-09-16 — feature 036 (App icon uses email.png) validated:
   lint/typecheck/build pass; full suite (665/665) re-run 4x total, stable;
   `git diff --stat` (1c42de4..5c73fcf) confirms `/test` touched only
