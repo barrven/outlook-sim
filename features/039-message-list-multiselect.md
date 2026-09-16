@@ -1,7 +1,7 @@
 ---
 id: 039
 title: Message list multi-select
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -106,7 +106,51 @@ every prior feature's Validation Notes).
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite re-run 3x: 571/571, stable each time (no
+flakes). `git diff 7088937..ba9af22` (implement → test commits) confirms `/test` touched
+only test files plus `STATE.md`/`BACKLOG.md`/the feature file — no implementation drift.
+
+Noted one inaccuracy in the Implementation Notes above: it describes the derived
+`selectedMessageId` as `selectedMessageIds.length === 1 ? [0] : null` — that's a
+documentation typo (missing the array-index syntax), not a code bug. The actual code at
+`App.tsx:39` reads `selectedMessageIds.length === 1 ? selectedMessageIds[0] : null`, which
+is correct; leaving the note as-is since Implementation Notes aren't corrected retroactively,
+but flagging it here so `/retro` doesn't mistake it for a real defect.
+
+Per-AC check (tests + direct code inspection):
+
+- **AC1** (Ctrl-click toggles a message's selection without clearing the rest): PASS. Code
+  inspection of `MessageListPane.tsx:87-95` confirms a Ctrl/Cmd-click either adds or removes
+  only the clicked id from `selectedMessageIds`, spreading/filtering rather than replacing
+  the array. `MessageListPane.test.tsx` covers both directions (add, remove) plus Meta-key
+  parity for Mac.
+- **AC2** (Shift-click selects the contiguous range between the last-clicked message and the
+  shift-clicked one): PASS. Code inspection of lines 76-85 confirms the range is computed
+  against `visibleMessages` (the actual on-screen order, correctly accounting for
+  search/category filtering) between `anchorId` and the clicked message, inclusive, in
+  either direction. Tests cover forward range, backward range, re-ranging from the same
+  anchor on a second Shift-click (the case most likely to regress if the anchor were
+  mistakenly updated on every click), and the no-anchor-yet fallback.
+- **AC3** (a plain click selects only that message, clearing any prior multi-selection):
+  PASS. Code inspection confirms the plain-click branch (line 96-97) always calls
+  `onSelectionChange([messageId])` — a fresh one-element array, never a merge with the
+  existing selection. Matches pre-existing single-select behavior since a single click when
+  nothing else was selected behaves identically to before this feature.
+- **AC4** (Reading Pane shows the single selected message when exactly one is selected, and a
+  neutral state when multiple are): PASS. Code inspection of `ReadingPane.tsx:80-81` and
+  `App.tsx:39/268` confirms `selectedMessageId` is non-null only when exactly one message is
+  selected (so the message-fetch effect only ever runs for a true single selection), and
+  `selectedCount` (the raw `selectedMessageIds.length`, always passed alongside) is what
+  distinguishes "0 selected" from "N>1 selected" in the empty-state branch — both of which
+  leave `selectedMessageId` null. Tests confirm all three renders (message shown, "N
+  selected", "Select an item to read.") plus round-tripping back from multiple to one.
+
+No live multi-window Electron GUI click-through (with real mouse modifier keys) was
+attempted — no attached display in this environment; same non-blocking gap noted on every
+prior feature's Validation Notes. The `App.test.tsx` integration test substitutes for this by
+driving real clicks through the real component tree with `fireEvent`'s modifier-key options.
+
+All checks pass — no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

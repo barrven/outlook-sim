@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 039 (Message list multi-select)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 039 (Message list multi-select) validated:
+  lint/typecheck/build pass; full test suite (571/571) re-run 3x, stable;
+  confirmed via `git diff` that `/test` touched only test files/docs, no
+  implementation drift. All 4 ACs verified by tests plus direct code
+  inspection — AC1 Ctrl/Cmd-click adds/removes only the clicked id
+  without replacing the array; AC2 the range is computed against the
+  actual on-screen `visibleMessages` order (correctly honoring search/
+  category filters) between the anchor and clicked message inclusive,
+  either direction; AC3 a plain click always passes a fresh one-element
+  array, never a merge; AC4 `selectedMessageId` is non-null only for a
+  true single selection, with `selectedCount` distinguishing 0-selected
+  from N>1-selected in the neutral-state branch. Flagged one
+  documentation-only inaccuracy in Implementation Notes (a typo in the
+  derived-selectedMessageId snippet — the actual code is correct) for
+  `/retro`'s awareness, not a code defect. No live multi-window Electron
+  GUI click-through attempted — no attached display; same non-blocking
+  gap as every prior feature; `App.test.tsx`'s integration test
+  substitutes by driving real modifier-key clicks through the real
+  component tree. All checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-15 — feature 039 (Message list multi-select) tested: added 14
   tests (557 → 571, all passing; re-run 3x, stable), all AC-traceable by
   number, across 3 layers — `MessageListPane.test.tsx` (+10, using
