@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 032 (Settings — generate personas via LLM)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,32 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM)
+  implemented: new `main/llm/generatePersonas.ts` asks the configured LLM
+  (via the existing provider-agnostic `generateText`) to return a JSON
+  array shaped exactly like 031's `PersonasFilePersona`, with guidance to
+  form a coherent, acyclic `reportsTo` structure (AC1/AC2); the response
+  is parsed (stripping an optional code fence) and validated by reusing
+  031's existing `validatePersonasFile` as-is, so malformed LLM output is
+  caught the same way a bad hand-edited import file is — never thrown,
+  never partially applied (AC4). New `llm:generatePersonas` IPC handler
+  logs failures to the existing durable LLM failure log (027), matching
+  every other user-triggered LLM call. `PersonasSettings.tsx` gained a
+  description textarea + Generate button; a successful generation is
+  staged in a review list (name/email/role/client/reports-to) with
+  Add-N/Discard actions (AC2/AC3) — Accept appends (not replaces) to the
+  existing list via the same `personas.set` call manual create/edit
+  already uses, so persistence (AC5) needed no new code. Verified live: a
+  standalone Vitest+stubbed-fetch check covered a well-formed
+  code-fence-wrapped response, non-JSON output, JSON missing a required
+  field, and a network failure, all resolving correctly with no throw and
+  the persisted persona list confirmed untouched on failure; a throwaway
+  RTL smoke test drove the full UI flow (generate → review → Accept
+  appends and persists, Discard leaves the list untouched, a failed
+  generation shows the exact error without touching the list).
+  lint/typecheck/build pass; existing suite unchanged 536/536 (only
+  `ipc.test.ts`'s exhaustive channel-list test needed a content touch-up
+  for the new channel). Phase set to `test`.
 - 2026-09-15 — feature 031 (Settings — load personas from a JSON file)
   accepted by user; logged to CHANGELOG. Active feature set to 032
   (Settings — generate personas via LLM, next in BACKLOG.md table order),

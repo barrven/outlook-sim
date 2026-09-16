@@ -558,6 +558,26 @@ body {
   resize: vertical;
 }
 
+.persona-generate,
+.persona-generate-review {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.persona-generate label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.persona-generate textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
 /* Message list pane */
 
 .message-list-pane {

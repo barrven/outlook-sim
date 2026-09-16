@@ -194,7 +194,7 @@ export type GenerateUnsolicitedMailResult =
 // and Settings' Test Connection — gets appended here regardless of whether
 // its UI banner/message was dismissed, so a trainer can inspect a durable
 // history of failures for troubleshooting.
-export type LlmFailureSource = 'personaReply' | 'unsolicitedMail' | 'testConnection'
+export type LlmFailureSource = 'personaReply' | 'unsolicitedMail' | 'testConnection' | 'generatePersonas'
 
 export interface LlmFailureLogEntry {
   timestamp: number
@@ -268,6 +268,15 @@ export type PersonasFileValidationResult =
 // closing the file-picker dialog without choosing anything, mirroring
 // `PickScenarioPackResult`.
 export type PickPersonasFileResult = PersonasFileValidationResult | { ok: false; canceled: true }
+
+// LLM-generated persona cast (feature 032) — the model is instructed to
+// produce exactly a `PersonasFilePersona[]`-shaped JSON array, so its
+// output is validated with the same `validatePersonasFile` a hand-edited
+// import file goes through; this just names that reused result shape for
+// the generation call.
+export type GeneratePersonasResult =
+  | { ok: true; personas: PersonasFilePersona[] }
+  | { ok: false; error: string }
 
 export interface ClockState {
   // Simulated time (ms epoch) as of the last start/pause/speed-change boundary.

@@ -102,6 +102,7 @@ describe('registerDataIpcHandlers', () => {
         'llm:test',
         'llm:personaReply',
         'llm:retryUnsolicitedMail',
+        'llm:generatePersonas',
         'session:startFreePlay',
         'scenario:applyPack'
       ].sort()

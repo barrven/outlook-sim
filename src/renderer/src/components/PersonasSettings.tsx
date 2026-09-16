@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type { Persona } from '../../../shared/data-types'
+import type { Persona, PersonasFilePersona } from '../../../shared/data-types'
 
 interface PersonaForm {
   displayName: string
@@ -41,6 +41,10 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState<PersonaForm>(EMPTY_FORM)
   const [loadPersonasError, setLoadPersonasError] = useState<string | null>(null)
+  const [generateDescription, setGenerateDescription] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [generatedPersonas, setGeneratedPersonas] = useState<PersonasFilePersona[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -54,9 +58,12 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
       // longer matches what's about to be shown. Discard it rather than
       // leave it dangling; the user already confirmed a destructive
       // replace to get here (AC4). A no-op on the initial mount, since
-      // nothing is open yet.
+      // nothing is open yet. An in-progress generated-personas review is
+      // discarded the same way.
       setCreating(false)
       setEditingId(null)
+      setGeneratedPersonas(null)
+      setGenerateError(null)
     })
     return () => {
       cancelled = true
@@ -122,6 +129,39 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
     await window.api.data.personas.set(imported)
     setPersonas(imported)
     closeEditor()
+  }
+
+  // Asks the LLM to generate a persona cast from a free-text company/
+  // industry description (feature 032), staging the result for review
+  // rather than committing it directly (AC2/AC3) — unlike Load Personas,
+  // which replaces the list, a successful generation is only ever added
+  // to it once the user explicitly accepts.
+  async function handleGeneratePersonas(): Promise<void> {
+    if (!generateDescription.trim()) return
+    setGenerating(true)
+    setGenerateError(null)
+    setGeneratedPersonas(null)
+    const result = await window.api.llm.generatePersonas(generateDescription.trim())
+    setGenerating(false)
+    if (!result.ok) {
+      setGenerateError(result.error)
+      return
+    }
+    setGeneratedPersonas(result.personas)
+  }
+
+  async function handleAcceptGenerated(): Promise<void> {
+    if (!generatedPersonas) return
+    const added: Persona[] = generatedPersonas.map((persona) => ({ id: generatePersonaId(), ...persona }))
+    const updated = [...personas, ...added]
+    await window.api.data.personas.set(updated)
+    setPersonas(updated)
+    setGeneratedPersonas(null)
+    setGenerateDescription('')
+  }
+
+  function handleDiscardGenerated(): void {
+    setGeneratedPersonas(null)
   }
 
   const isEditorOpen = creating || editingId !== null
@@ -254,6 +294,36 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
                   </button>
                 </div>
               </form>
+            ) : generatedPersonas ? (
+              <div className="persona-generate-review">
+                <p className="settings-view-note">
+                  Generated {generatedPersonas.length} persona{generatedPersonas.length === 1 ? '' : 's'} — review
+                  before adding:
+                </p>
+                <ul className="persona-list">
+                  {generatedPersonas.map((persona, index) => (
+                    <li key={index} className="persona-list-item">
+                      <div className="persona-list-item-info">
+                        <span className="persona-list-item-name">{persona.displayName || '(unnamed)'}</span>
+                        <span className="persona-list-item-meta">
+                          {persona.email}
+                          {persona.role ? ` · ${persona.role}` : ''}
+                          {persona.isClient ? ' · Client' : ''}
+                          {persona.reportsTo ? ` · Reports to ${persona.reportsTo}` : ''}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="settings-view-actions">
+                  <button type="button" onClick={handleAcceptGenerated}>
+                    Add {generatedPersonas.length} Persona{generatedPersonas.length === 1 ? '' : 's'}
+                  </button>
+                  <button type="button" onClick={handleDiscardGenerated}>
+                    Discard
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="settings-view-actions">
                 <button type="button" className="folder-new-btn" onClick={openCreate}>
@@ -268,6 +338,33 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
               <p className="settings-test-result-error" role="alert">
                 {loadPersonasError}
               </p>
+            )}
+
+            {!isEditorOpen && !generatedPersonas && (
+              <div className="persona-generate">
+                <label htmlFor="persona-generate-description">Generate Personas</label>
+                <textarea
+                  id="persona-generate-description"
+                  className="persona-textarea"
+                  placeholder="Describe the company or industry, e.g. 'a mid-size personal injury law firm in Chicago'"
+                  value={generateDescription}
+                  onChange={(event) => setGenerateDescription(event.target.value)}
+                />
+                <div className="settings-view-actions">
+                  <button
+                    type="button"
+                    onClick={handleGeneratePersonas}
+                    disabled={generating || !generateDescription.trim()}
+                  >
+                    {generating ? 'Generating…' : 'Generate Personas'}
+                  </button>
+                </div>
+                {generateError && (
+                  <p className="settings-test-result-error" role="alert">
+                    {generateError}
+                  </p>
+                )}
+              </div>
             )}
           </>
         )}

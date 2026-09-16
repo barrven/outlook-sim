@@ -20,6 +20,7 @@ import type {
   TraineeIdentity
 } from '../../shared/data-types'
 import { generateText } from '../llm/client'
+import { generatePersonas } from '../llm/generatePersonas'
 import { generatePersonaReply } from '../llm/personaReply'
 import { attemptUnsolicitedMail } from '../llm/scheduler'
 import { applyScenarioPack } from './scenarioPack'
@@ -133,6 +134,13 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
       broadcastPersonaReplyFailed(sentMessageId, result.error)
     } else if (result.replied) {
       broadcastMessagesChanged()
+    }
+    return result
+  })
+  ipcMain.handle('llm:generatePersonas', async (_event, description: string) => {
+    const result = await generatePersonas(config, description)
+    if (!result.ok) {
+      config.appendLlmFailureLog({ timestamp: Date.now(), source: 'generatePersonas', error: result.error })
     }
     return result
   })

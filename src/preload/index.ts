@@ -6,6 +6,7 @@ import type {
   FileVineFolderPatch,
   FileVineNotePatch,
   FiredReminder,
+  GeneratePersonasResult,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
@@ -105,7 +106,9 @@ const api = {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
     test: (settings: Settings) => ipcRenderer.invoke('llm:test', settings),
     personaReply: (sentMessageId: string) => ipcRenderer.invoke('llm:personaReply', sentMessageId),
-    retryUnsolicitedMail: () => ipcRenderer.invoke('llm:retryUnsolicitedMail')
+    retryUnsolicitedMail: () => ipcRenderer.invoke('llm:retryUnsolicitedMail'),
+    generatePersonas: (description: string): Promise<GeneratePersonasResult> =>
+      ipcRenderer.invoke('llm:generatePersonas', description)
   },
   onMessagesChanged: (callback: () => void) => {
     const listener = (): void => callback()

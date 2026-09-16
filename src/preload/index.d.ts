@@ -10,6 +10,7 @@ import type {
   FileVineNotePatch,
   FiredReminder,
   Folder,
+  GeneratePersonasResult,
   GenerateUnsolicitedMailResult,
   LlmGenerateInput,
   LlmGenerateResult,
@@ -115,6 +116,7 @@ export interface LlmApi {
   test: (settings: Settings) => Promise<LlmGenerateResult>
   personaReply: (sentMessageId: string) => Promise<PersonaReplyResult>
   retryUnsolicitedMail: () => Promise<GenerateUnsolicitedMailResult>
+  generatePersonas: (description: string) => Promise<GeneratePersonasResult>
 }
 
 export {}
