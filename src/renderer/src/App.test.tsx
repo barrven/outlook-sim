@@ -681,4 +681,45 @@ describe('App shell', () => {
     expect(screen.getByText('My Calendars')).toBeInTheDocument()
     expect(screen.queryByLabelText('Provider')).not.toBeInTheDocument()
   })
+
+  // Right-click context menu (feature 040), end-to-end through the real
+  // App/MessageListPane wiring — in particular the context menu's Delete
+  // (AC5), which permanently deletes rather than re-moving once a message
+  // is already in Deleted Items, a branch nothing else exercises.
+  it("040: the context menu's Delete permanently deletes a message that's already in Deleted Items", async () => {
+    const user = userEvent.setup()
+    const deletedMessage: MailMessage = {
+      id: 'msg-1',
+      folderId: 'deleted',
+      previousFolderId: 'inbox',
+      subject: 'Already deleted',
+      body: 'Body text',
+      fromName: 'Alex',
+      fromEmail: 'alex@example.com',
+      toName: 'Trainee',
+      toEmail: 'trainee@example.com',
+      cc: [],
+      timestamp: Date.now(),
+      isRead: true,
+      isFlagged: false,
+      categories: [],
+      attachments: []
+    }
+    vi.mocked(window.api.data.messages.list).mockImplementation(async (folderId?: string) =>
+      folderId === 'deleted' ? [deletedMessage] : []
+    )
+
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Deleted Items' }))
+    await screen.findByText('Already deleted')
+
+    fireEvent.contextMenu(screen.getByText('Already deleted'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+
+    expect(window.api.data.messages.delete).toHaveBeenCalledWith('msg-1')
+    expect(window.api.data.messages.update).not.toHaveBeenCalledWith(
+      'msg-1',
+      expect.objectContaining({ folderId: 'deleted' })
+    )
+  })
 })

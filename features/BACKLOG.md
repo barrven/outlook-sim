@@ -42,7 +42,7 @@
 | 031 | Settings — load personas from a JSON file | done | medium | 031-load-personas-from-json.md |
 | 032 | Settings — generate personas via LLM | done | medium | 032-generate-personas-via-llm.md |
 | 039 | Message list multi-select | done | medium | 039-message-list-multiselect.md |
-| 040 | Message list right-click context menu | testing | medium | 040-message-list-context-menu.md |
+| 040 | Message list right-click context menu | validating | medium | 040-message-list-context-menu.md |
 | 041 | Double-click message opens a pop-out reading window | backlog | medium | 041-message-popout-window.md |
 | 043 | Calendar item view-mode and single-open swap | backlog | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | backlog | medium | 046-tasks-panel.md |

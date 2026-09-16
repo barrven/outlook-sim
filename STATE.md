@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 040 (Message list right-click context menu)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,27 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 040 (Message list right-click context menu) tested:
+  added 22 tests (574 → 596, all passing; re-run 3x, stable), all
+  AC-traceable by number, across 3 layers — new `MessageContextMenu.test.tsx`
+  (+13, unit-level): AC1 every listed action renders; AC5 Reply/Reply
+  All/Forward enabled only for a single-message target, Delete works at any
+  size; AC4 Mark read/unread and Flag/Unflag label + applied-value switch
+  correctly between "not uniformly set" and "every target already set",
+  Add to category submits the trimmed name and no-ops on blank; AC3 Move to
+  folder stays collapsed until clicked, then lists every folder; plus
+  Escape/outside-click dismissal (an inside click doesn't trigger it).
+  `MessageListPane.test.tsx` (+8, integration): AC2 both halves — outside
+  the selection selects just that message (menu scoped to one, Reply
+  enabled), inside an existing multi-selection leaves it untouched (Reply
+  disabled); AC4 Mark as read/Flag/Add-to-category applied per selected id
+  correctly; AC3 Move to folder moves every selected message and clears
+  the selection; AC5 Delete/Reply call through with the correct
+  message(s); plus the menu closing on a folder change. `App.test.tsx`
+  (+1, end-to-end): the one branch nothing else covers — Delete
+  permanently deletes (not re-moves) a message already in Deleted Items,
+  confirmed by actually navigating there first. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-15 — feature 040 (Message list right-click context menu)
   implemented: new `MessageContextMenu.tsx` renders a fixed-positioned menu
   (closes on Escape/outside click) with Reply/Reply All/Forward (enabled

@@ -1,7 +1,7 @@
 ---
 id: 040
 title: Message list right-click context menu
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -72,7 +72,53 @@ full suite 574/574 (no change from before this feature — no new tests
 were added, since that's `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 22 tests (574 → 596, all passing; re-run 3x, stable), all AC-traceable
+by number, across 3 layers:
+
+- New `MessageContextMenu.test.tsx` (+13, unit-level, the component in
+  isolation): AC1 every listed action renders; AC5 Reply/Reply All/Forward
+  enabled for exactly one target message, disabled for a multi-message
+  target, and an enabled click calls through + closes the menu, while
+  Delete works regardless of target size; AC4 the Mark as
+  read/unread and Flag/Unflag label switches correctly between "not
+  uniformly set" (shows "Mark as read"/"Flag", applies `true`) and "every
+  target already set" (shows "Mark as unread"/"Unflag", applies `false`),
+  plus Add to category revealing its input on click and submitting the
+  *trimmed* name (and not calling through for a blank submission); AC3
+  Move to folder stays collapsed until clicked, then lists every folder,
+  and choosing one calls through with that folder's id; plus dismissal via
+  Escape and an outside click (confirming a click *inside* the menu does
+  not trigger the outside-click close path).
+- `MessageListPane.test.tsx` (+8, integration-level, real right-click →
+  selection → menu wiring): AC2 both halves — right-clicking outside the
+  current selection calls `onSelectionChange` with just that message
+  (verified via the resulting menu being scoped to one message, i.e.
+  Reply enabled) and right-clicking inside an existing multi-selection
+  leaves `onSelectionChange` uncalled (Reply stays disabled, proving the
+  menu operates on the full existing selection); AC4 Mark as
+  read/Flag issuing an `update` call per selected id, and Add to category
+  skipping a message that already has the category (only the message
+  lacking it gets an `update` call); AC3 Move to folder listing the
+  configured folders and moving every selected message, then clearing the
+  selection (since the moved messages are about to vanish from the
+  current-folder view); AC5 Delete calling `onDeleteMessages` once with
+  every targeted message object for a 3-message selection, and Reply
+  calling through with the actual message object for a single-message
+  target; plus a structural check that the menu closes when the folder
+  changes (same reset as the existing multi-select anchor).
+- `App.test.tsx` (+1, end-to-end through the real `App`/`MessageListPane`
+  wiring): the one branch nothing else exercises — the context menu's
+  Delete permanently deletes (`messages.delete`, not another `update` back
+  to `folderId: 'deleted'`) when the target message is already sitting in
+  Deleted Items, confirmed by actually navigating into that folder first.
+
+Deliberately not covered: exact on-screen pixel positioning of the menu
+(only that it renders and is scoped correctly — position is a `style`
+value taken verbatim from the click event, nothing to assert beyond "it's
+there"); a live multi-window Electron right-click (no attached display —
+same structural gap as every prior feature, substituted here by
+`fireEvent.contextMenu` driving the real `onContextMenu` handler through
+the real component tree).
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
