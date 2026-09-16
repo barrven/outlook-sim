@@ -1,7 +1,7 @@
 ---
 id: 034
 title: Move Settings into the File menu
-status: validating
+status: accept
 priority: low
 ---
 
@@ -93,7 +93,50 @@ end-to-end test for a path this change provably didn't touch would just
 be reprinting existing coverage.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+- `npm run lint` — clean, no errors/warnings.
+- `npm run typecheck` — clean.
+- `npm run build` — succeeds (main/preload/renderer all bundle).
+- `npx vitest run` (full suite) — 656/656 passing, re-run 3x, stable.
+
+Acceptance criteria, checked against current source:
+- **AC1 (nav rail no longer has a "Settings" button)** —
+  `App.tsx`'s `.app-nav-rail` (lines 275-287) now renders only
+  `FolderPane`/`CalendarFolderPane` and `NavSwitcher`; the
+  `settings-nav-button` element is gone, and `grep` confirms no
+  `settings-nav-button` reference remains anywhere in `src/`. Covered by
+  the new `034 AC1: the nav rail has no Settings button` test. Pass.
+- **AC2 (ribbon has a File menu/tab that includes a "Settings" entry)** —
+  `RibbonBar.tsx`'s File button (lines 97-121) opens a `role="menu"`
+  dropdown containing a `role="menuitem"` "Settings" button. Covered by
+  `File menu (034)` tests: menu hidden until clicked, opens with the
+  Settings entry present, `aria-expanded` toggles correctly. Pass.
+- **AC3 (clicking it opens the same Settings view as before, all
+  sections/behavior unchanged)** — the Settings entry's `onClick` calls
+  `onOpenSettings`, which `App.tsx` wires to the exact same
+  `setShowSettings(true)` state setter the old nav-rail button used; the
+  `<SettingsView>` render branch and its props (`onClose`,
+  `onFreePlayStarted`, `onScenarioPackLoaded`) are byte-for-byte
+  unchanged from before this feature (confirmed via diff — only the
+  trigger's location moved, never `SettingsView`'s own props or
+  behavior). Covered end-to-end by the renamed "opens Settings from the
+  File menu..." test (same assertions as before: Provider field
+  present, mail panes hidden) plus the free-play and Tasks-panel-hiding
+  tests, which now reach Settings the new way and still pass. Pass.
+- **AC4 (existing ✕ close affordance still works)** — `SettingsView.tsx`
+  line 170's `.settings-view-close` button and its `onClose` wiring are
+  untouched by this feature's diff; `App.tsx` still passes
+  `onClose={() => setShowSettings(false)}` unchanged.
+  `SettingsView.test.tsx` already covers the ✕ button at the component
+  level (pre-existing, not modified here), and the App-level tests that
+  return to Mail after opening Settings (via the module tab, not ✕, but
+  exercising the same `setShowSettings(false)` path) all still pass.
+  Pass — not re-tested end-to-end via ✕ specifically since neither the
+  affordance nor its wiring changed (see Test Notes for the reasoning).
+
+All 4 acceptance criteria pass. No regressions found elsewhere (full
+suite green; every other App/RibbonBar test — FileVine, Tasks panel,
+reminders, calendar, etc. — still passes unmodified aside from the
+Settings-access path).
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

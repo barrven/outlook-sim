@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 034 (Move Settings into the File menu)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,14 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 034 (Move Settings into the File menu) validated:
+  lint/typecheck/build pass; full suite 656/656, re-run 3x, stable. All 4
+  ACs re-checked directly against current source and pass — AC1 (nav
+  rail's Settings button gone, confirmed by grep and a dedicated test),
+  AC2 (File tab opens a `role="menu"` with a Settings `menuitem`), AC3
+  (Settings entry wires to the same `setShowSettings(true)`/`SettingsView`
+  props as before, unchanged by diff), AC4 (✕ close affordance and its
+  wiring untouched by this feature). Phase set to `accept`.
 - 2026-09-16 — feature 034 (Move Settings into the File menu) tested:
   `RibbonBar.test.tsx` and `App.test.tsx` updated for the new File-menu
   path (the previously-failing assertions fixed for real, plus 6 new File
