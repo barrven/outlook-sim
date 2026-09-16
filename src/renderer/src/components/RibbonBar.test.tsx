@@ -15,6 +15,8 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
   searchScope: 'folder' | 'all'
   onSearchQueryChange: () => void
   onSearchScopeChange: () => void
+  readingPaneMode: 'right' | 'off'
+  onReadingPaneModeChange: () => void
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
   onSelectViewTab: () => void
@@ -30,6 +32,8 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
     searchScope: 'folder',
     onSearchQueryChange: vi.fn(),
     onSearchScopeChange: vi.fn(),
+    readingPaneMode: 'right',
+    onReadingPaneModeChange: vi.fn(),
     onSelectHomeTab: vi.fn(),
     onSelectFileVineTab: vi.fn(),
     onSelectViewTab: vi.fn(),

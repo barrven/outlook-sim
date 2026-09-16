@@ -43,6 +43,10 @@ interface RibbonBarProps {
   searchScope: 'folder' | 'all'
   onSearchQueryChange: (query: string) => void
   onSearchScopeChange: (scope: 'folder' | 'all') => void
+  // Reading Pane Right/Off toggle (feature 042) — a View-tab control, same
+  // scoping as the Tasks toggle.
+  readingPaneMode: 'right' | 'off'
+  onReadingPaneModeChange: (mode: 'right' | 'off') => void
   onSelectHomeTab: () => void
   onSelectFileVineTab: () => void
   onSelectViewTab: () => void
@@ -63,6 +67,8 @@ function RibbonBar({
   searchScope,
   onSearchQueryChange,
   onSearchScopeChange,
+  readingPaneMode,
+  onReadingPaneModeChange,
   onSelectHomeTab,
   onSelectFileVineTab,
   onSelectViewTab,
@@ -219,6 +225,20 @@ function RibbonBar({
             </button>
           )
         })}
+        {viewTabActive && (
+          <div className="ribbon-reading-pane-control">
+            <label htmlFor="ribbon-reading-pane-mode">Reading Pane</label>
+            <select
+              id="ribbon-reading-pane-mode"
+              aria-label="Reading Pane"
+              value={readingPaneMode}
+              onChange={(event) => onReadingPaneModeChange(event.target.value as 'right' | 'off')}
+            >
+              <option value="right">Right</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+        )}
       </div>
     </div>
   )

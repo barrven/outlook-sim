@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 042 (View tab — Reading Pane Right/Off toggle)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
+  implemented: new `readingPaneMode: 'right' | 'off'` state in `App.tsx`
+  (session-only — AC4 explicitly permits this, and a persisted config
+  file felt disproportionate for a low-priority cosmetic toggle). A new
+  labelled `<select aria-label="Reading Pane">` in `RibbonBar`'s View-tab
+  action row (AC1) controls it. `<ReadingPane>` only renders when
+  `'right'`; `<MessageListPane>` gets a new `fullWidth` prop applying a
+  `.full-width` CSS class (`flex: 1 1 auto`, no border-right) so it fills
+  the freed space instead of leaving a blank gap (AC2). AC3 (single-click
+  no longer opens inline, double-click still pops out) fell out for free
+  — no `<ReadingPane>` mounted means nothing for a click-driven selection
+  to open, and the pop-out's `messagePopout.open` call is independent of
+  it. Verified live via a throwaway full-App RTL script covering the
+  whole flow both directions. lint/typecheck/build pass; full suite
+  unchanged at 681/681 (no pre-existing test depended on Reading Pane
+  visibility; two test files' shared prop-default helpers updated for
+  the new required props, compile-shape only). Phase set to `test`.
 - 2026-09-16 — feature 038 (Move mail search into the ribbon) accepted by
   user (selected "Accept (Recommended)", no changes requested); logged to
   CHANGELOG. Active feature set to 042 (View tab — Reading Pane Right/Off

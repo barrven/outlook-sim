@@ -31,6 +31,7 @@ describe('MessageListPane', () => {
     folders: [],
     searchQuery: '',
     searchScope: 'folder' as const,
+    fullWidth: false,
     onReply: vi.fn(),
     onReplyAll: vi.fn(),
     onForward: vi.fn(),

@@ -51,6 +51,10 @@ function App(): ReactElement {
   // nothing here resets it on folder/module changes.
   const [viewTabActive, setViewTabActive] = useState(false)
   const [showTasksPanel, setShowTasksPanel] = useState(false)
+  // Reading Pane Right/Off toggle (feature 042) — session-only state (AC4
+  // permits "at minimum for the current session"); 'right' matches the
+  // pre-existing default (inline pane always shown).
+  const [readingPaneMode, setReadingPaneMode] = useState<'right' | 'off'>('right')
   // Mail search (feature 038) — lifted up from MessageListPane so the ribbon
   // (which renders above it) can own the input, while MessageListPane still
   // does the actual filtering. Visible in exactly the same circumstances the
@@ -275,6 +279,8 @@ function App(): ReactElement {
         searchScope={searchScope}
         onSearchQueryChange={setSearchQuery}
         onSearchScopeChange={setSearchScope}
+        readingPaneMode={readingPaneMode}
+        onReadingPaneModeChange={setReadingPaneMode}
         onSelectHomeTab={handleSelectHomeTab}
         onSelectFileVineTab={handleSelectFileVineTab}
         onSelectViewTab={handleSelectViewTab}
@@ -318,23 +324,26 @@ function App(): ReactElement {
                 folders={folders}
                 searchQuery={searchQuery}
                 searchScope={searchScope}
+                fullWidth={readingPaneMode === 'off'}
                 onReply={handleReply}
                 onReplyAll={handleReplyAll}
                 onForward={handleForward}
                 onDeleteMessages={handleDeleteMessages}
               />
-              <ReadingPane
-                selectedMessageId={selectedMessageId}
-                selectedCount={selectedMessageIds.length}
-                messagesVersion={messagesVersion}
-                onEditDraft={handleEditDraft}
-                onReply={handleReply}
-                onReplyAll={handleReplyAll}
-                onForward={handleForward}
-                onDelete={handleDeleteMessage}
-                onRestore={handleRestoreMessage}
-                onPermanentDelete={handlePermanentDeleteMessage}
-              />
+              {readingPaneMode === 'right' && (
+                <ReadingPane
+                  selectedMessageId={selectedMessageId}
+                  selectedCount={selectedMessageIds.length}
+                  messagesVersion={messagesVersion}
+                  onEditDraft={handleEditDraft}
+                  onReply={handleReply}
+                  onReplyAll={handleReplyAll}
+                  onForward={handleForward}
+                  onDelete={handleDeleteMessage}
+                  onRestore={handleRestoreMessage}
+                  onPermanentDelete={handlePermanentDeleteMessage}
+                />
+              )}
             </>
           )
         ) : (

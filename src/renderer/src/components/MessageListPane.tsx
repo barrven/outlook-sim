@@ -13,6 +13,10 @@ interface MessageListPaneProps {
   // component only reads the current query/scope to filter its list.
   searchQuery: string
   searchScope: 'folder' | 'all'
+  // Reading Pane Right/Off toggle (feature 042) — when the inline Reading
+  // Pane isn't rendered alongside this pane, it takes the freed space
+  // instead of leaving a blank gap.
+  fullWidth: boolean
   onReply: (message: MailMessage) => void
   onReplyAll: (message: MailMessage) => void
   onForward: (message: MailMessage) => void
@@ -28,6 +32,7 @@ function MessageListPane({
   folders,
   searchQuery,
   searchScope,
+  fullWidth,
   onReply,
   onReplyAll,
   onForward,
@@ -177,7 +182,7 @@ function MessageListPane({
     : []
 
   return (
-    <div className="message-list-pane">
+    <div className={`message-list-pane${fullWidth ? ' full-width' : ''}`}>
       <div className="message-list-header">
         {selectedFolderName}
         {allCategories.length > 0 && (
