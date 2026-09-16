@@ -1,7 +1,7 @@
 ---
 id: 034
 title: Move Settings into the File menu
-status: accept
+status: done
 priority: low
 ---
 
@@ -139,4 +139,6 @@ reminders, calendar, etc. — still passes unmodified aside from the
 Settings-access path).
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — user accepted, selecting "Accept (Recommended)" when presented
+with the validation summary (lint/typecheck/build clean, full suite
+656/656 stable, all 4 ACs pass) and the diff. No changes requested.

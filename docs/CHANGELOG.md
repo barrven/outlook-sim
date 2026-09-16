@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Move Settings into the File menu (features/034-settings-in-file-menu.md)
+Settings is no longer a nav-rail button; it's opened from a new File menu
+on the ribbon (a dropdown, matching classic Outlook's File > Options
+pattern), with a Settings entry. Clicking it opens the same Settings view
+as before, with the same ✕ close affordance.
+
 ## 2026-09-16 — Ribbon — hide Send/Receive and Folder tabs (features/033-hide-unused-ribbon-tabs.md)
 The ribbon's Send/Receive and Folder tabs — placeholders since the app's
 first version, never wired to any functionality — are now hidden entirely
