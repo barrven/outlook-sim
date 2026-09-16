@@ -177,4 +177,21 @@ describe('TasksPanel', () => {
 
     expect(await screen.findByText('No tasks yet.')).toBeInTheDocument()
   })
+
+  // Requested-changes round: the add-task row must stay fixed above the
+  // list rather than being pushed down as tasks accumulate.
+  it('keeps the add-task row above the task list, regardless of how many tasks exist', async () => {
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 't1', text: 'First' }),
+      makeTask({ id: 't2', text: 'Second' })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    const addRow = screen.getByLabelText('New task')
+    const firstTask = await screen.findByText('First')
+
+    // DOCUMENT_POSITION_FOLLOWING on the task relative to the add row means
+    // the add row comes first in document order.
+    expect(addRow.compareDocumentPosition(firstTask) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })

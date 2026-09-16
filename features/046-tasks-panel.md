@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -135,9 +135,15 @@ only the AC5 task data itself is).
 didn't assert DOM order or border classes, so none of it needed rewriting
 — every existing assertion (add/complete/remove call-throughs, empty
 states, live refetch) still passes unchanged against the reordered JSX.
-Not independently re-verified here since a throwaway check already
-confirmed the DOM-order move during `/implement`; re-run as part of this
-stage's full-suite pass regardless.
+Added one new permanent regression test: with 2+ tasks present, the
+add-task row's DOM position is confirmed to precede the first task via
+`compareDocumentPosition` (631 → 632). The divider-line CSS itself is
+not unit-tested — jsdom in this project's test setup doesn't load the
+external stylesheet, so a computed-style assertion would read browser
+defaults, not the actual rule (confirmed by a failed throwaway attempt
+during `/implement`); no CSS rule anywhere in this codebase is verified
+that way, so this isn't a new gap. lint/typecheck/build all pass; full
+suite 632/632, re-run 3x, stable.
 
 ## Validation Notes
 lint/typecheck/build all pass. Full test suite (631/631) re-run 3x, stable

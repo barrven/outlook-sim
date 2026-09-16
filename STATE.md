@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,14 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 046 (Tasks side panel) tested (requested-changes
+  round): added one permanent regression test (631 → 632, stable across
+  3 runs) confirming the add-task row precedes the first task in DOM
+  order with 2+ tasks present. No existing test needed rewriting — none
+  asserted DOM order or border classes. The divider-line CSS remains
+  unverified by unit test (jsdom here doesn't load the external
+  stylesheet, same as every other CSS rule in this codebase). lint/
+  typecheck/build all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 046 (Tasks side panel) implemented requested
   changes: (1) added a visual divider (border-top on every item, plus a
   matching border-bottom on the last one, so adjacent items share one
