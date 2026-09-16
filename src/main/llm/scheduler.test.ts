@@ -271,6 +271,55 @@ describe('generateUnsolicitedMail', () => {
     const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
     expect(userMessage).not.toContain('never leak into Morgan')
   })
+
+  describe('049: FileVine content in the prompt', () => {
+    it('AC1: includes the associated FileVine folder\'s notes (name + content) in the system prompt', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      db.createFileVineNote({
+        folderId: folder.id,
+        name: 'Deadline note',
+        content: 'The probate filing is due 2026-06-01.'
+      })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Rivera Estate')
+      expect(systemMessage).toContain('Deadline note')
+      expect(systemMessage).toContain('The probate filing is due 2026-06-01.')
+    })
+
+    it('AC2: a persona with no associated FileVine folder generates exactly as before (no FileVine section)', async () => {
+      db.createFileVineFolder({ name: 'Unrelated Matter', parentId: null, clientPersonaId: null })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).not.toContain('FileVine')
+      expect(systemMessage).not.toContain('Unrelated Matter')
+    })
+
+    it('AC4: a folder content update is reflected in the very next generation, with the old content gone', async () => {
+      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
+      const note = db.createFileVineNote({ folderId: folder.id, name: 'Deadline note', content: 'Due 2026-04-01.' })
+      db.updateFileVineNote(note.id, { content: 'Due 2026-05-15 (moved).' })
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
+
+      await generateUnsolicitedMail(db, config, clock)
+
+      const [, init] = fetchSpy.mock.calls[0]
+      const body = JSON.parse(init?.body as string)
+      const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
+      expect(systemMessage).toContain('Due 2026-05-15 (moved).')
+      expect(systemMessage).not.toContain('Due 2026-04-01.')
+    })
+  })
 })
 
 describe('UnsolicitedMailScheduler', () => {

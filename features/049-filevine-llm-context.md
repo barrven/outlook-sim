@@ -1,7 +1,7 @@
 ---
 id: 049
 title: FileVine content feeds persona LLM context
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -68,7 +68,34 @@ attempted" note. lint/typecheck/build pass; existing `personaReply.test.ts`/
 for personas without a FileVine folder.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+632 → 648 net (+16, all passing; re-run 3x, stable), across 3 files:
+
+- New `main/llm/fileVineContext.test.ts` (+9, unit-level, real `MailDb`):
+  `null` for no folder / no folders at all; folder name + every note's
+  name and content included; aggregates across multiple folders
+  associated with the same persona; excludes a folder associated with a
+  *different* persona; a folder with no notes yet names itself explicitly
+  ("no notes/files yet") rather than being silently skipped (AC1); a very
+  large note is truncated with a `[...truncated]` marker while a small one
+  isn't (AC1); a note update is reflected on the very next call, with the
+  old content gone (AC4).
+- `main/llm/personaReply.test.ts` (+4, new `describe('049: ...')` block):
+  AC1 folder name + note content reach the system prompt sent to the LLM;
+  AC2 a persona with no associated folder gets no `FileVine`-section at
+  all (an unrelated folder existing elsewhere doesn't leak in either); AC4
+  an update lands on the next call, stale content gone; a no-notes-yet
+  folder is named explicitly.
+- `main/llm/scheduler.test.ts` (+3, same AC1/AC2/AC4 shape, for the
+  unsolicited-mail path).
+
+Deliberately not covered by an automated test: AC3 ("a live/manual check
+confirms a persona references specific content... when prompted about
+it") — this requires an actual LLM response from a real configured
+provider, not a stubbed `fetch`, so it's inherently a manual step for the
+user to perform against their own API key. The standalone live-verified
+script from `/implement` demonstrates the mechanism (specific note content
+reaches the prompt) but can't demonstrate the LLM *choosing* to reference
+it — that's the part AC3 itself calls "live/manual."
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

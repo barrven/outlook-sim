@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 049 (FileVine content feeds persona LLM context)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  tested: 632 → 648 net (+16, all passing; re-run 3x, stable), across new
+  `fileVineContext.test.ts` (+9, unit-level: null cases, name+content
+  inclusion, multi-folder aggregation, cross-persona exclusion, an
+  explicit "no notes/files yet" line for an empty folder, truncation of a
+  very large note vs. no truncation of a small one, immediate reflection
+  of an update) plus `personaReply.test.ts`/`scheduler.test.ts` (+4/+3,
+  AC1/AC2/AC4 each, asserting the actual system-prompt content sent to the
+  LLM). AC3 (a live LLM response referencing specific content) deliberately
+  left uncovered by automated tests — it needs a real provider response,
+  not a stubbed one, so it's a manual step for the user against their own
+  API key. lint/typecheck/build all pass. Test Notes filled in; phase set
+  to `validate`.
 - 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
   implemented: new `main/llm/fileVineContext.ts`'s
   `buildFileVineContextPrompt(db, personaId)` finds every FileVine folder
