@@ -1,7 +1,7 @@
 ---
 id: 041
 title: Double-click message opens a pop-out reading window
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -86,7 +86,59 @@ lint/typecheck/build all pass; existing suite unchanged 596/596 (no new
 tests added yet — that's `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added 8 tests (596 → 604, all passing; re-run 3x, stable), all AC-traceable
+by number, across 2 files:
+
+- New `MessagePopoutWindow.test.tsx` (+7): AC1 the fetch is scoped to the
+  given `messageId` and the fetched content (subject/body/sender) actually
+  renders, via the real `ReadingPane` — not a reimplementation, so content
+  parity with the inline Reading Pane is structural rather than something
+  to re-assert field-by-field; AC2 a `data:messages-changed` broadcast
+  (simulated by invoking the same callback `window.api.onMessagesChanged`
+  was registered with) triggers a refetch, and the subscription is
+  cleaned up on unmount (no leaked listener across pop-out opens/closes).
+  Plus action-wiring checks matching what the same buttons do in the main
+  window: Reply/Reply All/Forward call `compose.open` with this message as
+  the source; Delete moves it to Deleted Items preserving its prior
+  folder; a message already in Deleted Items shows Restore/Delete
+  permanently instead (both wired to the correct `update`/`delete`
+  calls) — this is also an end-to-end proof of AC2's *own-window* change
+  reflecting live, since the mocked API result changing is what the real
+  `data:messages-changed` round-trip would do; a draft shows Edit draft,
+  wired to open it in the compose window.
+- `MessageListPane.test.tsx` (+1): AC1's "opens" half — double-clicking a
+  row calls `window.api.messagePopout.open` with that message's id. Uses
+  `userEvent.dblClick` rather than `fireEvent.doubleClick`, since the
+  former reproduces the real click→click→dblclick sequence a browser
+  fires (the latter only dispatches the bare `dblclick` event) — the
+  existing plain-click handler on the same element needed to coexist
+  correctly with the double-click one under realistic event ordering, not
+  just fire in isolation.
+
+Deliberately not covered:
+- **AC3** (closing the pop-out doesn't affect the main window): this is
+  structural, not testable at this layer — the pop-out is a wholly
+  separate `BrowserWindow`/renderer process with no shared React state,
+  which a unit test can't exercise without actually spinning up two
+  Electron windows. Re-confirmed by code inspection during `/implement`
+  (`MessagePopoutWindow` takes only a `messageId` prop, no reference to
+  `App.tsx`'s `selectedMessageIds`) and again expected at `/validate`.
+- **AC4** (works with the inline Reading Pane "Right" or "Off", feature
+  042): 042 is still `backlog` — there's no "Off" state to exist yet, so
+  nothing to test against. Nothing in this feature's code reads any
+  Reading-Pane-visibility flag either, so there's nothing that *could*
+  regress when 042 lands; re-confirmed by inspection, not a new test.
+- Main-process window creation itself (`createMessagePopoutWindow` in
+  `main/windows.ts`, the `window:openMessagePopout` IPC handler) —
+  matches the project's existing convention of not unit-testing
+  `createComposeWindow`/`window:openCompose` either; Electron
+  `BrowserWindow` creation isn't exercised by this test setup for any
+  pop-out window, compose included.
+- `ReadingPane`'s own exhaustive branch coverage (read/unread, flag,
+  categories, attachments, every folder-state action set) — already
+  covered by `ReadingPane.test.tsx`; re-testing it here through the
+  pop-out host would just be duplicate implementation-detail coverage of
+  a component this feature doesn't modify.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

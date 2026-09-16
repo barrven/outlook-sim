@@ -958,4 +958,30 @@ describe('MessageListPane', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
+
+  // Double-click pop-out (feature 041)
+
+  it('041 AC1: double-clicking a message opens the pop-out window for that message', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue(ABCD)
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+    await screen.findByText('Bravo')
+
+    // userEvent.dblClick fires the real click/click/dblclick sequence a
+    // browser would, unlike fireEvent.doubleClick which only dispatches
+    // the bare dblclick event.
+    await user.dblClick(screen.getByText('Bravo'))
+
+    expect(window.api.messagePopout.open).toHaveBeenCalledWith('b')
+  })
 })

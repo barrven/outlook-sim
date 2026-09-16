@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 041 (Double-click message opens a pop-out reading window)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
+  window) tested: added 8 tests (596 → 604, all passing; re-run 3x,
+  stable), all AC-traceable by number, across 2 files — new
+  `MessagePopoutWindow.test.tsx` (+7): AC1 content renders via the real
+  `ReadingPane` scoped to the right message id; AC2 a `data:messages-
+  changed` broadcast triggers a refetch and the listener is cleaned up on
+  unmount; plus action-wiring checks (Reply/Reply All/Forward, Delete,
+  Restore/Delete-permanently for a message already in Deleted Items, Edit
+  draft) all confirmed to call through with the correct arguments, same as
+  the inline Reading Pane. `MessageListPane.test.tsx` (+1): AC1's "opens"
+  half — double-click calls `messagePopout.open` with the right id, using
+  `userEvent.dblClick` (the real click→click→dblclick sequence) rather
+  than the bare `fireEvent.doubleClick`. Deliberately not covered: AC3
+  (structural — separate window/process, no shared state to test at this
+  layer), AC4 (feature 042 doesn't exist yet, nothing to test against, and
+  nothing here depends on it), and main-process `BrowserWindow` creation
+  (matches the project's existing convention of not unit-testing
+  `createComposeWindow` either). lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
 - 2026-09-15 — feature 041 (Double-click message opens a pop-out reading
   window) implemented: mirrors the existing compose pop-out pattern
   (feature 004) exactly — new `window:openMessagePopout` IPC handler in
