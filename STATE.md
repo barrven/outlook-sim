@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 032 (Settings — generate personas via LLM)
 - **Last updated:** 2026-09-15
 
@@ -18,6 +18,27 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM) validated:
+  lint/typecheck/build pass; full test suite (557/557) re-run 3x, stable;
+  confirmed via `git diff` that `/test` touched only test files/docs, no
+  implementation drift. All 5 ACs verified by tests plus code inspection
+  plus an independent live check — a standalone `tsx`-run script against
+  the real `generatePersonas`/`ConfigStore` code (only `fetch` stubbed)
+  drove the full pipeline: generation read the exact configured
+  provider/key (AC1), produced a well-formed 2-persona cast with a
+  correct reportsTo relationship (AC2), simulated the UI's Accept-append
+  flow (AC3), and — critically — opened a *second* `ConfigStore` against
+  the same scratch directory (a real restart, not a mock), confirming all
+  3 personas (1 pre-existing + 2 generated) survived intact with
+  `reportsTo` preserved (AC5). AC4 confirmed by the unit/IPC tests'
+  4-failure-shape coverage (network, auth, non-JSON, bad-shape), each
+  leaving `config.getPersonas()` untouched. Code inspection independently
+  confirmed `personas.set` is never called from the generate handler
+  itself, only from Accept, so "shown before committed" (AC2/AC3) is a
+  structural guarantee, not just test behavior. No live multi-window
+  Electron GUI click-through attempted — no attached display; same
+  non-blocking gap as every prior feature. All checks pass, no gaps
+  found. Phase set to `accept`.
 - 2026-09-15 — feature 032 (Settings — generate personas via LLM) tested:
   added 21 tests (536 → 557, all passing; re-run 3x, stable), all
   AC-traceable by number, across 3 layers — `main/llm/generatePersonas.test.ts`

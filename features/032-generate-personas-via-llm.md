@@ -1,7 +1,7 @@
 ---
 id: 032
 title: Settings — generate personas via LLM
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -109,7 +109,56 @@ feature's Validation Notes).
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite re-run 3x: 557/557, stable each time
+(no flakes). `git diff ef2fbb2..697c091` (implement → test commits) confirms `/test`
+touched only test files plus `STATE.md`/`BACKLOG.md`/the feature file — no implementation
+drift.
+
+Per-AC check (tests + code inspection + an independent live check):
+
+- **AC1** (free-text description triggers an LLM call using the currently configured
+  provider/model/key): PASS. `generatePersonas.test.ts` and `ipc.test.ts` both assert the
+  handler reads `config.getSettings()` (persisted Settings), never a caller-supplied value.
+  Independently re-verified live outside the test suite: a standalone `tsx`-run script
+  against the real `generatePersonas`/`ConfigStore` code (fetch stubbed only, no other
+  mocking) confirmed the request URL/Authorization header matched the exact
+  provider/key configured on that `ConfigStore` instance.
+- **AC2** (a successful generation produces well-formed personas — all required fields
+  populated, sensible reports-to structure — shown before being committed): PASS. Code
+  inspection of `PersonasSettings.tsx` confirms `personas.set` is called only from
+  `handleSubmit`/`handleDelete`/`handleLoadPersonas`/`handleAcceptGenerated` — never from
+  `handleGeneratePersonas` itself — so a generation result is structurally staged
+  (`generatedPersonas` state) before any commit is possible. `validatePersonasFile` reuse
+  guarantees every field is populated (required fields enforced, optional ones defaulted).
+  The same live script generated a 2-persona cast with the second persona's `reportsTo`
+  correctly referencing the first's `displayName`.
+- **AC3** (accept adds to the list; discard drops the result): PASS. UI tests
+  (`PersonasSettings.test.tsx`) cover both paths directly — Accept appends to the existing
+  list and calls `personas.set` with the merged array; Discard never calls `personas.set`
+  and the review UI closes cleanly, existing list/controls intact.
+- **AC4** (a failed generation — bad key, network error, malformed LLM output — shows a
+  clear error, never corrupts the existing list): PASS. Unit tests cover all four failure
+  shapes named in the AC (network error, provider auth/bad-key error, non-JSON output,
+  well-formed-but-invalid-shape output) resolving to a clear error, never a throw, with
+  `config.getPersonas()` confirmed unchanged in each case; UI test confirms the exact error
+  string renders via the existing `role="alert"` convention and `personas.set` is never
+  called on failure.
+- **AC5** (generated personas persist across restarts like any other persona once accepted):
+  PASS. No new persistence code exists for this path — accepted personas go through the
+  identical `personas.set` → `config:personas:set` → `ConfigStore.setPersonas` call every
+  other persona-creation path already uses, and that store's close/reopen persistence is
+  already covered generally by `config.test.ts`. Independently re-verified live: the same
+  standalone script generated a cast, simulated the Accept flow's append, then opened a
+  *second* `ConfigStore` instance against the same directory (a real restart, not a mock) —
+  all 3 personas (1 pre-existing + 2 generated) came back intact, with the generated
+  persona's `reportsTo` relationship preserved byte-for-byte.
+
+No live multi-window Electron GUI click-through was attempted — no attached display in this
+environment; same non-blocking gap noted on every prior feature's Validation Notes. The live
+script above used a fresh scratch temp directory throughout, not the real
+`~/.config/outlook-sim` config — nothing real was touched.
+
+All checks pass — no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
