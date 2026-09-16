@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — FileVine content feeds persona LLM context (features/049-filevine-llm-context.md)
+Personas with an associated FileVine folder now have that folder's notes
+(name and content) woven into their LLM prompt context when generating a
+reply or unsolicited mail, so they can meaningfully reference and
+correspond about the documents in it. Personas with no associated folder
+are unaffected. Folder updates are reflected immediately, with no stale
+caching.
+
 ## 2026-09-16 — Tasks side panel (features/046-tasks-panel.md)
 A new View ribbon tab exposes a Tasks toggle: turning it on shows a
 right-hand column panel with two sections. Flagged Mail lists every

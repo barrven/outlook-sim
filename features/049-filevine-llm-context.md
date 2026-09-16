@@ -1,7 +1,7 @@
 ---
 id: 049
 title: FileVine content feeds persona LLM context
-status: accept
+status: done
 priority: medium
 ---
 
@@ -135,4 +135,7 @@ display; same non-blocking gap as every prior feature. All checks pass;
 the one open item is the inherently-manual AC3, not a defect.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — User accepted. AC3 (a live/manual check that a real LLM
+references specific FileVine content) was flagged as inherently
+non-automatable and left for the user's own manual confirmation against
+their configured provider — accepted with that understanding.

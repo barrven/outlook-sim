@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 049 (FileVine content feeds persona LLM context)
+- **Phase:** implement
+- **Active feature:** 033 (Ribbon — hide Send/Receive and Folder tabs)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
+  accepted by user; logged to CHANGELOG. AC3 (live LLM referencing
+  specific content) flagged as inherently manual and accepted with that
+  understanding. Active feature set to 033 (Ribbon — hide Send/Receive and
+  Folder tabs, next in BACKLOG.md table order), phase set to `implement`.
 - 2026-09-16 — feature 049 (FileVine content feeds persona LLM context)
   validated: lint/typecheck/build pass; full test suite (648/648) re-run
   3x, stable; confirmed via `git diff --stat` (7ebd663..a8dd074) that
