@@ -7,6 +7,17 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-15 — Settings — generate personas via LLM (features/032-generate-personas-via-llm.md)
+Settings' Personas section gains a "Generate Personas" control — enter a
+short company/industry description and the configured LLM drafts a full
+cast of personas (name, email, role, bio, writing style, reports-to)
+reflecting it, shown in a review list before anything is saved. Accept
+appends the generated personas to the existing list; Discard drops the
+result with no changes made. A failed generation (bad key, network
+error, malformed LLM output) shows a clear error and never touches the
+existing persona list; accepted personas persist across restarts like
+any other persona.
+
 ## 2026-09-15 — Settings — load personas from a JSON file (features/031-load-personas-from-json.md)
 Settings' Personas section gains a "Load Personas…" button that imports a
 persona list from a standalone JSON file — its own schema (a bare array

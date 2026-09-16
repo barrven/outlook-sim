@@ -1,7 +1,7 @@
 ---
 id: 032
 title: Settings — generate personas via LLM
-status: accept
+status: done
 priority: medium
 ---
 
@@ -161,4 +161,6 @@ script above used a fresh scratch temp directory throughout, not the real
 All checks pass — no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-15 — Presented the feature summary (what it does, per-AC validation results,
+checks, diff) via AskUserQuestion with three options (Accept / Request changes / Reject).
+User selected **Accept**. No changes requested.

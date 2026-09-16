@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 032 (Settings — generate personas via LLM)
+- **Phase:** implement
+- **Active feature:** 039 (Message list multi-select)
 - **Last updated:** 2026-09-15
 
 ## Phases
@@ -18,6 +18,10 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-15 — feature 032 (Settings — generate personas via LLM)
+  accepted by user; logged to CHANGELOG. Active feature set to 039
+  (Message list multi-select, next in BACKLOG.md table order), phase set
+  to `implement`.
 - 2026-09-15 — feature 032 (Settings — generate personas via LLM) validated:
   lint/typecheck/build pass; full test suite (557/557) re-run 3x, stable;
   confirmed via `git diff` that `/test` touched only test files/docs, no
