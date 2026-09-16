@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: accept
+status: testing
 priority: medium
 ---
 
@@ -73,6 +73,25 @@ Tradeoff: the toggle's on/off state is plain in-memory React state, not
 persisted — the AC only requires freestanding *tasks* to survive a
 restart, not the panel's visibility.
 
+**Requested-changes round (post-accept-gate):**
+- `TasksPanel.tsx`: moved the add-task row (text input, due-date input,
+  Add button) above the task list, not below it — it's the JSX-order
+  change that keeps it visually fixed in place as the list grows, no CSS
+  positioning needed.
+- `global.css`: `.tasks-panel-flagged-item`/`.tasks-panel-task` each got
+  `border-top: 1px solid var(--border)`, with a `:last-child` selector
+  adding a matching `border-bottom` — so every item shows a line above
+  and below without doubling the border thickness between adjacent items
+  (an item's bottom edge is the next item's top border). `.tasks-panel-
+  add-row`'s spacing flipped from `margin-top` to `margin-bottom` to match
+  its new position above the list.
+- Verified live: a throwaway RTL check confirmed the add-row now precedes
+  the task list in DOM order. The border styling itself isn't unit-tested
+  — jsdom in this project's test environment doesn't load the external
+  stylesheet, so computed-style assertions read browser defaults, not the
+  actual CSS (confirmed by a failed throwaway attempt); no other CSS rule
+  in this codebase is verified that way either, so this isn't a new gap.
+
 ## Test Notes
 608 → 631 net (+23, all passing; re-run 3x, stable), across 5 files:
 
@@ -111,6 +130,14 @@ Deliberately not covered: real multi-window Electron behavior (there's
 only ever one Tasks panel, no pop-out) and the toggle's on/off state
 surviving a restart (Implementation Notes: intentionally not persisted,
 only the AC5 task data itself is).
+
+**Requested-changes round:** the existing `TasksPanel.test.tsx` suite
+didn't assert DOM order or border classes, so none of it needed rewriting
+— every existing assertion (add/complete/remove call-throughs, empty
+states, live refetch) still passes unchanged against the reordered JSX.
+Not independently re-verified here since a throwaway check already
+confirmed the DOM-order move during `/implement`; re-run as part of this
+stage's full-suite pass regardless.
 
 ## Validation Notes
 lint/typecheck/build all pass. Full test suite (631/631) re-run 3x, stable
@@ -157,4 +184,12 @@ display; same non-blocking gap as every prior feature. All checks pass,
 no gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the AC-by-AC mapping and validation summary
+(631/631 tests stable, no implementation drift, plus the worktree-recovery
+detour noted in `STATE.md`). User selected "Request changes" via the
+accept-stage decision prompt, then specified: (1) add a visual separator
+(line above and below) between each task in the Tasks list; (2) the same
+separator treatment for each item in the Flagged Mail list; (3) move the
+add-task input row to the top of the Tasks section so it stays fixed in
+place rather than being pushed down as tasks are added. Decision:
+**changes requested**.

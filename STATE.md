@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
+- **Phase:** test
 - **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,29 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 046 (Tasks side panel) implemented requested
+  changes: (1) added a visual divider (border-top on every item, plus a
+  matching border-bottom on the last one, so adjacent items share one
+  line instead of doubling it) to both `.tasks-panel-task` and
+  `.tasks-panel-flagged-item`; (2) moved the add-task row above the task
+  list in `TasksPanel.tsx` (a JSX-order change, no CSS positioning) so it
+  stays fixed in place as tasks are added rather than being pushed down;
+  `.tasks-panel-add-row`'s margin flipped from `margin-top` to
+  `margin-bottom` to match. Verified live: a throwaway RTL check confirmed
+  the add-row now precedes the list in DOM order; the border CSS itself
+  isn't unit-testable here since jsdom in this project's test setup
+  doesn't load the external stylesheet (confirmed by a failed throwaway
+  computed-style assertion — not a new gap, no CSS in this codebase is
+  verified that way). lint/typecheck/build pass; full suite unchanged at
+  631/631 (no existing test asserted DOM order or border classes, so
+  nothing needed rewriting). Phase set to `test`.
+- 2026-09-16 — feature 046 (Tasks side panel) accept gate: user selected
+  "Request changes", then specified (1) a divider line above/below each
+  task and each flagged-mail item, (2) move the add-task input row to the
+  top of the Tasks section so it stays fixed as tasks are added. Recorded
+  in the feature file's Acceptance Log. Status set to `testing` directly
+  (the fix was implemented in the same pass rather than stopping at
+  `implementing`), phase set to `test`.
 - 2026-09-16 — feature 046 (Tasks side panel) validated: lint/typecheck/
   build pass; full test suite (631/631) re-run 3x, stable; confirmed via
   `git diff --stat` (f52357e..b210896) that `/test` touched only test/doc

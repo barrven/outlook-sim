@@ -78,6 +78,30 @@ function TasksPanel({ messagesVersion }: TasksPanelProps): ReactElement {
       </div>
       <div className="tasks-panel-section">
         <h3 className="tasks-panel-heading">Tasks</h3>
+        {/* Kept above the list (not below) so it stays in a fixed spot as
+            the task count grows, rather than being pushed further down the
+            panel on every add. */}
+        <div className="tasks-panel-add-row">
+          <input
+            type="text"
+            placeholder="Add a task…"
+            aria-label="New task"
+            value={newTaskText}
+            onChange={(event) => setNewTaskText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleAddTask()
+            }}
+          />
+          <input
+            type="date"
+            aria-label="Due date"
+            value={newTaskDue}
+            onChange={(event) => setNewTaskDue(event.target.value)}
+          />
+          <button type="button" onClick={handleAddTask} disabled={!newTaskText.trim()}>
+            Add
+          </button>
+        </div>
         {tasks.length === 0 ? (
           <p className="tasks-panel-empty">No tasks yet.</p>
         ) : (
@@ -104,27 +128,6 @@ function TasksPanel({ messagesVersion }: TasksPanelProps): ReactElement {
             ))}
           </ul>
         )}
-        <div className="tasks-panel-add-row">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            aria-label="New task"
-            value={newTaskText}
-            onChange={(event) => setNewTaskText(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') handleAddTask()
-            }}
-          />
-          <input
-            type="date"
-            aria-label="Due date"
-            value={newTaskDue}
-            onChange={(event) => setNewTaskDue(event.target.value)}
-          />
-          <button type="button" onClick={handleAddTask} disabled={!newTaskText.trim()}>
-            Add
-          </button>
-        </div>
       </div>
     </div>
   )

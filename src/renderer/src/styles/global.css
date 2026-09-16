@@ -1695,11 +1695,20 @@ body {
   padding: 0;
 }
 
+/* Every item gets a line above and below it. Only the top border is set
+   per-item — an item's bottom edge is the next item's top border, so
+   adjacent items share one line instead of drawing it twice; the last
+   item then needs its own bottom border to close the list off. */
 .tasks-panel-flagged-item {
   padding: 4px 0;
   font-size: 13px;
   color: var(--text);
   overflow-wrap: break-word;
+  border-top: 1px solid var(--border);
+}
+
+.tasks-panel-flagged-item:last-child {
+  border-bottom: 1px solid var(--border);
 }
 
 .tasks-panel-task {
@@ -1709,6 +1718,11 @@ body {
   padding: 4px 0;
   font-size: 13px;
   color: var(--text);
+  border-top: 1px solid var(--border);
+}
+
+.tasks-panel-task:last-child {
+  border-bottom: 1px solid var(--border);
 }
 
 .tasks-panel-task.done .tasks-panel-task-text {
@@ -1741,7 +1755,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .tasks-panel-add-row input,
