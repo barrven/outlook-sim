@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 037 (Element-level styling pass — semantic colors, border-radius, red flags)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 037 (Element-level styling pass) validated:
+  lint/typecheck/build pass; full suite (674/674) re-run 3x, stable;
+  `git diff --stat` (0d14f1d..aac62a9) confirms `/test` touched only
+  docs/test files, no implementation drift. All 4 ACs re-verified
+  directly against current source: AC1 zero hex colors remain outside
+  `:root` (independently `awk`+`grep`'d, not just trusting the test);
+  AC2 all 39 `border-radius` declarations use a radius token, none
+  hardcoded; AC3 both flag rules (`message-list-flag-btn.flagged`,
+  `reading-pane-flag-toggle.flagged`) resolve to `var(--danger)`; AC4
+  diffed the whole feature end-to-end and confirmed the only non-color/
+  non-radius change anywhere is the new (then-empty) flag-toggle
+  selector itself — no layout property touched. Not independently
+  re-verified: actual rendered appearance in a live browser (no attached
+  display), same non-blocking gap class as every prior feature. All
+  checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-16 — feature 037 (Element-level styling pass) tested: 665 → 674
   net (+9, all passing; re-run 3x, stable), across new
   `src/main/globalCssStyling.test.ts` (+5, AC1/AC2/AC3: reads the real

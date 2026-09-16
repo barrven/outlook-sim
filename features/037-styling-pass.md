@@ -1,7 +1,7 @@
 ---
 id: 037
 title: Element-level styling pass — semantic colors, border-radius, red flags
-status: validating
+status: accept
 priority: low
 ---
 
@@ -115,7 +115,38 @@ regression-test "a property I didn't touch" beyond that diff read.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (674/674) re-run 3x,
+stable. `git diff --stat` (0d14f1d..aac62a9) confirms `/test` touched only
+`STATE.md`/feature/backlog docs plus the two new/extended test files — no
+implementation drift.
+
+All 4 ACs re-verified directly against current source (not just trusting
+prior notes), independent of the new tests:
+- AC1 (consistent color tokens): `awk`'d the file to strip the `:root`
+  block and grepped the remainder for hex color literals — zero matches.
+  Every color anywhere in the stylesheet is a `var(...)` token.
+- AC2 (visible, consistent border-radius): grepped all 39
+  `border-radius` declarations — every one uses `var(--radius)` or
+  `var(--radius-pill)`, none hardcoded. Both tokens resolve to a plainly
+  visible radius (6px / a full pill), a real increase from the prior
+  barely-there 2-3px.
+- AC3 (red flags): read both flag rules directly —
+  `.message-list-flag-btn.flagged` and `.reading-pane-flag-toggle.flagged`
+  both set `color: var(--danger)`, covering the message-list row
+  indicator and the Reading Pane toggle (and by extension its pop-out
+  reuse) named in the AC.
+- AC4 (ribbon/pane layout unchanged): diffed the entire feature
+  (`736bbc7..aac62a9`, i.e. every commit this feature made) filtering out
+  color/background/border-color/border-radius lines — the only surviving
+  hunk is the new (empty-bodied at that point) `.reading-pane-flag-toggle.flagged`
+  selector itself. No padding/margin/width/height/flex/gap/position/
+  display property changed anywhere. The `ReadingPane.tsx` diff is a
+  single new className expression, no structural JSX change.
+
+Not independently re-verified: actual rendered appearance in a live
+browser/Electron window (no attached display) — same class of gap as
+every prior feature's GUI-click-through notes, not a defect found here.
+All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
