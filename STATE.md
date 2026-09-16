@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 046 (Tasks side panel)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 046 (Tasks side panel) validated (requested-changes
+  round): lint/typecheck/build pass; full suite (632/632) re-run 3x,
+  stable; `git diff --stat` (2eceff4..7d5c3dc) confirms `/test` touched
+  only test/doc files. Re-verified both requested changes directly against
+  current source: the add-row precedes the list in `TasksPanel.tsx`'s JSX;
+  both `.tasks-panel-flagged-item` and `.tasks-panel-task` carry the
+  shared-border-top/last-child-border-bottom divider pattern in
+  `global.css`, consistent with this codebase's existing `var(--border)`
+  divider convention elsewhere. Border rendering itself not re-verified
+  via a live GUI (no attached display, same gap as every prior feature).
+  All checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-16 — feature 046 (Tasks side panel) tested (requested-changes
   round): added one permanent regression test (631 → 632, stable across
   3 runs) confirming the add-task row precedes the first task in DOM

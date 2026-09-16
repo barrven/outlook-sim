@@ -1,7 +1,7 @@
 ---
 id: 046
 title: Tasks side panel
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -188,6 +188,23 @@ All 6 ACs re-verified directly against current source:
 No live multi-window Electron GUI click-through attempted — no attached
 display; same non-blocking gap as every prior feature. All checks pass,
 no gaps found.
+
+**Requested-changes round validated:** lint/typecheck/build pass; full
+suite (632/632) re-run 3x, stable; `git diff --stat` (2eceff4..7d5c3dc)
+confirms `/test` touched only test/doc files. Re-verified directly against
+current source: (1) `TasksPanel.tsx` — the add-row `<div>` (line 84)
+appears before both the empty-state `<p>` and the `<ul className="tasks-
+panel-list">` (line 106/108) for the Tasks section, confirming it's fixed
+above the list, not pushed down as tasks accumulate; (2) `global.css` —
+both `.tasks-panel-flagged-item` and `.tasks-panel-task` carry `border-
+top: 1px solid var(--border)` plus a `:last-child` `border-bottom`,
+giving every item a line above and below without doubling the shared
+border between adjacent items. The border rendering itself couldn't be
+re-verified via a running Electron GUI (same no-attached-display gap as
+every prior feature), but the CSS is straightforward and follows this
+codebase's existing `var(--border)` divider convention used throughout
+(e.g. `.message-list-header`, `.folder-pane-header`). All checks pass, no
+gaps found.
 
 ## Acceptance Log
 2026-09-16 — Presented the AC-by-AC mapping and validation summary
