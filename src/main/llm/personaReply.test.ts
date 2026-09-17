@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -236,6 +236,57 @@ describe('generatePersonaReply', () => {
     const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
     expect(userMessage).toContain('Attachments: report.pdf')
     expect(userMessage).not.toContain('--- Content of')
+  })
+
+  it('065 AC1/AC2: a reply that includes an attachment block produces a real generated attachment', async () => {
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      chatResponse(
+        'Sure, attached is the breakdown.\n---ATTACHMENT: breakdown.html---\n# Breakdown\n\nMedical: $12,000\n---END ATTACHMENT---'
+      )
+    )
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.replied) {
+      expect(result.message.body.startsWith('Sure, attached is the breakdown.')).toBe(true)
+      expect(result.message.body).not.toContain('---ATTACHMENT')
+      expect(result.message.attachments).toHaveLength(1)
+      const attachment = result.message.attachments[0]
+      expect(attachment.filename).toBe('breakdown.html')
+      expect(existsSync(attachment.path!)).toBe(true)
+      expect(readFileSync(attachment.path!, 'utf-8')).toContain('Medical: $12,000')
+    } else {
+      expect.fail('expected a reply to be sent')
+    }
+  })
+
+  it('065 AC5: a reply with no attachment block still sends normally, with an empty attachments array', async () => {
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.replied) {
+      expect(result.message.attachments).toEqual([])
+      expect(result.message.body.startsWith('Sure, noon works!')).toBe(true)
+    } else {
+      expect.fail('expected a reply to be sent')
+    }
+  })
+
+  it('065: an attachment block alongside a NO_REPLY response is discarded, no file written, no message created', async () => {
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      chatResponse('NO_REPLY\n---ATTACHMENT: report.html---\n# Report\n---END ATTACHMENT---')
+    )
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result).toEqual({ ok: true, replied: false })
+    expect(db.listMessages('inbox')).toEqual([])
   })
 
   it('omits the Attachments line entirely for a message with none', async () => {

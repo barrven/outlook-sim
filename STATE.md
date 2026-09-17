@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 065 (Mail — LLM-generated incoming attachments)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
+  tested: 733 → 751 net (+18, all passing; re-run 3x, stable) across 4
+  files. New `generatedAttachment.test.ts` (+12) covers
+  `extractAttachmentBlock` (well-formed/absent/malformed/empty blocks) and
+  `writeGeneratedAttachment` (real file on disk with rendered content,
+  `.html` forced regardless of requested extension, path-traversal
+  filenames contained, embedded `<script>` stripped, no collisions between
+  same-named attachments). `personaReply.test.ts` (+3) and
+  `scheduler.test.ts` (+2) cover both real generators end-to-end: a
+  response with a block produces a real generated attachment and a clean
+  body; a response without one leaves `attachments: []` unaffected (AC5);
+  and (personaReply only) a block riding along with `NO_REPLY` is
+  discarded entirely, nothing written or created. `ReadingPane.test.tsx`
+  (+1) covers AC3: a real-`path` attachment click opens via
+  `window.api.attachments.open` instead of the mock placeholder, with the
+  existing mock-attachment test tightened to assert that API is never
+  called for a `path`-less attachment. Deliberately uncovered: the
+  `attachments:open`/`extractText` IPC handlers' actual `shell`/`dialog`
+  delegation (no established main-process mocking pattern in this repo,
+  same as other dialog-wrapping handlers) and a live OS file-association
+  double-click (no attached display). lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
   implemented: new `src/main/llm/generatedAttachment.ts` defines a shared
   protocol — a persona reply or unsolicited-mail response may end with a

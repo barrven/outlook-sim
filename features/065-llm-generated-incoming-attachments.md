@@ -1,7 +1,7 @@
 ---
 id: 065
 title: Mail — LLM-generated incoming attachments
-status: testing
+status: validating
 priority: high
 ---
 
@@ -100,7 +100,53 @@ paths themselves (the throwaway script proved it works; nothing yet
 locks it in as a regression test).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+733 → 751 net (+18, all passing; re-run 3x, stable) across 4 files.
+
+New `generatedAttachment.test.ts` (+12) is the core unit coverage, split
+across `extractAttachmentBlock` (AC1/AC5: a well-formed trailing block
+splits cleanly from the text before it, in both a bare-reply-body context
+and a Subject/body one; no block present, a malformed block missing its
+closing marker, and an empty filename/content all gracefully fall back to
+`attachment: null`) and `writeGeneratedAttachment` (AC2: a real HTML file
+lands on disk under the given directory with the Markdown actually
+rendered; AC4: the source Markdown is carried as `extractedText`; always
+forces a `.html` extension regardless of what was requested; a
+path-traversal filename (`../../etc/passwd`) can't escape its own
+directory; an embedded `<script>` tag is stripped from the written file;
+two attachments requesting the identical filename land in separate
+directories without colliding).
+
+`personaReply.test.ts` (+3, AC1/AC2/AC5) and `scheduler.test.ts` (+2,
+AC1/AC2/AC5) cover the same three shapes end-to-end through each real
+generator: a response with an attachment block produces a message whose
+`attachments` array has a real file on disk containing the expected
+content, with the block itself cleanly stripped from the email body; a
+response with no block produces `attachments: []`, unaffected (AC5, the
+everyday case); and (`personaReply.test.ts` only, since `NO_REPLY` is
+specific to replies) an attachment block riding along with a `NO_REPLY`
+response is discarded entirely — no file written, no message created —
+confirmed by asserting `db.listMessages('inbox')` stays empty.
+
+`ReadingPane.test.tsx` (+1, AC3): clicking an attachment with a real
+`path` calls `window.api.attachments.open` with that path instead of
+toggling the old placeholder note. The pre-existing mock-attachment test
+was tightened with an explicit assertion that `attachments.open` is never
+called for a `path`-less (true mock) attachment, locking in the branch
+this feature added to `ReadingPane.tsx`'s click handler.
+
+Deliberately not covered by an automated test: the `attachments:open` and
+`attachments:extractText` IPC handlers' actual delegation to Electron's
+`shell`/`dialog` modules (no established pattern in this repo for mocking
+those in a main-process unit test, same as the untested `scenario:pickPack`/
+`personasFile:pick`/`attachments:pick` wrappers), and a real end-to-end
+double-click-to-open against a live OS file association (no attached
+display on this dev box). AC4 (persists across restart) is covered
+structurally by `writeGeneratedAttachment` writing to a real path under a
+caller-supplied durable directory rather than a temp folder — the actual
+"restart and reopen" round-trip was proven live during `/implement`'s
+throwaway script, not re-encoded as a permanent test, since it would only
+be re-testing `MailDb`'s own JSON round-trip (already covered elsewhere).
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,6 +26,29 @@ function subjectBodyResponse(subject: string, body: string): Response {
     status: 200,
     statusText: 'OK',
     json: () => Promise.resolve({ choices: [{ message: { content: `Subject: ${subject}\n\n${body}` } }] })
+  } as Response
+}
+
+function subjectBodyWithAttachmentResponse(
+  subject: string,
+  body: string,
+  attachmentFilename: string,
+  attachmentMarkdown: string
+): Response {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: () =>
+      Promise.resolve({
+        choices: [
+          {
+            message: {
+              content: `Subject: ${subject}\n\n${body}\n---ATTACHMENT: ${attachmentFilename}---\n${attachmentMarkdown}\n---END ATTACHMENT---`
+            }
+          }
+        ]
+      })
   } as Response
 }
 
@@ -97,6 +120,45 @@ describe('generateUnsolicitedMail', () => {
     }
     expect(db.listMessages('inbox')).toHaveLength(1)
     nowSpy.mockRestore()
+  })
+
+  it('065 AC1/AC2: a response that includes an attachment block produces a real generated attachment', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      subjectBodyWithAttachmentResponse(
+        'Invoice due',
+        'Please see the attached invoice.',
+        'invoice.html',
+        '# Invoice\n\nAmount due: $500'
+      )
+    )
+
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.sent) {
+      expect(result.message.subject).toBe('Invoice due')
+      expect(result.message.body).toBe('Please see the attached invoice.')
+      expect(result.message.attachments).toHaveLength(1)
+      const attachment = result.message.attachments[0]
+      expect(attachment.filename).toBe('invoice.html')
+      expect(existsSync(attachment.path!)).toBe(true)
+      expect(readFileSync(attachment.path!, 'utf-8')).toContain('Amount due: $500')
+    } else {
+      expect.fail('expected a message to be sent')
+    }
+  })
+
+  it('065 AC5: a response with no attachment block still sends normally, with an empty attachments array', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Just checking in.'))
+
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.sent) {
+      expect(result.message.attachments).toEqual([])
+    } else {
+      expect.fail('expected a message to be sent')
+    }
   })
 
   it('sends the system prompt, persona details, recent correspondence, and upcoming calendar items', async () => {

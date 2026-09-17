@@ -428,9 +428,27 @@ describe('ReadingPane', () => {
     await user.click(attachmentButton)
     expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
 
-    // No IPC/file-system surface exists for attachments at all — only the
-    // existing messages/categories calls should ever have been made.
+    // A true mock attachment (no `path`) never touches the filesystem —
+    // only a real attachment (feature 065) opens via the OS.
     expect(window.api.data.messages.update).not.toHaveBeenCalled()
+    expect(window.api.attachments.open).not.toHaveBeenCalled()
+  })
+
+  it('065 AC3: clicking a real attachment (with a path) opens it via the OS instead of toggling a placeholder', async () => {
+    const user = userEvent.setup()
+    const messageWithRealAttachment: MailMessage = {
+      ...MESSAGE,
+      attachments: [{ filename: 'settlement-offer.html', path: '/home/trainee/settlement-offer.html' }]
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(messageWithRealAttachment)
+
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    const attachmentButton = await screen.findByRole('button', { name: /settlement-offer\.html/ })
+    await user.click(attachmentButton)
+
+    expect(window.api.attachments.open).toHaveBeenCalledWith('/home/trainee/settlement-offer.html')
+    expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
   })
 
   it('resets the open attachment note when a different message is selected', async () => {
