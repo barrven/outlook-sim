@@ -270,6 +270,31 @@ describe('RibbonBar', () => {
     expect(onDelete).toHaveBeenCalledTimes(1)
   })
 
+  it('058: New Email is styled with the primary color class, and enabled Delete with the danger color class', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} onNewEmail={vi.fn()} onDelete={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'New Email' })).toHaveClass('ribbon-action-primary')
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveClass('ribbon-action-danger')
+  })
+
+  it('058: a disabled Delete (no handler) does not get the danger color class', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} />)
+
+    const deleteButton = screen.getByRole('button', { name: 'Delete' })
+    expect(deleteButton).toBeDisabled()
+    expect(deleteButton).not.toHaveClass('ribbon-action-danger')
+  })
+
+  it('058: the permanently-disabled Reply/Reply All/Forward actions never get a color class', () => {
+    render(<RibbonBar activeModule="mail" {...tabProps()} onDelete={vi.fn()} />)
+
+    for (const label of ['Reply', 'Reply All', 'Forward', 'New Items']) {
+      const button = screen.getByRole('button', { name: label })
+      expect(button).toBeDisabled()
+      expect(button.className).not.toMatch(/ribbon-action-(primary|danger)/)
+    }
+  })
+
   it('FileVine tab between Home and View calls onSelectFileVineTab and becomes the active tab', async () => {
     const user = userEvent.setup()
     const onSelectFileVineTab = vi.fn()

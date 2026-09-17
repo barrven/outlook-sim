@@ -112,6 +112,33 @@ describe('color scheme infrastructure (058)', () => {
 
     expect(defaultTheme).toMatch(/--pane-bg:\s*#ffffff;/i)
   })
+
+  // Requested directly by the user after seeing the revised palette live:
+  // give the always-visible action buttons (ribbon + Reading Pane) their
+  // own semantic identity colors instead of a uniform look, the same
+  // "logical/semantic color system" Core Requirement 2 already calls for.
+  it('defines a distinct flag/amber token trio, separate from --warning', () => {
+    const defaultTheme = extractDefaultThemeBlock(css)
+
+    expect(defaultTheme).toMatch(/--flag:\s*#[0-9a-fA-F]{3,8};/)
+    expect(defaultTheme).toMatch(/--flag-bg:\s*#[0-9a-fA-F]{3,8};/)
+    expect(defaultTheme).toMatch(/--flag-border:\s*#[0-9a-fA-F]{3,8};/)
+  })
+
+  it('the ribbon\'s enabled New Email/Delete actions use the primary/danger tokens, never a hardcoded color', () => {
+    expect(css).toMatch(/\.ribbon-action-primary:not\(:disabled\)\s*{[^}]*color:\s*var\(--accent\);/)
+    expect(css).toMatch(/\.ribbon-action-danger:not\(:disabled\)\s*{[^}]*color:\s*var\(--danger\);/)
+  })
+
+  it('a disabled ribbon action is visibly muted rather than looking identical to an enabled one', () => {
+    expect(css).toMatch(/\.ribbon-action:disabled\s*{[^}]*color:\s*var\(--text-muted\);/)
+  })
+
+  it('Reading Pane Delete/Mark-as-(un)read/Flag each get a distinct semantic color, not the shared blue default', () => {
+    expect(css).toMatch(/\.reading-pane-actions \.reading-pane-delete-btn\s*{[^}]*color:\s*var\(--danger\);/)
+    expect(css).toMatch(/\.reading-pane-actions \.reading-pane-read-toggle\s*{[^}]*color:\s*var\(--text-muted\);/)
+    expect(css).toMatch(/\.reading-pane-actions \.reading-pane-flag-toggle\s*{[^}]*color:\s*var\(--flag\);/)
+  })
 })
 
 describe('office clock (045)', () => {

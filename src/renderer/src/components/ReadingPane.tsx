@@ -141,10 +141,10 @@ function ReadingPane({
               <button type="button" onClick={() => onEditDraft(displayedMessage)}>
                 Edit draft
               </button>
-              <button type="button" onClick={() => onDelete(displayedMessage)}>
+              <button type="button" className="reading-pane-delete-btn" onClick={() => onDelete(displayedMessage)}>
                 Delete
               </button>
-              <button type="button" onClick={handleToggleRead}>
+              <button type="button" className="reading-pane-read-toggle" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
               <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>
@@ -156,10 +156,14 @@ function ReadingPane({
               <button type="button" onClick={() => onRestore(displayedMessage)}>
                 Restore
               </button>
-              <button type="button" onClick={() => onPermanentDelete(displayedMessage)}>
+              <button
+                type="button"
+                className="reading-pane-delete-btn"
+                onClick={() => onPermanentDelete(displayedMessage)}
+              >
                 Delete permanently
               </button>
-              <button type="button" onClick={handleToggleRead}>
+              <button type="button" className="reading-pane-read-toggle" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
               <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>
@@ -177,10 +181,10 @@ function ReadingPane({
               <button type="button" onClick={() => onForward(displayedMessage)}>
                 Forward
               </button>
-              <button type="button" onClick={() => onDelete(displayedMessage)}>
+              <button type="button" className="reading-pane-delete-btn" onClick={() => onDelete(displayedMessage)}>
                 Delete
               </button>
-              <button type="button" onClick={handleToggleRead}>
+              <button type="button" className="reading-pane-read-toggle" onClick={handleToggleRead}>
                 {readToggleLabel}
               </button>
               <button type="button" className={flagToggleClassName} onClick={handleToggleFlag}>

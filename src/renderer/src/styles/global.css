@@ -46,6 +46,14 @@
   --warning-bg: #fff4ce;
   --warning-border: #c19c00;
   --success: #107c10;
+
+  /* Flag/amber semantic color — distinct from --warning (a caution/error
+     state, used for the LLM failure banner) even though both land in the
+     yellow/brown family; this one is specifically the Flag action's own
+     identity color, an Outlook-style amber rather than a warning tone. */
+  --flag: #a15c00;
+  --flag-bg: #fdedd3;
+  --flag-border: #e2a33d;
 }
 
 * {
@@ -254,10 +262,33 @@ body {
   cursor: default;
 }
 
+.ribbon-action:disabled {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
 .ribbon-action.active {
   background: var(--selected-bg);
   border-color: var(--selected-border);
   color: var(--accent);
+}
+
+/* Semantic action coloring (058) — only ever applied to buttons that are
+   actually wired (New Email, Delete); a disabled ribbon action (Reply/
+   Reply All/Forward/New Items have no handler yet) stays neutral rather
+   than showing a vivid color for something that doesn't do anything,
+   and :disabled above still wins if one of these is ever conditionally
+   disabled (Delete is, depending on selection). */
+.ribbon-action-primary:not(:disabled) {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  color: var(--accent);
+}
+
+.ribbon-action-danger:not(:disabled) {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger);
 }
 
 /* Reading Pane Right/Off control (feature 042) — a View-tab action, like
@@ -1020,7 +1051,32 @@ body {
   cursor: pointer;
 }
 
+/* Semantic action coloring (058): Reply/Reply All/Forward/Edit draft/
+   Restore keep the base blue above (the "communicative default" action);
+   Delete/Mark-as-(un)read/Flag get their own identity colors so the row
+   reads as distinct actions rather than a uniform button group. Each
+   override pairs the base class with its own for enough specificity to
+   beat `.reading-pane-actions button` above without `!important`. */
+.reading-pane-actions .reading-pane-delete-btn {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.reading-pane-actions .reading-pane-read-toggle {
+  background: var(--nav-rail-bg);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.reading-pane-actions .reading-pane-flag-toggle {
+  background: var(--flag-bg);
+  border-color: var(--flag-border);
+  color: var(--flag);
+}
+
 .reading-pane-flag-toggle.flagged {
+  background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger);
 }

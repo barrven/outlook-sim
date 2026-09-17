@@ -552,6 +552,31 @@ describe('ReadingPane', () => {
     expect(unflagButton.className.split(' ')).toEqual(expect.arrayContaining(['reading-pane-flag-toggle', 'flagged']))
   })
 
+  it('058: Delete and the read/unread toggle each get their own semantic-color class, for a message outside Drafts/Deleted Items', async () => {
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(MESSAGE)
+
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: 'Delete' })).toHaveClass('reading-pane-delete-btn')
+    expect(screen.getByRole('button', { name: 'Mark as unread' })).toHaveClass('reading-pane-read-toggle')
+  })
+
+  it('058: Delete and the read/unread toggle keep their semantic-color class in Drafts (Delete) and Deleted Items (Delete permanently)', async () => {
+    const draftMessage: MailMessage = { ...MESSAGE, id: 'draft-1', folderId: 'drafts' }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(draftMessage)
+
+    render(<ReadingPane selectedMessageId="draft-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: 'Delete' })).toHaveClass('reading-pane-delete-btn')
+    expect(screen.getByRole('button', { name: 'Mark as unread' })).toHaveClass('reading-pane-read-toggle')
+
+    const deletedMessage: MailMessage = { ...MESSAGE, id: 'deleted-1', folderId: 'deleted', previousFolderId: 'inbox' }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(deletedMessage)
+    render(<ReadingPane selectedMessageId="deleted-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    expect(await screen.findByRole('button', { name: 'Delete permanently' })).toHaveClass('reading-pane-delete-btn')
+  })
+
   it('037 AC3: a flagged message in Deleted Items shows the Flag toggle with the "flagged" class', async () => {
     const flaggedDeleted: MailMessage = {
       ...MESSAGE,

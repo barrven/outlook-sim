@@ -19,6 +19,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
 - 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
+  palette): after seeing the revised palette live (post-`/test`, before
+  `/validate`), the user asked for semantic button coloring — Delete red,
+  New Email/Reply/Reply All/Forward blue, Mark-as-(un)read gray, Flag
+  amber. Added as AC5 to the feature file and implemented on the two
+  surfaces where these actions are actually wired (ribbon Home tab's New
+  Email/Delete; Reading Pane's full action row) — MessageContextMenu's
+  equivalent items deliberately left unstyled (menu items, not toolbar
+  buttons) and flagged as a scoping choice. New `--flag`/`--flag-bg`/
+  `--flag-border` tokens; everything else reuses existing 037/058 tokens.
+  Disabled ribbon actions (Reply/Reply All/Forward/New Items have no
+  handler) never get a color class, and gained a `:disabled` dimming
+  rule they were missing before (a latent pre-existing gap). New tests:
+  768 total (was 759), stable across 3 runs; lint/typecheck/build pass.
+  Feature file's Implementation/Test Notes updated with a dated addendum
+  documenting this as a user-directed addition, not silently folded into
+  the original scope. Status remains `validating`.
+- 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
   palette) tested: 755 → 759 net (+4, all passing; re-run 3x, stable),
   all in `globalCssStyling.test.ts`'s new "color scheme infrastructure
   (058)" block. AC2 covered by reading the real `index.html`/`global.css`

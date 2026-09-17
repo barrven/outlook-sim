@@ -26,6 +26,14 @@ changes — colors only (Core Requirement 2).
       consistent border-radius, red flags) still holds
 - [ ] No ribbon/pane layout, sizing, or chrome changes — this is a
       color-only revision
+- [ ] (Added mid-review, user-requested) The always-visible action buttons
+      (ribbon's New Email/Delete; Reading Pane's Reply/Reply All/Forward/
+      Delete/Mark-as-(un)read/Flag) each get their own semantic identity
+      color — destructive actions red, communicative actions blue, the
+      read/unread toggle a neutral gray, Flag its own amber — instead of a
+      uniform look, consistent with Core Requirement 2's semantic color
+      system. A disabled action (no handler wired) never shows a color, so
+      color always signals "this does something."
 
 ## Implementation Notes
 Scoped entirely to `src/renderer/index.html` and
@@ -86,6 +94,58 @@ setup doesn't load the external stylesheet, so no test could regress
 from a CSS-only value change — same pre-existing gap as every prior
 purely-CSS feature, e.g. 037).
 
+### Post-`/test`, pre-`/validate` addition (user-requested, mid-review)
+After seeing the revised palette live, the user asked for semantic
+button coloring: Delete red, New Email/Reply/Reply All/Forward blue,
+Mark-as-(un)read gray, Flag amber. Scoped to the two surfaces that
+actually have these actions wired to something real: the ribbon's Home
+tab (`New Email`, `Delete` — the only two of its six Mail actions with a
+handler; `New Items`/`Reply`/`Reply All`/`Forward` are permanently-
+disabled placeholders, matching feature 033's own "hide/disable what
+isn't wired" convention) and the Reading Pane's action row (all of
+Reply/Reply All/Forward/Delete/Mark-as-(un)read/Flag are always wired
+there). Deliberately left `MessageContextMenu.tsx`'s equivalent items
+unstyled — a native-feeling right-click menu doesn't get bold per-item
+button coloring the way a toolbar does, and the user's request was
+specifically about buttons, not menu items; flagged here rather than
+silently scoped out.
+
+New `--flag`/`--flag-bg`/`--flag-border` token trio added to
+`:root[data-theme='default']` — distinct from `--warning` (the existing
+LLM-failure-banner color, also yellow/brown-ish) since Flag is an action
+identity color, not a caution state. Everything else reuses existing
+037/058 tokens directly: blue → `--accent`/`--selected-bg`/
+`--selected-border` (already the exact trio `.ribbon-action.active`
+used); red → `--danger`/`--danger-bg`/`--danger-border`; gray →
+`--text-muted`/`--border`/`--nav-rail-bg` (the app's own blue-tinted
+"neutral," not a reintroduced flat gray — reintroducing one would have
+directly undone this same feature's AC1/AC3 gray-reduction).
+
+`RibbonBar.tsx` gained an `ACTION_COLOR_CLASS` lookup applied only when
+an action has a real handler (`New Email` always does; `Delete` does
+only when something's selected) — a disabled button never gets a color
+class, so color continues to mean "this does something," and I added a
+`.ribbon-action:disabled` rule (a latent pre-existing gap: disabled
+ribbon buttons had no dimming at all before this) so a disabled button
+now visibly recedes rather than looking identical to an enabled one.
+`ReadingPane.tsx` gained `reading-pane-delete-btn`/`reading-pane-read-
+toggle` classNames on the relevant buttons across all three branches
+(default/Drafts/Deleted Items); the existing `reading-pane-flag-toggle`
+class needed no JSX change, just new CSS.
+
+The new CSS overrides needed care with selector specificity: the
+existing base `.reading-pane-actions button` rule is (0,1,1) — a single
+class + element — so a bare `.reading-pane-delete-btn` alone (0,1,0)
+wouldn't have beaten it. Used two-class descendant selectors (e.g.
+`.reading-pane-actions .reading-pane-delete-btn`, specificity (0,2,0))
+throughout, and kept the pre-existing `.reading-pane-flag-toggle.flagged`
+override positioned after the new default-amber rule in source order so
+the (equal-specificity) flagged-red state still wins the tie once a
+message is actually flagged.
+
+lint/typecheck/build all pass; full suite unchanged at 759/759 before
+adding this round's own tests (see Test Notes).
+
 ## Test Notes
 755 → 759 net (+4, all passing; re-run 3x, stable), all within
 `globalCssStyling.test.ts`'s new `describe('color scheme infrastructure
@@ -130,6 +190,42 @@ feature, e.g. 037/042) can assert on computed styles; visually confirming
 the new palette looks right is a manual check for the user, same
 category as every prior styling-pass feature's non-blocking gap.
 
+lint/typecheck/build all pass.
+
+### Post-`/test` addition's own tests (semantic button coloring)
+759 → 768 net (+9, all passing; re-run 3x, stable) across 3 files.
+
+`globalCssStyling.test.ts` (+5): a new token trio (`--flag`/`--flag-bg`/
+`--flag-border`) exists; the ribbon's `.ribbon-action-primary`/
+`.ribbon-action-danger` rules resolve to `--accent`/`--danger`; a
+disabled ribbon action resolves to `--text-muted`; Reading Pane's
+delete/read-toggle/flag-toggle rules resolve to `--danger`/
+`--text-muted`/`--flag` respectively — all assertions target the actual
+CSS text on disk, the same pattern the rest of this file already uses.
+
+`RibbonBar.test.tsx` (+3): New Email gets `ribbon-action-primary` and an
+enabled Delete gets `ribbon-action-danger`; a *disabled* Delete (no
+`onDelete` handler) gets neither; the permanently-disabled Reply/Reply
+All/Forward/New Items never get a color class regardless — the concrete
+check that "only wired actions get colored" actually holds, not just
+"the CSS rule exists somewhere."
+
+`ReadingPane.test.tsx` (+2, mirroring the existing 037 AC3 flag-class
+tests' style): Delete and the read/unread toggle carry their new classes
+for a message outside Drafts/Deleted Items, and Delete (as "Delete
+permanently") keeps its class in both the Drafts and Deleted Items
+branches too — the three-branch JSX duplication this component already
+has (039/006-era) means all three needed independent coverage, not just
+the default branch.
+
+Not independently covered: the CSS specificity reasoning itself (that
+the two-class override rules actually beat the base rule, and that the
+flagged-red state still wins its tie against the new default-amber
+rule) — inherently a browser-rendering concern jsdom can't exercise here,
+same category as every other computed-style gap in this file. Reasoned
+through by hand during implementation instead (see Implementation
+Notes) and will show up immediately as a visibly-wrong color if wrong,
+the same way any CSS-only bug in this codebase would surface.
 lint/typecheck/build all pass.
 
 ## Validation Notes

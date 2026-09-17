@@ -13,6 +13,14 @@ const TABS = ['Home', 'FileVine', 'View']
 type ClickableTab = 'Home' | 'FileVine' | 'View'
 
 const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']
+// Semantic action coloring (058) — only for actions with a real handler in
+// actionHandlers below (New Email, Delete); Reply/Reply All/Forward/New
+// Items have none yet and stay neutral rather than looking colored/active
+// for something that doesn't do anything.
+const ACTION_COLOR_CLASS: Partial<Record<string, string>> = {
+  'New Email': 'ribbon-action-primary',
+  Delete: 'ribbon-action-danger'
+}
 // Day/Work Week/Week/Month/Today live in CalendarView's own view-tab header,
 // not here — no need to duplicate the view switcher in the ribbon too.
 // New Meeting is hidden until meeting invites/RSVP (an explicit spec
@@ -212,11 +220,12 @@ function RibbonBar({
         {actions.map((action) => {
           const handler = actionHandlers[action]
           const isToggle = action === 'Tasks'
+          const colorClass = handler ? ACTION_COLOR_CLASS[action] : undefined
           return (
             <button
               key={action}
               type="button"
-              className={`ribbon-action${isToggle && showTasksPanel ? ' active' : ''}`}
+              className={`ribbon-action${colorClass ? ` ${colorClass}` : ''}${isToggle && showTasksPanel ? ' active' : ''}`}
               disabled={!handler}
               aria-pressed={isToggle ? showTasksPanel : undefined}
               onClick={handler}
