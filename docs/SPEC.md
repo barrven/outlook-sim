@@ -170,8 +170,19 @@ _Staging area for feature ideas noticed outside the dev loop (not bugs —
 see `BUGS.md` for those). `/spec` should fold these into Core Requirements
 or Non-goals as appropriate, then clear them from this list._
 
-_(empty — the retry-button/durable-logging idea noted 2026-09-12 was folded
-into Core Requirement 8 on 2026-09-14)_
+- 2026-09-16 — Settings — Edit persona: clicking "Edit" on a persona in
+  the list should open the edit panel inline, directly below that
+  specific persona's row, instead of a single shared editor rendered
+  below the whole list (today's behavior forces a scroll from the clicked
+  row down to the editor, which is confusing).
+- 2026-09-16 — Settings — Persona editor: the "Client" (`isClient`)
+  checkbox is visually misaligned — it inherits the same `flex: 1 1 auto`
+  sizing `.settings-field-row` applies to text inputs, so it drifts
+  instead of sitting immediately left-aligned after its label. Left-align
+  it, the same fix already applied to the calendar event form's own
+  All-day checkbox (`.calendar-event-form-row-checkbox` pairs
+  `justify-content: flex-start` on the row with an explicit `flex: 0 0
+  auto` + fixed width/height on the checkbox itself).
 
 ## Changelog of spec revisions
 _Appended by `/retro` — what changed about the spec itself and why._
@@ -205,3 +216,20 @@ _Appended by `/retro` — what changed about the spec itself and why._
   files rendered formatted, and folder contents fed into that persona's LLM
   context so personas can reference and correspond about the documents
   there. `/features` is next, to turn this into a new backlog.
+- 2026-09-16 — (iteration 2 retro) closed: all 27 planned features (023-
+  049) shipped and accepted, with one "Request changes" round (046 —
+  Tasks panel) addressed in the same pass, no rejections. Nothing
+  surfaced a genuine spec-level gap — a few implementation nuances were
+  flagged along the way (038: search text now persists across FileVine/
+  Settings toggles instead of resetting, a side effect of relocating it
+  into the ribbon; 043: Cancel returns to the read-only view rather than
+  closing outright, a judgment call beyond that feature's literal
+  wording) but neither needed spec language, since the Core Requirements
+  don't specify that level of behavioral detail. No Core Requirement/
+  Non-goal/Constraint text changed this retro. Two new UI-fix ideas
+  queued in "Ideas for next spec revision" (persona editor: inline edit
+  panel placement, Client checkbox alignment) for `/features` to turn
+  into iteration 3's backlog directly — no `/spec` pass needed since
+  these don't change any Core Requirement, just correct how existing
+  ones are implemented. Outer iteration bumped to 3, phase set to
+  `features`.

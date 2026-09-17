@@ -3,9 +3,9 @@
 This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
-- **Outer iteration:** 2
-- **Phase:** retro
-- **Active feature:** _(none — backlog cleared)_
+- **Outer iteration:** 3
+- **Phase:** features
+- **Active feature:** _(none — awaiting /features)_
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — retro for iteration 2 closed: all 27 planned features
+  (023-049) shipped and accepted, one "Request changes" round (046)
+  addressed in the same pass, no rejections. Nothing surfaced a genuine
+  spec-level gap; two implementation nuances flagged along the way (038
+  search-text persistence across FileVine/Settings, 043 Cancel-returns-
+  to-view) didn't need spec language. User then requested two follow-up
+  UI fixes (Settings — Personas: open the edit panel inline under the
+  persona being edited instead of a shared editor below the whole list;
+  left-align the Client/`isClient` checkbox, mirroring the calendar event
+  form's existing All-day-checkbox alignment fix) — queued in
+  `docs/SPEC.md`'s "Ideas for next spec revision" for `/features` to
+  turn into backlog directly, no Core Requirement changed. Outer
+  iteration bumped to 3, phase set to `features`.
 - 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
   mini-calendar) accepted by user (selected "Accept (Recommended)", no
   changes requested); logged to CHANGELOG. This was the last
