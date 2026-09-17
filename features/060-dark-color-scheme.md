@@ -1,7 +1,7 @@
 ---
 id: 060
 title: Dark color scheme
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -11,13 +11,13 @@ Add a dark color scheme using the same scheme-switching mechanism (feature
 legibility.
 
 ## Acceptance Criteria
-- [ ] A dark color scheme exists, defining a complete value for every
+- [x] A dark color scheme exists, defining a complete value for every
       semantic token, with dark backgrounds
-- [ ] Switching to the dark scheme changes every themed surface
+- [x] Switching to the dark scheme changes every themed surface
       consistently, the same as the light schemes
-- [ ] Text and interactive elements maintain adequate contrast against the
+- [x] Text and interactive elements maintain adequate contrast against the
       dark backgrounds
-- [ ] No layout/chrome changes — same structural constraint as feature 058
+- [x] No layout/chrome changes — same structural constraint as feature 058
 
 ## Implementation Notes
 Added a `:root[data-theme='dark']` block to `src/renderer/src/styles/
@@ -75,7 +75,32 @@ suite only checks the CSS source, not a rendered page).
 Full suite: 783/783 passing (776 + 7 new), re-run twice, stable.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass clean. Full suite 783/783, re-run 3x,
+stable. `git diff --stat` (56c893d..HEAD) confirms `/implement`+`/test`
+touched only expected files (global.css, the test file, and the
+feature/BACKLOG/STATE bookkeeping).
+
+All 4 ACs re-verified with independent scripts (Python, not just
+re-running the vitest file):
+
+- **AC1** (complete value per token, dark backgrounds): parsed the
+  `dark` block directly — 23/23 tokens present. `--pane-bg`/
+  `--ribbon-bg`/`--nav-rail-bg` relative luminance 0.0085/0.0174/0.0135
+  — genuinely dark (well below mid-gray ~0.18), not just "different."
+- **AC2** (switching changes every themed surface consistently): `dark`'s
+  token-name set is byte-identical to `default`/`sage`/`plum`'s (23
+  names each) — the switch mechanism can't leave anything undefined.
+- **AC3** (adequate contrast against dark backgrounds): independent WCAG
+  relative-luminance implementation — text/text-muted/accent on
+  `--pane-bg` 14.9/7.35/8.22:1; white on `--primary-bg` 5.2:1; the
+  standalone-text tokens `--danger-border` on `--pane-bg`/`--nav-rail-bg`
+  6.47/5.96:1, `--success` on `--pane-bg` 6.46:1, `--flag-border` on
+  `--pane-bg` 8.16:1. All clear the 4.5:1 AA threshold with margin.
+- **AC4** (no layout/chrome changes): regex sweep of the `dark` block for
+  padding/margin/width/height/flex/gap/position/display finds nothing;
+  `git diff --stat` shows no component/layout files touched at all.
+
+All checks pass, no gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

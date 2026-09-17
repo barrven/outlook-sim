@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 060 (Dark color scheme)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 060 (Dark color scheme) validated: lint/
+  typecheck/build pass; full suite (783/783) re-run 3x, stable;
+  `git diff --stat` (56c893d..HEAD) confirms `/implement`+`/test` touched
+  only expected files. All 4 ACs re-verified with independent Python
+  scripts (not just re-running the test file): AC1 dark block has all
+  23 tokens, pane/ribbon/nav-rail luminance 0.0085/0.0174/0.0135
+  (genuinely dark); AC2 dark's token-name set is identical to
+  default/sage/plum's; AC3 an independent WCAG contrast implementation
+  confirms text/text-muted/accent on --pane-bg (7.35-14.9:1), white on
+  --primary-bg (5.2:1), and the standalone-text tokens --danger-border/
+  --success/--flag-border against the backgrounds they actually render
+  on (5.96-8.16:1) all clear 4.5:1; AC4 no layout property anywhere in
+  the dark block, no disclosed exceptions needed. All checks pass, no
+  gaps found. Phase set to `accept`.
 - 2026-09-17 — feature 060 (Dark color scheme) tested: 776 → 783 net
   (+7, all passing; re-run twice, stable), all in
   `globalCssStyling.test.ts`'s new "dark color scheme (060)" block. AC1
