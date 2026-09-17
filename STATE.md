@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 045 (Simulated clock — black text and dropdown mini-calendar)
+- **Phase:** retro
+- **Active feature:** _(none — backlog cleared)_
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
+  mini-calendar) accepted by user (selected "Accept (Recommended)", no
+  changes requested); logged to CHANGELOG. This was the last
+  `backlog`-status feature in `features/BACKLOG.md` — Active feature
+  cleared, phase set to `retro`.
 - 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
   mini-calendar) validated: lint/typecheck/build pass; full suite
   (713/713) re-run 3x, stable; `git diff --stat` (b837c4e..027ed92)

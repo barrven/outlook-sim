@@ -1,7 +1,7 @@
 ---
 id: 045
 title: Simulated clock — black text and dropdown mini-calendar
-status: accept
+status: done
 priority: low
 ---
 
@@ -127,4 +127,10 @@ every prior feature. All checks pass, no gaps found. Phase set to
 `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (black clock text, click-to-open
+month mini-calendar reusing CalendarView's own date math, today
+highlighted, Previous/Next fully independent of the real clock, live
+time-remaining/elapsed readout), the AC-by-AC mapping, and the validation
+result (all checks pass). Noted this clears the current backlog. User
+selected "Accept (Recommended)", no changes requested. Decision:
+accepted.

@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Simulated clock — black text and dropdown mini-calendar (features/045-clock-minicalendar.md)
+The ribbon's simulated-clock text is now black and clickable, opening a
+month mini-calendar with the current simulated day highlighted.
+Previous/Next navigate the mini-calendar without affecting the actual
+simulated clock, and clicking any other day shows how much simulated
+time remains (or has passed) until that day.
+
 ## 2026-09-16 — Double-click calendar item opens a pop-out window (features/044-calendar-popout-window.md)
 Double-clicking a calendar item (day or month view) now opens it in its
 own window — view mode by default, with the same edit affordance as the
