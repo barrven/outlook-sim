@@ -50,7 +50,7 @@
 | 043 | Calendar item view-mode and single-open swap | done | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | done | medium | 046-tasks-panel.md |
 | 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
-| 058 | Color scheme infrastructure + revised default palette | testing | medium | 058-color-scheme-infrastructure.md |
+| 058 | Color scheme infrastructure + revised default palette | validating | medium | 058-color-scheme-infrastructure.md |
 | 059 | Two additional light color schemes | backlog | medium | 059-additional-light-schemes.md |
 | 060 | Dark color scheme | backlog | medium | 060-dark-color-scheme.md |
 | 061 | Settings — Appearance color scheme switcher | backlog | medium | 061-appearance-scheme-switcher.md |

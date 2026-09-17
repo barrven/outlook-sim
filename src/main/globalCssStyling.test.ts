@@ -3,6 +3,7 @@ import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 
 const css = readFileSync(join(__dirname, '../renderer/src/styles/global.css'), 'utf-8')
+const indexHtml = readFileSync(join(__dirname, '../renderer/index.html'), 'utf-8')
 
 function extractRootBlock(source: string): string {
   const match = source.match(/:root\s*{([^}]*)}/)
@@ -64,6 +65,52 @@ describe('global.css semantic tokens (037)', () => {
   it('AC3: the flagged message-list indicator and Reading Pane flag toggle both use the danger token', () => {
     expect(css).toMatch(/\.message-list-flag-btn\.flagged\s*{\s*color:\s*var\(--danger\);\s*}/)
     expect(css).toMatch(/\.reading-pane-flag-toggle\.flagged\s*{[^}]*color:\s*var\(--danger\);/)
+  })
+})
+
+describe('color scheme infrastructure (058)', () => {
+  it('AC2: the root element opts into the "default" scheme, the single switch point for every color token', () => {
+    expect(indexHtml).toMatch(/<html[^>]*\bdata-theme=(['"])default\1[^>]*>/)
+  })
+
+  it('AC2: color tokens are defined by an attribute-selector block, not the plain :root — provably swappable even with only one scheme so far', () => {
+    // A real second scheme (059/060) is just another `:root[data-theme='...']`
+    // block; nothing else in the app needs to change to add or select one.
+    expect(css).toMatch(/:root\[data-theme=['"]default['"]\]\s*{/)
+
+    // The color tokens must live ONLY in that attribute-selector block —
+    // not also duplicated in the plain, unconditional :root — otherwise
+    // changing data-theme wouldn't actually swap every token's value.
+    const root = extractRootBlock(css)
+    for (const token of ['--border', '--ribbon-bg', '--pane-bg', '--nav-rail-bg', '--accent', '--danger']) {
+      expect(root).not.toContain(`${token}:`)
+    }
+  })
+
+  it('AC1/AC3: the revised default palette replaces 037\'s flat neutral grays with distinct, non-gray hues', () => {
+    const defaultTheme = extractDefaultThemeBlock(css)
+
+    // The exact hex values feature 037 originally shipped — asserting
+    // they're gone (not just "different") catches an accidental partial
+    // revert, not just any edit at all.
+    const originalGrays: Record<string, string> = {
+      '--border': '#c6c6c6',
+      '--ribbon-bg': '#f3f2f1',
+      '--nav-rail-bg': '#f7f7f7',
+      '--hover-bg': '#eaeaea',
+      '--text-muted': '#6b6b6b'
+    }
+    for (const [token, originalHex] of Object.entries(originalGrays)) {
+      const match = defaultTheme.match(new RegExp(`${token}:\\s*(#[0-9a-fA-F]{3,8});`))
+      expect(match, `${token} should still be defined`).not.toBeNull()
+      expect(match![1].toLowerCase()).not.toBe(originalHex)
+    }
+  })
+
+  it('AC1/AC3: --pane-bg stays pure white regardless of the gray-reduction pass, for message-content readability', () => {
+    const defaultTheme = extractDefaultThemeBlock(css)
+
+    expect(defaultTheme).toMatch(/--pane-bg:\s*#ffffff;/i)
   })
 })
 

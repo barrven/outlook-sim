@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 058 (Color scheme infrastructure + revised default palette)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
+  palette) tested: 755 → 759 net (+4, all passing; re-run 3x, stable),
+  all in `globalCssStyling.test.ts`'s new "color scheme infrastructure
+  (058)" block. AC2 covered by reading the real `index.html`/`global.css`
+  off disk: `<html>` carries `data-theme="default"`, and — the meaningful
+  check — the color tokens exist ONLY inside `:root[data-theme='default']`,
+  never duplicated in the plain `:root` (which would silently defeat
+  switching). AC1/AC3 covered by asserting the 5 grayest 037-era tokens
+  are no longer their exact original hex values (catches a partial
+  revert, not just any edit) plus a lock-in that `--pane-bg` stayed pure
+  white. AC4 (no layout changes) and the actual rendered appearance
+  remain manual/inspection-only, same non-blocking category as every
+  prior pure-CSS feature (037/042). lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
   palette) implemented: `<html>` gains `data-theme="default"`
   (`index.html`), and `global.css`'s color tokens moved from the bare

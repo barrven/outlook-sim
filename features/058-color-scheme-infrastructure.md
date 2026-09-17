@@ -1,7 +1,7 @@
 ---
 id: 058
 title: Color scheme infrastructure + revised default palette
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -87,7 +87,50 @@ from a CSS-only value change — same pre-existing gap as every prior
 purely-CSS feature, e.g. 037).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+755 → 759 net (+4, all passing; re-run 3x, stable), all within
+`globalCssStyling.test.ts`'s new `describe('color scheme infrastructure
+(058)', ...)` block.
+
+- **AC2 (switch mechanism):** one test reads the real `index.html` off
+  disk and confirms `<html>` carries `data-theme="default"`; a second
+  confirms `global.css` defines the color tokens inside a
+  `:root[data-theme='default']` attribute-selector block — and,
+  crucially, that none of those tokens are *also* still declared in the
+  plain unconditional `:root` (which would silently defeat the whole
+  point: changing `data-theme` wouldn't actually swap anything if the old
+  values were still active from an un-gated `:root`). This is what
+  "provably swappable even with only one scheme defined" actually means
+  in code, not just by inspection.
+- **AC1/AC3 (gray-reduction, revised palette):** rather than a generic
+  "is this a valid hex color" check (which would pass even if `/implement`
+  had changed nothing), the test asserts each of the 5 grayest 037-era
+  tokens (`--border`, `--ribbon-bg`, `--nav-rail-bg`, `--hover-bg`,
+  `--text-muted`) is no longer set to its exact original hex value —
+  catches a partial revert, not just "some edit happened." A companion
+  test locks in that `--pane-bg` deliberately stayed pure white. The rest
+  of AC3 ("every existing 037 AC still holds") is exercised by the
+  pre-existing 037 tests just above this block in the same file, updated
+  during `/implement` to look in the new `:root[data-theme='default']`
+  location and still passing unchanged in substance.
+- **AC1** ("every color value still a token, no new hardcoded colors"):
+  already covered by the pre-existing, updated "no hardcoded hex color
+  outside a token-defining block" test — re-ran it directly against the
+  final palette values, still green.
+
+Deliberately not covered by an automated test: **AC4** (no ribbon/pane
+layout/sizing/chrome changes) — verified during `/implement` by directly
+inspecting `git diff` and confirming zero non-color CSS properties
+changed anywhere, the same way feature 037's own AC4 was verified rather
+than unit-tested (a structural "did any non-color property change"
+assertion would be brittle and not meaningfully different from re-reading
+the diff by eye). Also not covered: the actual *rendered* appearance in a
+live browser/Electron window — jsdom in this project's test setup doesn't
+load the external stylesheet, so no test here (or in any prior purely-CSS
+feature, e.g. 037/042) can assert on computed styles; visually confirming
+the new palette looks right is a manual check for the user, same
+category as every prior styling-pass feature's non-blocking gap.
+
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
