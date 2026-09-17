@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 063 (Mail — extract real attachment content into persona LLM context)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 063 (Mail — extract real attachment content into
+  persona LLM context) validated: lint/typecheck/build pass; full suite
+  (733/733) re-run 3x, stable; `git diff --stat` (9839f64..259ac2c)
+  confirms `/implement`+`/test` touched only the expected files (plus
+  checked-in binary fixtures). All 4 ACs re-verified directly against
+  current source: AC1 extraction happens only at send time and flows into
+  the same `fields` object used for both draft-update and sent-create;
+  AC2 extracted content lands in the LLM user-prompt as a labeled block,
+  with the "live LLM references it" half flagged as an inherently manual
+  check (same category as other live-LLM ACs); AC3 confirmed against real
+  fixture files for all 6 supported formats, with one scoping note
+  surfaced — only modern `.pptx` is supported, not legacy binary `.ppt`
+  (graceful "unsupported" fallback per AC4, but flagged for explicit user
+  sign-off at `/accept` since the AC's literal wording groups PPT with
+  PPTX); AC4 confirmed both at the extraction-function level (try/catch,
+  never throws) and end-to-end (Compose still sends on a failed/unsupported
+  extraction). All checks pass; the one open item is a scoping
+  interpretation flagged for the user, not a defect. Phase set to `accept`.
 - 2026-09-17 — feature 063 (Mail — extract real attachment content into
   persona LLM context) tested: 714 → 733 net (+19, all passing; re-run 3x,
   stable) across 3 files. New `attachmentExtraction.test.ts` (+13) is the
