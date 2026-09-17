@@ -35,6 +35,9 @@
 | 026 | Fix — recurring event reminders fire per occurrence | done | high | 026-fix-recurring-reminder-per-occurrence.md |
 | 047 | FileVine tab — folder structure and client association | done | high | 047-filevine-folders-and-clients.md |
 | 048 | FileVine notes/files CRUD with Markdown content | done | high | 048-filevine-notes-markdown.md |
+| 062 | Mail — real outgoing attachments (file picker) | backlog | high | 062-real-outgoing-attachments.md |
+| 063 | Mail — extract real attachment content into persona LLM context | backlog | high | 063-attachment-content-extraction.md |
+| 065 | Mail — LLM-generated incoming attachments | backlog | high | 065-llm-generated-incoming-attachments.md |
 | 027 | LLM error banner — Retry button and durable failure log | done | medium | 027-llm-error-retry-and-log.md |
 | 028 | Trainee identity & personas — org-structure fields | done | medium | 028-org-structure-fields.md |
 | 029 | Scenario packs include the system prompt | done | medium | 029-scenario-pack-system-prompt.md |
@@ -47,6 +50,13 @@
 | 043 | Calendar item view-mode and single-open swap | done | medium | 043-calendar-view-edit-mode.md |
 | 046 | Tasks side panel | done | medium | 046-tasks-panel.md |
 | 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
+| 058 | Color scheme infrastructure + revised default palette | backlog | medium | 058-color-scheme-infrastructure.md |
+| 059 | Two additional light color schemes | backlog | medium | 059-additional-light-schemes.md |
+| 060 | Dark color scheme | backlog | medium | 060-dark-color-scheme.md |
+| 061 | Settings — Appearance color scheme switcher | backlog | medium | 061-appearance-scheme-switcher.md |
+| 064 | Mail — multimodal image attachments sent directly to the LLM | backlog | medium | 064-multimodal-image-attachments.md |
+| 066 | Mail — save a generated attachment into FileVine | backlog | medium | 066-save-attachment-to-filevine.md |
+| 067 | Mail — pop-out window for viewing attachments | backlog | medium | 067-attachment-popout-window.md |
 | 033 | Ribbon — hide Send/Receive and Folder tabs | done | low | 033-hide-unused-ribbon-tabs.md |
 | 034 | Move Settings into the File menu | done | low | 034-settings-in-file-menu.md |
 | 035 | File menu — About section | done | low | 035-file-menu-about.md |
@@ -56,6 +66,14 @@
 | 042 | View tab — Reading Pane Right/Off toggle | done | low | 042-reading-pane-toggle.md |
 | 044 | Double-click calendar item opens a pop-out window | done | low | 044-calendar-popout-window.md |
 | 045 | Simulated clock — black text and dropdown mini-calendar | done | low | 045-clock-minicalendar.md |
+| 050 | Settings — Persona editor opens inline under the edited persona | backlog | low | 050-persona-editor-inline-placement.md |
+| 051 | Settings — Persona editor's Client checkbox left-aligned | backlog | low | 051-persona-editor-checkbox-alignment.md |
+| 052 | Settings — spacing between Scenario Pack Load and Save sections | backlog | low | 052-scenario-pack-load-save-spacing.md |
+| 053 | Ribbon — Home tab: remove dead placeholder buttons | backlog | low | 053-remove-dead-home-tab-buttons.md |
+| 054 | Mail message list — flagged-row styling | backlog | low | 054-flagged-row-styling.md |
+| 055 | Mail message list — show each message's timestamp | backlog | low | 055-message-list-timestamp.md |
+| 056 | Tasks panel — unflag and pop-out controls on Flagged Mail rows | backlog | low | 056-tasks-panel-flagged-mail-controls.md |
+| 057 | Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort) | backlog | low | 057-tasks-panel-redesign.md |
 
 <!--
 Status values: backlog | implementing | testing | validating | accept | done | blocked

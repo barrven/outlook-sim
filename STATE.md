@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** features
-- **Active feature:** _(none — awaiting /features)_
+- **Phase:** implement
+- **Active feature:** 062 (Mail — real outgoing attachments (file picker))
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,27 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — `/features` (iteration 3): decomposed the post-retro spec
+  additions into 18 new backlog features (050-067). 8 small UI fixes
+  (low priority, straight from "Ideas for next spec revision": persona
+  editor inline-edit placement + Client checkbox alignment, Scenario
+  Pack Load/Save spacing, removing the Home tab's dead placeholder
+  buttons, flagged-row/flag-icon styling, message-list timestamps, Tasks
+  panel Flagged-Mail unflag+pop-out controls, and a Tasks-section
+  redesign). 4 color-scheme features (medium priority, split for
+  independent shippability: scheme-switching infrastructure + revised
+  default palette, two more light schemes, a dark scheme, and the
+  Settings Appearance switcher). 6 attachment features replacing mock
+  attachments (Core Requirement 3): real outgoing file picker (062) and
+  content extraction into LLM context (063) and LLM-generated incoming
+  HTML documents (065) as high priority — these replace the app's core
+  mock-attachment behavior; multimodal image sending (064), saving a
+  generated attachment into FileVine (066), and an attachment pop-out
+  viewer (067) as medium priority, each layered on top of one of the
+  three high-priority pieces. Cleared "Ideas for next spec revision" in
+  `docs/SPEC.md` (all 8 items now have feature files). Active feature set
+  to 062 (first backlog item by priority/table order), phase set to
+  `implement`.
 - 2026-09-16 — retro for iteration 2 closed: all 27 planned features
   (023-049) shipped and accepted, one "Request changes" round (046)
   addressed in the same pass, no rejections. Nothing surfaced a genuine

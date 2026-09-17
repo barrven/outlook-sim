@@ -33,7 +33,12 @@ practice only.
    stay classic-Outlook; individual interactive elements (buttons, chips,
    panels, flags, etc.) use a logical/semantic color system and a modest
    border-radius for a more modern feel, without restyling the ribbon/pane
-   structure itself.
+   structure itself. The app ships 4 selectable color schemes — 3 light
+   (including a revised, less-monochrome version of the original palette as
+   the default) and 1 dark — all built on the same semantic-token system, so
+   switching schemes never requires touching layout/chrome, only token
+   values. Settings offers a control to switch between them (see
+   requirement 9), and the choice persists like any other setting.
 3. The Mail module supports: compose and mock-send; reply, reply all,
    forward (replies quote the full prior thread/email chain, not just the
    immediately preceding message); drafts; delete and Deleted Items;
@@ -41,9 +46,20 @@ practice only.
    (a message the trainee sends is created already read — "unread" only
    applies to incoming mail); flags (shown in red); categories; search (a
    box in the ribbon, between the View tab and the simulated-clock display);
-   and mock attachments (filename + placeholder only, no real file payload —
-   attachments persist correctly on both the original/draft copy and the
-   Sent Items copy of a sent message). The message list supports multi-select
+   and attachments — persisting correctly on both the original/draft copy
+   and the Sent Items copy of a sent message. Outgoing attachments (composed
+   or replied to by the trainee) are real files picked from the local
+   filesystem: PDF, plain text, DOCX, XLSX, CSV, PPT/PPTX, and other common
+   types have their content extracted and included in the relevant
+   persona's LLM context so replies can reference them (no OCR — an
+   attached image is instead sent directly to the configured LLM provider/
+   model as an image when it supports multimodal input). Incoming
+   (persona-generated) attachments are LLM-generated: when a scenario calls
+   for a document, the LLM produces its text, which is rendered into an
+   HTML file actually written to disk — downloadable, and optionally
+   savable into a FileVine folder as a note/file (requirement 15). Any
+   attachment, real or LLM-generated, can be opened in its own pop-out
+   window for viewing. The message list supports multi-select
    (Ctrl-click, Shift-click) and a right-click context menu — Move to folder,
    Mark read/unread, Flag/Unflag, Add to category, Reply/Reply All/Forward,
    Delete — whose actions apply to the whole current selection. Double-
@@ -91,7 +107,8 @@ practice only.
    scenario pack), and a "Generate Personas" UI that asks the configured LLM
    to generate a full set of personas — including reports-to relationships —
    from a short company/industry description, as an alternative to manual
-   entry.
+   entry. Settings also has an Appearance control to switch between the
+   app's color schemes (requirement 2).
 10. Personas double as contacts and as From/To parties on mock mail.
 11. The app supports two modes: **free-play** (the user sets prompt +
     personas + trainee identity and starts from an empty or lightly seeded
@@ -141,6 +158,9 @@ practice only.
 - Scoring, grading, or coaching UI — this is a practice sandbox only
 - macOS/Linux support (Windows only for v1)
 - Cloud backend or telemetry of any kind
+- OCR / text extraction from scanned or image-based document content — an
+  attached image may be sent directly to a multimodal-capable LLM
+  (requirement 3), but there's no local OCR pipeline
 
 ## Constraints
 - Platform: Windows only, built as an Electron desktop app.
@@ -164,25 +184,26 @@ practice only.
 - No cost/rate-limiting behavior for the unsolicited-mail scheduler was
   specified in the source prompt. `/features` will default to a reasonable
   scheduler interval unless the user specifies one first.
+- Real attachments (requirement 3) raise a few implementation details not
+  pinned down yet: (1) FileVine's note model stores content as Markdown
+  (requirement 15) — saving an LLM-generated HTML attachment into FileVine
+  needs a reconciliation (store the raw HTML as its own kind of note
+  content, wrap/convert it into Markdown, or something else); (2) whether
+  extracted attachment text feeding the LLM context gets truncated the
+  same way FileVine notes already are (a 4000-char cap per note); (3) how
+  a real, non-HTML attachment (e.g. a PDF the trainee attached) actually
+  renders in its own pop-out window — the extracted text, or handed off to
+  the OS's own file viewer. `/features` will propose defaults for each
+  when it breaks this down into concrete features.
 
 ## Ideas for next spec revision
 _Staging area for feature ideas noticed outside the dev loop (not bugs —
 see `BUGS.md` for those). `/spec` should fold these into Core Requirements
 or Non-goals as appropriate, then clear them from this list._
 
-- 2026-09-16 — Settings — Edit persona: clicking "Edit" on a persona in
-  the list should open the edit panel inline, directly below that
-  specific persona's row, instead of a single shared editor rendered
-  below the whole list (today's behavior forces a scroll from the clicked
-  row down to the editor, which is confusing).
-- 2026-09-16 — Settings — Persona editor: the "Client" (`isClient`)
-  checkbox is visually misaligned — it inherits the same `flex: 1 1 auto`
-  sizing `.settings-field-row` applies to text inputs, so it drifts
-  instead of sitting immediately left-aligned after its label. Left-align
-  it, the same fix already applied to the calendar event form's own
-  All-day checkbox (`.calendar-event-form-row-checkbox` pairs
-  `justify-content: flex-start` on the row with an explicit `flex: 0 0
-  auto` + fixed width/height on the checkbox itself).
+_(empty — the 8 UI-fix ideas noted 2026-09-16 were turned directly into
+features 050-057 by `/features` the same day, since none needed Core
+Requirement language)_
 
 ## Changelog of spec revisions
 _Appended by `/retro` — what changed about the spec itself and why._
@@ -233,3 +254,30 @@ _Appended by `/retro` — what changed about the spec itself and why._
   these don't change any Core Requirement, just correct how existing
   ones are implemented. Outer iteration bumped to 3, phase set to
   `features`.
+- 2026-09-16 — (iteration 3, pre-`/features`) the user kept adding to the
+  spec after the retro closed. Two real Core Requirement changes: (1)
+  Requirement 2/9 — 4 selectable color schemes (3 light incl. a revised,
+  less-gray default, plus 1 dark), all on the existing semantic-token
+  system, switchable from a new Settings → Appearance control. (2)
+  Requirement 3 — mock attachments replaced with real ones: outgoing
+  (trainee-composed) attachments are real files from disk (PDF, text,
+  DOCX, XLSX, CSV, PPT/PPTX, and other common types) with their content
+  extracted into the relevant persona's LLM context, images sent directly
+  to a multimodal-capable provider, no OCR (added to Non-goals); incoming
+  (persona-generated) attachments become an LLM-authored document
+  rendered to an HTML file actually written to disk — downloadable,
+  optionally savable into FileVine, and any attachment (real or
+  generated) can be opened in its own pop-out window. Three
+  implementation details this raises (FileVine's Markdown-only note model
+  vs. HTML content; whether extracted attachment text gets the same
+  4000-char cap FileVine notes already use; how a real non-HTML
+  attachment renders in its pop-out) are logged in Open Questions for
+  `/features` to default sensibly. Also queued 6 smaller UI-fix ideas in
+  "Ideas for next spec revision" (persona editor inline-edit placement +
+  Client checkbox alignment, Scenario Pack Load/Save spacing, removing
+  the Home tab's dead placeholder buttons, flagged-row/flag-icon styling,
+  message-list timestamps, and a Tasks-panel redesign — inline edit
+  panels, a header Add button, due-date sorting — plus unflag/pop-out
+  controls on the Flagged Mail list) — none of these needed Core
+  Requirement language, just UI-level correction of existing features.
+  `/features` is next.
