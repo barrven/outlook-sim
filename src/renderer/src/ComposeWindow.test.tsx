@@ -614,5 +614,129 @@ describe('ComposeWindow', () => {
       await screen.findByDisplayValue('Re: Quarterly numbers')
       expect(screen.queryByText(/original\.pdf/)).not.toBeInTheDocument()
     })
+
+    it('063 AC1: extracts a sent attachment\'s content and persists it alongside the message', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'report.pdf',
+        path: '/home/trainee/report.pdf'
+      })
+      vi.mocked(window.api.attachments.extractText).mockResolvedValue('Q3 revenue grew 12%.')
+
+      render(<ComposeWindow />)
+
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      await screen.findByText(/report\.pdf/)
+      await user.selectOptions(screen.getByLabelText('To'), 'morgan@example.com')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.attachments.extractText).toHaveBeenCalledWith('/home/trainee/report.pdf')
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [
+            { filename: 'report.pdf', path: '/home/trainee/report.pdf', extractedText: 'Q3 revenue grew 12%.' }
+          ]
+        })
+      )
+    })
+
+    it('063 AC4: an unsupported/failed extraction still sends, with no extracted content on that attachment', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'photo.png',
+        path: '/home/trainee/photo.png'
+      })
+      vi.mocked(window.api.attachments.extractText).mockResolvedValue(undefined)
+
+      render(<ComposeWindow />)
+
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      await screen.findByText(/photo\.png/)
+      await user.selectOptions(screen.getByLabelText('To'), 'morgan@example.com')
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [{ filename: 'photo.png', path: '/home/trainee/photo.png' }]
+        })
+      )
+    })
+
+    it('does not extract attachment content when only saving a draft', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'report.pdf',
+        path: '/home/trainee/report.pdf'
+      })
+
+      render(<ComposeWindow />)
+
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      await screen.findByText(/report\.pdf/)
+      await user.click(screen.getByRole('button', { name: 'Save & Close' }))
+
+      await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
+      expect(window.api.attachments.extractText).not.toHaveBeenCalled()
+      expect(window.api.data.messages.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [{ filename: 'report.pdf', path: '/home/trainee/report.pdf' }]
+        })
+      )
+    })
+
+    it('does not re-extract an attachment that already has extracted content (e.g. a previously-sent draft reopened)', async () => {
+      const user = userEvent.setup()
+      mockClose()
+      vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+      vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      const draftWithExtractedAttachment: MailMessage = {
+        id: 'draft-4',
+        folderId: 'drafts',
+        previousFolderId: null,
+        subject: 'Has extracted attachment',
+        body: '',
+        fromName: '',
+        fromEmail: '',
+        toName: 'Morgan Rivera',
+        toEmail: 'morgan@example.com',
+        cc: [],
+        timestamp: Date.now(),
+        isRead: true,
+        isFlagged: false,
+        categories: [],
+        attachments: [
+          { filename: 'report.pdf', path: '/home/trainee/report.pdf', extractedText: 'Already extracted.' }
+        ]
+      }
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(draftWithExtractedAttachment)
+
+      render(<ComposeWindow draftId="draft-4" />)
+
+      await screen.findByText(/report\.pdf/)
+      await user.click(screen.getByRole('button', { name: 'Send' }))
+
+      await waitFor(() => expect(window.api.data.messages.update).toHaveBeenCalled())
+      expect(window.api.attachments.extractText).not.toHaveBeenCalled()
+      expect(window.api.data.messages.update).toHaveBeenCalledWith(
+        'draft-4',
+        expect.objectContaining({
+          attachments: [
+            { filename: 'report.pdf', path: '/home/trainee/report.pdf', extractedText: 'Already extracted.' }
+          ]
+        })
+      )
+    })
   })
 })

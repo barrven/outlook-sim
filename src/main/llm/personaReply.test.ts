@@ -202,6 +202,42 @@ describe('generatePersonaReply', () => {
     expect(userMessage).toContain('Attachments: report.pdf, photo.jpg')
   })
 
+  it('063 AC2: includes an attachment\'s extracted content in the prompt, alongside the filename line', async () => {
+    const message = sendMessage({
+      attachments: [
+        { filename: 'report.pdf', path: '/tmp/report.pdf', extractedText: 'Q3 revenue grew 12% year over year.' },
+        { filename: 'photo.jpg', path: '/tmp/photo.jpg' }
+      ]
+    })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
+
+    await generatePersonaReply(db, config, clock, message.id)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
+    expect(userMessage).toContain('Attachments: report.pdf, photo.jpg')
+    expect(userMessage).toContain('--- Content of report.pdf ---')
+    expect(userMessage).toContain('Q3 revenue grew 12% year over year.')
+    // The second attachment has no extractedText (e.g. unsupported type, or
+    // extraction failed/never ran) — no content block for it, just the
+    // filename line above.
+    expect(userMessage).not.toContain('--- Content of photo.jpg ---')
+  })
+
+  it('063 AC4: omits the content block entirely when no attachment has extracted text', async () => {
+    const message = sendMessage({ attachments: [{ filename: 'report.pdf', path: '/tmp/report.pdf' }] })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
+
+    await generatePersonaReply(db, config, clock, message.id)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
+    expect(userMessage).toContain('Attachments: report.pdf')
+    expect(userMessage).not.toContain('--- Content of')
+  })
+
   it('omits the Attachments line entirely for a message with none', async () => {
     const message = sendMessage() // attachments: [] by default
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))

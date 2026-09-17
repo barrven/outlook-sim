@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 063 (Mail — extract real attachment content into persona LLM context)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,26 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 063 (Mail — extract real attachment content into
+  persona LLM context) tested: 714 → 733 net (+19, all passing; re-run 3x,
+  stable) across 3 files. New `attachmentExtraction.test.ts` (+13) is the
+  core coverage, against real fixture files (checked into
+  `src/main/llm/attachmentFixtures/`, generated via LibreOffice headless
+  conversion so the real `officeparser` parsing path is exercised, not a
+  mock) — one per supported format, plus AC4's unsupported/corrupted/
+  missing/empty-file cases and the 4000-char truncation cap.
+  `personaReply.test.ts` (+2) covers AC2's prompt-wiring half — extracted
+  content appears in a labeled block in the LLM user-prompt when present,
+  omitted when absent — leaving AC2's "live LLM response references it"
+  half as the same category of manual check as this project's other
+  live-LLM ACs. `ComposeWindow.test.tsx` (+4) covers AC1/AC4 end-to-end:
+  extraction happens (and persists) only at send time, an
+  unsupported/failed extraction still sends normally, and re-sending an
+  already-extracted attachment doesn't re-extract. Deliberately
+  uncovered: the `attachments:extractText` IPC handler itself (pure
+  delegation, same untested-wrapper convention as this repo's other
+  `dialog`-adjacent handlers). lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
 - 2026-09-17 — feature 063 (Mail — extract real attachment content into
   persona LLM context) implemented: new `src/main/llm/attachmentExtraction.ts`
   dispatches by extension — `.txt`/`.csv` read directly as text,

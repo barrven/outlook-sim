@@ -1,0 +1,1 @@
+MARKER_TXT_PLAIN plain text fixture content.

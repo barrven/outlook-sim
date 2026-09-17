@@ -1,7 +1,7 @@
 ---
 id: 063
 title: Mail — extract real attachment content into persona LLM context
-status: testing
+status: validating
 priority: high
 ---
 
@@ -86,7 +86,50 @@ compose-time wiring/idempotence, and the transcript's attachment-content
 block) have no automated coverage yet.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+714 → 733 net (+19, all passing; re-run 3x, stable) across 3 files.
+
+New `attachmentExtraction.test.ts` (+13, AC3/AC4) is the core coverage,
+against real fixture files checked into `src/main/llm/attachmentFixtures/`
+(generated once via LibreOffice headless conversion, each containing a
+unique marker string — not hand-crafted binaries, so they exercise the
+real `officeparser`/zip/XML parsing path, not a mock): one passing test per
+supported format (.txt, .csv, .docx, .xlsx, .pdf, .pptx) confirms its
+marker text comes back (AC3); a `describe` block covers AC4's "doesn't
+block" guarantee — an unsupported extension (.png), a legacy binary `.ppt`
+(unsupported by this library, confirmed to degrade the same as any other
+unrecognized type), a missing file, a corrupted `.docx`, and an empty file
+all resolve to `undefined` without throwing; a final pair confirms the
+4000-char truncation cap (mirroring feature 049's FileVine convention)
+does/doesn't kick in at the right size, same pattern as
+`fileVineContext.test.ts`'s existing truncation tests.
+
+`personaReply.test.ts` (+2, AC2's prompt-wiring half): a message with one
+attachment carrying `extractedText` produces a `--- Content of <filename>
+---` block in the LLM's user-prompt content, right alongside the existing
+`Attachments: <names>` filename line, while a second attachment on the same
+message with no `extractedText` contributes only its filename, no content
+block; a message with an attachment but no `extractedText` at all omits
+the content block entirely. AC2's other half — a live LLM response
+actually referencing something specific from the attachment — is
+deliberately left as a manual check against a real provider/API key, per
+the AC's own wording and the same category as this project's other "live
+LLM" acceptance criteria (e.g. feature 049's AC3).
+
+`ComposeWindow.test.tsx` (+4, AC1/AC4): sending an attachment calls
+`window.api.attachments.extractText` with its real path and persists the
+result on that attachment; an extraction that resolves to `undefined`
+(unsupported/failed) still sends normally with no `extractedText` field
+added; saving a draft (not sending) never calls `extractText` at all; and
+reopening a draft whose attachment already carries `extractedText` (e.g.
+sent once, still open, sent again) doesn't call `extractText` a second
+time — confirms the idempotence `/implement` built in.
+
+Deliberately not covered: a dedicated test for the `attachments:extractText`
+IPC handler itself — it has no logic beyond delegating to the
+already-thoroughly-tested pure `extractAttachmentText` function, same
+rationale this repo already applies to the untested `scenario:pickPack`/
+`personasFile:pick`/`attachments:pick` dialog-wrapping handlers. lint/
+typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
