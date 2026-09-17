@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 062 (Mail — real outgoing attachments (file picker))
-- **Last updated:** 2026-09-16
+- **Phase:** implement
+- **Active feature:** 063 (Mail — extract real attachment content into persona LLM context)
+- **Last updated:** 2026-09-17
 
 ## Phases
 
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 062 (Mail — real outgoing attachments (file picker))
+  accepted by user (selected "Accept (Recommended)" against the validation
+  summary, AC-by-AC mapping, and diff, no changes requested); logged to
+  CHANGELOG. Active feature set to 063 (Mail — extract real attachment
+  content into persona LLM context, next in BACKLOG.md table order), phase
+  set to `implement`.
 - 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
   validated: lint/typecheck/build pass; full suite (714/714) re-run 3x,
   stable; `git diff --stat` (734dd28..c37e44c) confirms `/implement`+`/test`

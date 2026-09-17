@@ -7,6 +7,15 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-17 — Mail — real outgoing attachments (file picker) (features/062-real-outgoing-attachments.md)
+Composing, replying, or forwarding mail now attaches real files via a
+native OS file-picker dialog, replacing the old mock flow of typing a
+filename into a text box. Any file type can be picked; multiple
+attachments can still be added and removed before sending, and the
+attached file's real path travels with the message onto both the
+draft and the Sent Items copy — laying the groundwork for upcoming
+attachment-content features.
+
 ## 2026-09-16 — Simulated clock — black text and dropdown mini-calendar (features/045-clock-minicalendar.md)
 The ribbon's simulated-clock text is now black and clickable, opening a
 month mini-calendar with the current simulated day highlighted.

@@ -1,7 +1,7 @@
 ---
 id: 062
 title: Mail — real outgoing attachments (file picker)
-status: accept
+status: done
 priority: high
 ---
 
@@ -140,4 +140,6 @@ handler, and this handler has no validation logic to extract).
 All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-17 — User selected "Accept (Recommended)" against the validation
+summary, AC-by-AC mapping, and diff. No changes requested. Decision:
+accepted.
