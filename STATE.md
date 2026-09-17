@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 060 (Dark color scheme)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,14 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 060 (Dark color scheme) implemented: added a
+  `:root[data-theme='dark']` block to global.css with the same 23-token
+  set as the other schemes, dark backgrounds throughout (including
+  --pane-bg, unlike 059's light schemes). Most status tokens kept
+  identical to other schemes (self-contained pairs); --danger-border and
+  --success brightened since both are also used as standalone text on
+  dark backgrounds and the light-tuned values fail WCAG AA there.
+  Phase set to `test`.
 - 2026-09-17 — feature 059 (Two additional light color schemes) accepted
   by user (selected "Accept (Recommended)" against the validation
   summary and AC-by-AC mapping, no changes requested); logged to
