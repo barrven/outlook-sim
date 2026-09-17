@@ -7,6 +7,16 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-17 — Mail — extract real attachment content into persona LLM context (features/063-attachment-content-extraction.md)
+Sending a message with a real attachment (PDF, plain text, DOCX, XLSX,
+CSV, or PPTX) now extracts its readable text and includes it in the
+recipient persona's reply context, so replies can reference the
+attachment's actual content instead of just its filename. An
+unsupported file type or a failed extraction never blocks sending —
+the attachment stays on the message either way. (Legacy binary `.ppt`
+isn't supported, only modern `.pptx`; image attachments are handled
+separately, sent directly to a multimodal LLM.)
+
 ## 2026-09-17 — Mail — real outgoing attachments (file picker) (features/062-real-outgoing-attachments.md)
 Composing, replying, or forwarding mail now attaches real files via a
 native OS file-picker dialog, replacing the old mock flow of typing a

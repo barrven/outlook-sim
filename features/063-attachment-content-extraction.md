@@ -1,7 +1,7 @@
 ---
 id: 063
 title: Mail — extract real attachment content into persona LLM context
-status: accept
+status: done
 priority: high
 ---
 
@@ -189,4 +189,6 @@ given the AC's literal wording groups PPT with PPTX.
 All checks otherwise pass. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-17 — User selected "Accept (Recommended)" against the validation
+summary, AC-by-AC mapping, and the flagged `.pptx`-only (no legacy `.ppt`)
+scoping call. No changes requested. Decision: accepted.
