@@ -1,7 +1,7 @@
 ---
 id: 042
 title: View tab — Reading Pane Right/Off toggle
-status: accept
+status: done
 priority: low
 ---
 
@@ -128,4 +128,9 @@ of gap as every prior feature. All checks pass, no gaps found. Phase set
 to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (Right/Off select in the View
+tab, session-only `readingPaneMode` state, `<ReadingPane>` conditionally
+rendered, `.full-width` CSS fallback for the message list, double-click
+pop-out unaffected), the AC-by-AC mapping, and the validation result (all
+checks pass). User selected "Accept (Recommended)", no changes requested.
+Decision: accepted.

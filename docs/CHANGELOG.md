@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — View tab — Reading Pane Right/Off toggle (features/042-reading-pane-toggle.md)
+The View ribbon tab gains a Reading Pane control (Right/Off). Off removes
+the inline reading pane entirely — the message list widens to fill the
+space, and single-clicking a message no longer opens it inline. Reading
+mail still works via the double-click pop-out window (feature 041), or
+by switching back to Right.
+
 ## 2026-09-16 — Move mail search into the ribbon (features/038-search-in-ribbon.md)
 The mail search box moved from the message-list header into the ribbon
 itself, between the tab strip and the clock display. It still filters

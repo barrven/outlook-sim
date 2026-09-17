@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 042 (View tab — Reading Pane Right/Off toggle)
+- **Phase:** implement
+- **Active feature:** 044 (Double-click calendar item opens a pop-out window)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
+  accepted by user (selected "Accept (Recommended)", no changes
+  requested); logged to CHANGELOG. Active feature set to 044
+  (Double-click calendar item opens a pop-out window, next in
+  BACKLOG.md table order — 045 remains lower in the table), phase set
+  to `implement`.
 - 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
   validated: lint/typecheck/build pass; full suite (688/688) re-run 3x,
   stable; `git diff --stat` (3cbecaa..83802d5) confirms `/test` touched
