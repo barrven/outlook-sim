@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 065 (Mail — LLM-generated incoming attachments)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
+  validated: lint/typecheck/build pass; full suite (751/751) re-run 3x,
+  stable; `git diff --stat` (1b39043..31fa317) confirms `/implement`+
+  `/test` touched only the expected files. All 4 ACs re-verified directly
+  against current source: AC1 both generators import/append the shared
+  `ATTACHMENT_PROMPT_INSTRUCTION` and run `extractAttachmentBlock` before
+  any other response parsing; AC2 the same `app.getPath('userData')`
+  value already used by `MailDb`/`ConfigStore`/`SimClock` is threaded
+  into `writeGeneratedAttachment`, which writes a real rendered HTML
+  file there; AC3 the new `attachments:open` (`shell.openPath`) handler
+  is wired into `ReadingPane.tsx`'s attachment click handler, also
+  closing a gap feature 062 left open for real outgoing attachments; AC4
+  falls out of AC2's durable-directory choice plus `MailDb`'s unchanged
+  JSON persistence, proven live during `/implement`; AC5 confirmed both
+  by the prompt's explicit "most emails do NOT need one" wording and
+  structurally (`attachments: []` unless the model actually included a
+  block), with every pre-existing test in both generator files passing
+  unmodified. All checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
   tested: 733 → 751 net (+18, all passing; re-run 3x, stable) across 4
   files. New `generatedAttachment.test.ts` (+12) covers

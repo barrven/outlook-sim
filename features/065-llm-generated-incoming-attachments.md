@@ -1,7 +1,7 @@
 ---
 id: 065
 title: Mail — LLM-generated incoming attachments
-status: validating
+status: accept
 priority: high
 ---
 
@@ -12,17 +12,17 @@ rendered into a real HTML file written to local disk — replacing today's
 filename-only mock for incoming mail.
 
 ## Acceptance Criteria
-- [ ] A persona reply or unsolicited-mail generation can produce an
+- [x] A persona reply or unsolicited-mail generation can produce an
       attachment: the LLM's response includes document content for it,
       distinct from the email body itself
-- [ ] That content is rendered into a real HTML file written to disk
+- [x] That content is rendered into a real HTML file written to disk
       (under the app's existing local data directory), not just a
       filename placeholder
-- [ ] The generated attachment is downloadable/openable by the user — a
+- [x] The generated attachment is downloadable/openable by the user — a
       real file exists and is reachable from the UI
-- [ ] A generated attachment persists correctly alongside its message
+- [x] A generated attachment persists correctly alongside its message
       (survives app restart, shows up when the message is reopened)
-- [ ] Not every persona-generated message needs an attachment — this only
+- [x] Not every persona-generated message needs an attachment — this only
       applies when the scenario/LLM determines a document is warranted;
       the everyday no-attachment flow is unaffected
 
@@ -149,7 +149,57 @@ be re-testing `MailDb`'s own JSON round-trip (already covered elsewhere).
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full suite 751/751, re-run 3x, stable.
+`git diff --stat` (1b39043..31fa317) confirms `/implement`+`/test` touched
+only the expected files — no drift.
+
+All 4 ACs re-verified directly against current source:
+- **AC1**: both `personaReply.ts:5,59` and `scheduler.ts:4,42` import and
+  append the shared `ATTACHMENT_PROMPT_INSTRUCTION` to their system
+  prompts, then both call `extractAttachmentBlock(result.text)`
+  (`personaReply.ts:130`, `scheduler.ts:127`) before any other parsing —
+  the same shared protocol in both generators, confirmed structurally and
+  by the 5 new `personaReply.test.ts`/`scheduler.test.ts` cases exercising
+  real (mocked) LLM responses end-to-end.
+- **AC2**: `main/index.ts:29`'s `userDataDir = app.getPath('userData')` —
+  the same value already passed to `MailDb`/`ConfigStore`/`SimClock` — is
+  threaded through `registerDataIpcHandlers`/`UnsolicitedMailScheduler`
+  into `writeGeneratedAttachment(userDataDir, ...)`
+  (`personaReply.ts:144`, `scheduler.ts:135`), which writes a real,
+  Markdown-rendered HTML file there (not a filename placeholder) —
+  confirmed by `generatedAttachment.test.ts`'s file-on-disk assertions and
+  live during `/implement`'s throwaway script.
+- **AC3**: `main/index.ts:134`'s `attachments:open` handler
+  (`shell.openPath`) is wired into `ReadingPane.tsx:123-124`'s attachment
+  click handler for any attachment carrying a real `path` — confirmed by
+  the new `ReadingPane.test.tsx` case, and by inspection that this also
+  applies to feature 062's real outgoing attachments (same shared
+  component), closing a gap those earlier features left open.
+- **AC4**: falls out of AC2's persistent-directory choice
+  (`app.getPath('userData')`, not a temp dir) plus `MailDb`'s existing
+  JSON round-trip for the `attachments` column (unchanged by this
+  feature) — proven live during `/implement` by reopening a fresh `MailDb`
+  instance against the same directory and confirming the attachment was
+  still there. Not re-encoded as a permanent test, since doing so would
+  only re-test `MailDb`'s own already-covered JSON persistence.
+- **AC5**: `ATTACHMENT_PROMPT_INSTRUCTION` explicitly tells the model
+  "only... if a real document genuinely belongs... most emails do NOT
+  need one"; structurally, `attachments = attachment ? [...] : []`
+  (`personaReply.ts:144`, `scheduler.ts:135`) means the everyday case is
+  byte-for-byte the same `[]` this code always produced before this
+  feature. Confirmed by the two AC5-labeled tests plus every pre-existing
+  test in both files (24+29 of them) continuing to pass unmodified — none
+  needed updating for the new optional behavior, which is itself evidence
+  the everyday path is unaffected.
+
+Not independently re-verified: a live OS file-association double-click
+(no attached display on this dev box) and the `attachments:open`/
+`extractText`/`pick` IPC handlers' actual `shell`/`dialog` delegation (no
+established main-process `dialog`/`shell` mocking pattern in this repo —
+same non-blocking gap category as every prior `dialog`-touching feature,
+e.g. 021/022/031/062).
+
+All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
