@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
-import type { MailMessage } from '../../../shared/data-types'
+import type { MailMessage, MessageAttachment } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
   selectedMessageId: string | null
@@ -113,9 +113,17 @@ function ReadingPane({
     })
   }
 
-  // "Opening" a mock attachment is just a UI toggle — there's no real file
-  // behind it, so this never touches the filesystem.
-  function handleToggleAttachment(index: number): void {
+  // A real attachment (a trainee-picked file, feature 062, or an
+  // LLM-generated document, feature 065) hands off to the OS's own default
+  // handler for that file type — this app has no in-app viewer yet
+  // (feature 067). A true mock attachment (no `path`, pre-062 data) falls
+  // back to the old placeholder-note toggle, since there's no real file
+  // behind it to open.
+  function handleAttachmentClick(attachment: MessageAttachment, index: number): void {
+    if (attachment.path) {
+      void window.api.attachments.open(attachment.path)
+      return
+    }
     setOpenAttachmentIndex((current) => (current === index ? null : index))
   }
 
@@ -227,12 +235,12 @@ function ReadingPane({
                 <button
                   type="button"
                   className="attachment-button"
-                  onClick={() => handleToggleAttachment(index)}
+                  onClick={() => handleAttachmentClick(attachment, index)}
                 >
                   <span aria-hidden="true">📎</span>
                   {attachment.filename}
                 </button>
-                {openAttachmentIndex === index && (
+                {!attachment.path && openAttachmentIndex === index && (
                   <span className="attachment-placeholder-note">Mock attachment — no file content.</span>
                 )}
               </div>

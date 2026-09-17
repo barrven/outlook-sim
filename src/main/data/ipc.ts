@@ -63,7 +63,7 @@ export function broadcastCalendarItemsChanged(): void {
   }
 }
 
-export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: SimClock): void {
+export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: SimClock, userDataDir: string): void {
   ipcMain.handle('db:folders:list', () => db.listFolders())
   ipcMain.handle('db:folders:create', (_event, folder: NewFolder) => db.createFolder(folder))
   ipcMain.handle('db:folders:rename', (_event, id: string, name: string) => db.renameFolder(id, name))
@@ -154,7 +154,7 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     return result
   })
   ipcMain.handle('llm:personaReply', async (_event, sentMessageId: string) => {
-    const result = await generatePersonaReply(db, config, clock, sentMessageId)
+    const result = await generatePersonaReply(db, config, clock, sentMessageId, userDataDir)
     if (!result.ok) {
       config.appendLlmFailureLog({ timestamp: Date.now(), source: 'personaReply', error: result.error })
       broadcastPersonaReplyFailed(sentMessageId, result.error)
@@ -176,7 +176,7 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
   // this retry deliberately bypasses (a retry is an explicit, immediate
   // request, not a scheduled one).
   ipcMain.handle('llm:retryUnsolicitedMail', async () => {
-    const result = await attemptUnsolicitedMail(db, config, clock)
+    const result = await attemptUnsolicitedMail(db, config, clock, userDataDir)
     if (!result.ok) {
       broadcastUnsolicitedMailFailed(result.error)
     } else if (result.sent) {

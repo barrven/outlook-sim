@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { basename, extname } from 'path'
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import type {
   ComposeOpenOptions,
   PickAttachmentResult,
@@ -30,12 +30,13 @@ app.whenReady().then(() => {
   const mailDb = new MailDb(userDataDir)
   const configStore = new ConfigStore(userDataDir)
   const simClock = new SimClock(userDataDir)
-  registerDataIpcHandlers(mailDb, configStore, simClock)
+  registerDataIpcHandlers(mailDb, configStore, simClock, userDataDir)
 
   const scheduler = new UnsolicitedMailScheduler(
     mailDb,
     configStore,
     simClock,
+    userDataDir,
     () => broadcastMessagesChanged(),
     (error) => broadcastUnsolicitedMailFailed(error)
   )
@@ -125,6 +126,12 @@ app.whenReady().then(() => {
   ipcMain.handle('attachments:extractText', (_event, filePath: string): Promise<string | undefined> =>
     extractAttachmentText(filePath)
   )
+
+  // Hands off to the OS's own default handler for the file's type (feature
+  // 065 AC3) — this app has no in-app document viewer of its own yet
+  // (feature 067). Returns Electron's own result: '' on success, otherwise
+  // a human-readable error (e.g. the file no longer exists on disk).
+  ipcMain.handle('attachments:open', (_event, filePath: string): Promise<string> => shell.openPath(filePath))
 
   ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {

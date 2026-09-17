@@ -2,6 +2,7 @@ import type { MailMessage, Persona, PersonaReplyResult, TraineeIdentity } from '
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
 import { buildFileVineContextPrompt } from './fileVineContext'
+import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlock, writeGeneratedAttachment } from './generatedAttachment'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
@@ -54,7 +55,8 @@ function buildSystemPrompt(
     persona.extraPrompt,
     fileVineContext,
     `Decide whether a reply is appropriate given the conversation and the guidance above — for example, a purely FYI message may not warrant one. If a reply is NOT warranted, respond with exactly this text and nothing else: ${NO_REPLY_MARKER}`,
-    'Otherwise, respond with ONLY the body text of your reply email — no subject line, no meta-commentary about being an AI.'
+    'Otherwise, respond with ONLY the body text of your reply email — no subject line, no meta-commentary about being an AI.',
+    ATTACHMENT_PROMPT_INSTRUCTION
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -96,7 +98,8 @@ export async function generatePersonaReply(
   db: MailDb,
   config: ConfigStore,
   clock: SimClock,
-  sentMessageId: string
+  sentMessageId: string,
+  userDataDir: string
 ): Promise<PersonaReplyResult> {
   const sentMessage = db.getMessage(sentMessageId)
   if (!sentMessage) {
@@ -124,7 +127,8 @@ export async function generatePersonaReply(
     return { ok: false, error: result.error }
   }
 
-  const text = result.text.trim()
+  const { text: withoutAttachment, attachment } = extractAttachmentBlock(result.text)
+  const text = withoutAttachment.trim()
   if (text === NO_REPLY_MARKER) {
     return { ok: true, replied: false }
   }
@@ -135,6 +139,10 @@ export async function generatePersonaReply(
   // present here (checked above), so there's never an empty quote block.
   const body = `${text}${quoteBody(sentMessage)}`
 
+  // Most replies have no document attached (AC5) — only written to disk
+  // when the model actually included one.
+  const attachments = attachment ? [writeGeneratedAttachment(userDataDir, attachment.filename, attachment.markdown)] : []
+
   const message = db.createMessage({
     folderId: 'inbox',
     subject: sentMessage.subject,
@@ -143,7 +151,8 @@ export async function generatePersonaReply(
     fromEmail: persona.email,
     toName: identity.displayName,
     toEmail: identity.fromEmail,
-    timestamp: clock.now()
+    timestamp: clock.now(),
+    attachments
   })
   return { ok: true, replied: true, message }
 }

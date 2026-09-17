@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 065 (Mail — LLM-generated incoming attachments)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,36 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
+  implemented: new `src/main/llm/generatedAttachment.ts` defines a shared
+  protocol — a persona reply or unsolicited-mail response may end with a
+  fenced `---ATTACHMENT: <filename>---\n<Markdown>\n---END ATTACHMENT---`
+  block, anchored to the end of the raw text regardless of the surrounding
+  format. `extractAttachmentBlock()` never throws (missing/malformed block
+  → no attachment, AC5); `writeGeneratedAttachment()` renders the Markdown
+  via `marked`, sanitizes it with a new `sanitize-html` dependency (a
+  lightweight Node-native alternative to the renderer's `marked`+
+  `DOMPurify` pairing, which needs a browser DOM this main-process code
+  doesn't have), and writes a real HTML file under
+  `<userDataDir>/generated-attachments/<uuid>/`, reusing the `path`/
+  `extractedText` fields features 062/063 already added (no schema
+  change). Both generators gained a `userDataDir` parameter threaded from
+  `main/index.ts` (same value already passed to `MailDb`/`ConfigStore`/
+  `SimClock`). AC3 (reachable from the UI) added a new `attachments:open`
+  IPC handler (`shell.openPath`) wired into `ReadingPane.tsx`'s existing
+  attachment click handler — which also fixes a pre-existing gap: a real
+  outgoing attachment (feature 062) previously still showed the stale
+  "Mock attachment" placeholder, since 062/063 never touched
+  `ReadingPane.tsx`. Verified live end-to-end via a throwaway script with
+  a stubbed `fetch`: both generators produce a real file on disk with
+  correct content and a clean email body when the model includes a block,
+  `attachments: []` when it doesn't; reopening the db (simulating a
+  restart) still returns the attachment; a hostile filename and an
+  embedded `<script>` tag were both neutralized. ~50 pre-existing test
+  call sites needed a mechanical new-parameter fix (compile-shape only,
+  using each test file's own existing temp-dir fixture) — no behavioral
+  rewrite. lint/typecheck/build pass; full suite unchanged at 733/733.
+  Phase set to `test`.
 - 2026-09-17 — feature 063 (Mail — extract real attachment content into
   persona LLM context) accepted by user (selected "Accept (Recommended)"
   against the validation summary, AC-by-AC mapping, and the flagged

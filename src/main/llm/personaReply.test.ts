@@ -82,7 +82,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ toEmail: 'stranger@example.com', toName: 'Stranger' })
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toEqual({ ok: true, replied: false })
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -90,7 +90,7 @@ describe('generatePersonaReply', () => {
   })
 
   it('returns an error, without throwing, when the message id does not exist', async () => {
-    const result = await generatePersonaReply(db, config, clock, 'does-not-exist')
+    const result = await generatePersonaReply(db, config, clock, 'does-not-exist', baseDir)
     expect(result).toEqual({ ok: false, error: 'Sent message not found.' })
   })
 
@@ -101,7 +101,7 @@ describe('generatePersonaReply', () => {
     // again here under the AC's own name for traceability.
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const result = await generatePersonaReply(db, config, clock, 'does-not-exist')
+    const result = await generatePersonaReply(db, config, clock, 'does-not-exist', baseDir)
 
     expect(result).toEqual({ ok: false, error: 'Sent message not found.' })
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -113,7 +113,7 @@ describe('generatePersonaReply', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
     const nowSpy = vi.spyOn(clock, 'now').mockReturnValue(5000)
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result.ok).toBe(true)
     expect(result).toMatchObject({ ok: true, replied: true })
@@ -144,7 +144,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ body: 'Line one\nLine two' })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toMatchObject({ ok: true, replied: true })
     if (result.ok && result.replied) {
@@ -170,7 +170,7 @@ describe('generatePersonaReply', () => {
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -194,7 +194,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }] })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -211,7 +211,7 @@ describe('generatePersonaReply', () => {
     })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -229,7 +229,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ attachments: [{ filename: 'report.pdf', path: '/tmp/report.pdf' }] })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks, got it!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -242,7 +242,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage() // attachments: [] by default
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -264,7 +264,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage()
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    await generatePersonaReply(db, config, clock, message.id)
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -289,7 +289,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ toEmail: 'alex@example.com', toName: 'Alex Chen' })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sounds good.'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toMatchObject({ ok: true, replied: true })
     if (result.ok && result.replied) {
@@ -303,7 +303,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ toEmail: 'morgan@example.com' })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toMatchObject({ ok: true, replied: true })
   })
@@ -314,7 +314,7 @@ describe('generatePersonaReply', () => {
     vi.spyOn(clock, 'now').mockReturnValue(new Date('2027-06-01T00:00:00').getTime())
     const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-01-01T00:00:00').getTime())
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toMatchObject({ ok: true, replied: true })
     if (result.ok && result.replied) {
@@ -339,7 +339,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage({ cc: [{ name: 'Alex Chen', email: 'alex@example.com' }] })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toMatchObject({ ok: true, replied: true })
     const inboxMessages = db.listMessages('inbox')
@@ -351,7 +351,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('NO_REPLY'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toEqual({ ok: true, replied: false })
     expect(db.listMessages('inbox')).toEqual([])
@@ -361,7 +361,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('  NO_REPLY  \n'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toEqual({ ok: true, replied: false })
   })
@@ -370,7 +370,7 @@ describe('generatePersonaReply', () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
     expect(db.listMessages('inbox')).toEqual([])
@@ -385,7 +385,7 @@ describe('generatePersonaReply', () => {
       json: () => Promise.resolve({ error: { message: 'Incorrect API key provided.' } })
     } as Response)
 
-    const result = await generatePersonaReply(db, config, clock, message.id)
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
 
     expect(result).toEqual({ ok: false, error: 'openai API error (401): Incorrect API key provided.' })
     expect(db.listMessages('inbox')).toEqual([])
@@ -402,7 +402,7 @@ describe('generatePersonaReply', () => {
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-      await generatePersonaReply(db, config, clock, message.id)
+      await generatePersonaReply(db, config, clock, message.id, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -418,7 +418,7 @@ describe('generatePersonaReply', () => {
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-      await generatePersonaReply(db, config, clock, message.id)
+      await generatePersonaReply(db, config, clock, message.id, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -434,7 +434,7 @@ describe('generatePersonaReply', () => {
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-      await generatePersonaReply(db, config, clock, message.id)
+      await generatePersonaReply(db, config, clock, message.id, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -448,7 +448,7 @@ describe('generatePersonaReply', () => {
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
-      await generatePersonaReply(db, config, clock, message.id)
+      await generatePersonaReply(db, config, clock, message.id, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)

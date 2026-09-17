@@ -1,6 +1,7 @@
 import type { GenerateUnsolicitedMailResult, Persona, TraineeIdentity } from '../../shared/data-types'
 import { generateText } from './client'
 import { buildFileVineContextPrompt } from './fileVineContext'
+import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlock, writeGeneratedAttachment } from './generatedAttachment'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
@@ -37,7 +38,8 @@ function buildSystemPrompt(
     persona.writingStyleNotes && `Writing style: ${persona.writingStyleNotes}`,
     persona.extraPrompt,
     fileVineContext,
-    'Respond in exactly this format and nothing else:\nSubject: <subject line>\n\n<body text>'
+    'Respond in exactly this format and nothing else, except optionally the attachment block described below:\nSubject: <subject line>\n\n<body text>',
+    ATTACHMENT_PROMPT_INSTRUCTION
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -101,7 +103,8 @@ function parseSubjectAndBody(text: string): { subject: string; body: string } | 
 export async function generateUnsolicitedMail(
   db: MailDb,
   config: ConfigStore,
-  clock: SimClock
+  clock: SimClock,
+  userDataDir: string
 ): Promise<GenerateUnsolicitedMailResult> {
   const persona = pickPersona(config.getPersonas())
   if (!persona) {
@@ -121,10 +124,15 @@ export async function generateUnsolicitedMail(
     return { ok: false, error: result.error }
   }
 
-  const parsed = parseSubjectAndBody(result.text)
+  const { text: withoutAttachment, attachment } = extractAttachmentBlock(result.text)
+  const parsed = parseSubjectAndBody(withoutAttachment)
   if (!parsed) {
     return { ok: false, error: 'Provider response was not in the expected Subject/body format.' }
   }
+
+  // Most unsolicited messages have no document attached (AC5) — only
+  // written to disk when the model actually included one.
+  const attachments = attachment ? [writeGeneratedAttachment(userDataDir, attachment.filename, attachment.markdown)] : []
 
   const message = db.createMessage({
     folderId: 'inbox',
@@ -134,7 +142,8 @@ export async function generateUnsolicitedMail(
     fromEmail: persona.email,
     toName: identity.displayName,
     toEmail: identity.fromEmail,
-    timestamp: clock.now()
+    timestamp: clock.now(),
+    attachments
   })
   return { ok: true, sent: true, message }
 }
@@ -148,9 +157,10 @@ export async function generateUnsolicitedMail(
 export async function attemptUnsolicitedMail(
   db: MailDb,
   config: ConfigStore,
-  clock: SimClock
+  clock: SimClock,
+  userDataDir: string
 ): Promise<GenerateUnsolicitedMailResult> {
-  const result = await generateUnsolicitedMail(db, config, clock)
+  const result = await generateUnsolicitedMail(db, config, clock, userDataDir)
   if (!result.ok) {
     config.appendLlmFailureLog({ timestamp: Date.now(), source: 'unsolicitedMail', error: result.error })
   }
@@ -174,6 +184,7 @@ export class UnsolicitedMailScheduler {
     private db: MailDb,
     private config: ConfigStore,
     private clock: SimClock,
+    private userDataDir: string,
     private onGenerated?: () => void,
     private onFailed?: (error: string) => void
   ) {}
@@ -209,7 +220,7 @@ export class UnsolicitedMailScheduler {
 
       this.config.setSchedulerState({ nextDueSimTime: now + randomIntervalMs() })
 
-      const result = await attemptUnsolicitedMail(this.db, this.config, this.clock)
+      const result = await attemptUnsolicitedMail(this.db, this.config, this.clock, this.userDataDir)
       if (result.ok && result.sent) {
         this.onGenerated?.()
       } else if (!result.ok) {

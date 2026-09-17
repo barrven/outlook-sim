@@ -128,7 +128,8 @@ export function createMockApi(): Window['api'] {
     },
     attachments: {
       pick: vi.fn().mockResolvedValue({ ok: false, canceled: true }),
-      extractText: vi.fn().mockResolvedValue(undefined)
+      extractText: vi.fn().mockResolvedValue(undefined),
+      open: vi.fn().mockResolvedValue('')
     },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),

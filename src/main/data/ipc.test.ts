@@ -51,7 +51,7 @@ describe('registerDataIpcHandlers', () => {
     clock = new SimClock(baseDir)
     handlers.clear()
     getAllWindowsMock.mockReset().mockReturnValue([])
-    registerDataIpcHandlers(db, config, clock)
+    registerDataIpcHandlers(db, config, clock, baseDir)
   })
 
   afterEach(() => {
@@ -315,7 +315,7 @@ describe('registerDataIpcHandlers', () => {
     it('registering the IPC handlers makes no network call by itself', () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch')
       handlers.clear()
-      registerDataIpcHandlers(db, config, clock)
+      registerDataIpcHandlers(db, config, clock, baseDir)
       expect(fetchSpy).not.toHaveBeenCalled()
     })
 

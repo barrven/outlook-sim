@@ -65,7 +65,7 @@ describe('generateUnsolicitedMail', () => {
     config.setPersonas([])
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const result = await generateUnsolicitedMail(db, config, clock)
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toEqual({ ok: true, sent: false })
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -78,7 +78,7 @@ describe('generateUnsolicitedMail', () => {
     )
     const nowSpy = vi.spyOn(clock, 'now').mockReturnValue(5000)
 
-    const result = await generateUnsolicitedMail(db, config, clock)
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result.ok).toBe(true)
     expect(result).toMatchObject({ ok: true, sent: true })
@@ -127,7 +127,7 @@ describe('generateUnsolicitedMail', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(subjectBodyResponse('Following up', 'Any word on the Chen file?'))
 
-    await generateUnsolicitedMail(db, config, clock)
+    await generateUnsolicitedMail(db, config, clock, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -171,7 +171,7 @@ describe('generateUnsolicitedMail', () => {
     })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
 
-    await generateUnsolicitedMail(db, config, clock)
+    await generateUnsolicitedMail(db, config, clock, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -184,7 +184,7 @@ describe('generateUnsolicitedMail', () => {
   it('degrades gracefully — no crash, no message inserted — when the LLM call fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
 
-    const result = await generateUnsolicitedMail(db, config, clock)
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
     expect(db.listMessages('inbox')).toEqual([])
@@ -198,7 +198,7 @@ describe('generateUnsolicitedMail', () => {
       json: () => Promise.resolve({ choices: [{ message: { content: 'Just a plain sentence, no subject line.' } }] })
     } as Response)
 
-    const result = await generateUnsolicitedMail(db, config, clock)
+    const result = await generateUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toEqual({
       ok: false,
@@ -224,7 +224,7 @@ describe('generateUnsolicitedMail', () => {
 
     const seenEmails = new Set<string>()
     for (let i = 0; i < 20; i++) {
-      const result = await generateUnsolicitedMail(db, config, clock)
+      const result = await generateUnsolicitedMail(db, config, clock, baseDir)
       expect(result).toMatchObject({ ok: true, sent: true })
       if (result.ok && result.sent) seenEmails.add(result.message.fromEmail)
     }
@@ -264,7 +264,7 @@ describe('generateUnsolicitedMail', () => {
     // Force persona selection deterministically for this assertion.
     vi.spyOn(Math, 'random').mockReturnValue(0) // pickPersona -> index 0 -> PERSONA (Morgan)
 
-    await generateUnsolicitedMail(db, config, clock)
+    await generateUnsolicitedMail(db, config, clock, baseDir)
 
     const [, init] = fetchSpy.mock.calls[0]
     const body = JSON.parse(init?.body as string)
@@ -282,7 +282,7 @@ describe('generateUnsolicitedMail', () => {
       })
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
 
-      await generateUnsolicitedMail(db, config, clock)
+      await generateUnsolicitedMail(db, config, clock, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -296,7 +296,7 @@ describe('generateUnsolicitedMail', () => {
       db.createFileVineFolder({ name: 'Unrelated Matter', parentId: null, clientPersonaId: null })
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
 
-      await generateUnsolicitedMail(db, config, clock)
+      await generateUnsolicitedMail(db, config, clock, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -311,7 +311,7 @@ describe('generateUnsolicitedMail', () => {
       db.updateFileVineNote(note.id, { content: 'Due 2026-05-15 (moved).' })
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
 
-      await generateUnsolicitedMail(db, config, clock)
+      await generateUnsolicitedMail(db, config, clock, baseDir)
 
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
@@ -365,7 +365,7 @@ describe('UnsolicitedMailScheduler', () => {
     })
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir)
     await scheduler.tick()
 
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -378,7 +378,7 @@ describe('UnsolicitedMailScheduler', () => {
     vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 500, anchorRealTime: 0, running: true, speed: 1 })
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir)
     await scheduler.tick()
 
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -392,7 +392,7 @@ describe('UnsolicitedMailScheduler', () => {
     const onGenerated = vi.fn()
     const onFailed = vi.fn()
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock, onGenerated, onFailed)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir, onGenerated, onFailed)
     await scheduler.tick()
 
     expect(onGenerated).toHaveBeenCalledTimes(1)
@@ -411,7 +411,7 @@ describe('UnsolicitedMailScheduler', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
     const onFailed = vi.fn()
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock, undefined, onFailed)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir, undefined, onFailed)
     await scheduler.tick()
 
     expect(onFailed).toHaveBeenCalledWith('Network error: fetch failed')
@@ -436,7 +436,7 @@ describe('UnsolicitedMailScheduler', () => {
     vi.spyOn(clock, 'getState').mockReturnValue({ anchorSimTime: 1000, anchorRealTime: 0, running: true, speed: 1 })
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir)
     await scheduler.tick()
 
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -452,7 +452,7 @@ describe('UnsolicitedMailScheduler', () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
       const onGenerated = vi.fn()
 
-      const scheduler = new UnsolicitedMailScheduler(db, config, clock, onGenerated)
+      const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir, onGenerated)
       scheduler.start()
       await vi.advanceTimersByTimeAsync(10_000)
       expect(onGenerated).toHaveBeenCalledTimes(1)
@@ -478,7 +478,7 @@ describe('UnsolicitedMailScheduler', () => {
     })
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockReturnValue(slowFetch)
 
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir)
     const firstTick = scheduler.tick()
     const secondTick = scheduler.tick() // fired while the first is still in flight
 
@@ -493,7 +493,7 @@ describe('UnsolicitedMailScheduler', () => {
     config.setSchedulerState({ nextDueSimTime: clock.now() - 1 }) // already due
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
     const onGenerated = vi.fn()
-    const scheduler = new UnsolicitedMailScheduler(db, config, clock, onGenerated)
+    const scheduler = new UnsolicitedMailScheduler(db, config, clock, baseDir, onGenerated)
 
     // Real clock starts paused (013's default) — due but paused, so no-op.
     await scheduler.tick()
@@ -542,7 +542,7 @@ describe('attemptUnsolicitedMail (feature 027)', () => {
     })
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
 
-    const result = await attemptUnsolicitedMail(db, config, clock)
+    const result = await attemptUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toEqual({ ok: false, error: 'Network error: fetch failed' })
     expect(config.getLlmFailureLog()).toEqual([
@@ -559,14 +559,14 @@ describe('attemptUnsolicitedMail (feature 027)', () => {
     })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(subjectBodyResponse('Hi', 'Body'))
 
-    const result = await attemptUnsolicitedMail(db, config, clock)
+    const result = await attemptUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toMatchObject({ ok: true, sent: true })
     expect(config.getLlmFailureLog()).toEqual([])
   })
 
   it('does not log anything for the no-personas-configured no-op (not a failure)', async () => {
-    const result = await attemptUnsolicitedMail(db, config, clock)
+    const result = await attemptUnsolicitedMail(db, config, clock, baseDir)
 
     expect(result).toEqual({ ok: true, sent: false })
     expect(config.getLlmFailureLog()).toEqual([])

@@ -125,7 +125,8 @@ const api = {
   attachments: {
     pick: (): Promise<PickAttachmentResult> => ipcRenderer.invoke('attachments:pick'),
     extractText: (filePath: string): Promise<string | undefined> =>
-      ipcRenderer.invoke('attachments:extractText', filePath)
+      ipcRenderer.invoke('attachments:extractText', filePath),
+    open: (filePath: string): Promise<string> => ipcRenderer.invoke('attachments:open', filePath)
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
