@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** accept
-- **Active feature:** 044 (Double-click calendar item opens a pop-out window)
+- **Phase:** implement
+- **Active feature:** 045 (Simulated clock — black text and dropdown mini-calendar)
 - **Last updated:** 2026-09-16
 
 ## Phases
@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
+  window) accepted by user (selected "Accept (Recommended)", no changes
+  requested); logged to CHANGELOG. Active feature set to 045 (Simulated
+  clock — black text and dropdown mini-calendar, last remaining
+  `backlog`-status feature in BACKLOG.md), phase set to `implement`.
 - 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
   window) validated: lint/typecheck/build pass; full suite (705/705)
   re-run 3x, stable; `git diff --stat` (370eaf9..54e81fe) confirms

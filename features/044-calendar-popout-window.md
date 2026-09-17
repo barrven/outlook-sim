@@ -1,7 +1,7 @@
 ---
 id: 044
 title: Double-click calendar item opens a pop-out window
-status: accept
+status: done
 priority: low
 ---
 
@@ -181,4 +181,9 @@ prior pop-out feature. All checks pass, no gaps found. Phase set to
 `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-16 — Presented the implementation (double-click opens a pop-out
+window reusing the extracted `CalendarItemPanel`, new cross-window
+broadcast for calendar items, single-click inline behavior untouched),
+the AC-by-AC mapping, and the validation result (all checks pass). User
+selected "Accept (Recommended)", no changes requested. Decision:
+accepted.

@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-16 — Double-click calendar item opens a pop-out window (features/044-calendar-popout-window.md)
+Double-clicking a calendar item (day or month view) now opens it in its
+own window — view mode by default, with the same edit affordance as the
+inline panel. Editing or deleting from the pop-out updates the main
+window's calendar live. Single-click inline behavior is unchanged;
+double-click is purely additive.
+
 ## 2026-09-16 — View tab — Reading Pane Right/Off toggle (features/042-reading-pane-toggle.md)
 The View ribbon tab gains a Reading Pane control (Right/Off). Off removes
 the inline reading pane entirely — the message list widens to fill the
