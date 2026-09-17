@@ -1,7 +1,7 @@
 ---
 id: 062
 title: Mail — real outgoing attachments (file picker)
-status: validating
+status: accept
 priority: high
 ---
 
@@ -12,16 +12,16 @@ actual file from the local filesystem gets attached — the foundation for
 features 063/064's content extraction and multimodal handling.
 
 ## Acceptance Criteria
-- [ ] The compose window's attachment control opens a real OS file-picker
+- [x] The compose window's attachment control opens a real OS file-picker
       dialog (the same `dialog.showOpenDialog` pattern already used for
       Load/Save Scenario Pack), replacing the current filename text input
-- [ ] The picked file's name and a reference to its real content (stored
+- [x] The picked file's name and a reference to its real content (stored
       path or copied file) are attached to the message, persisting
       correctly on both the draft/original copy and, once sent, the Sent
       Items copy
-- [ ] Multiple attachments can still be added/removed before sending, as
+- [x] Multiple attachments can still be added/removed before sending, as
       today
-- [ ] Picking a file of any type succeeds (attaching doesn't require the
+- [x] Picking a file of any type succeeds (attaching doesn't require the
       file to be a supported-for-extraction type — that's features
       063/064's concern, not this one's)
 
@@ -92,7 +92,52 @@ load the external stylesheet, the same pre-existing gap as every other CSS
 change in this codebase). lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite 714/714, re-run 3x, stable.
+`git diff --stat` (734dd28..c37e44c) confirms `/implement`+`/test` touched
+only the expected files — no drift into unrelated modules.
+
+All 4 ACs re-verified directly against current source:
+- **AC1** (`src/main/index.ts:110-122`): `attachments:pick` uses
+  `dialog.showOpenDialog` with the identical canceled/empty-`filePaths`
+  early-return shape as the pre-existing `scenario:pickPack`/
+  `personasFile:pick` handlers it was modeled on. `ComposeWindow.tsx` has no
+  remaining text input/form for attachments (`grep` confirms
+  `attachmentDraft`/`handleAddAttachment`'s old form-submit signature and the
+  `compose-attachment-add-form`/text-`<input>` are gone) — a single button
+  calls `window.api.attachments.pick()`.
+- **AC2**: `handleAddAttachment` (`ComposeWindow.tsx:81-85`) stores both
+  `filename` and the real absolute `path` returned by the dialog handler.
+  `persist()` (`ComposeWindow.tsx:91-119`) forwards the same `attachments`
+  state into `fields` regardless of `folderId` ('drafts' or 'sent'), so both
+  the draft/original copy and the Sent Items copy go through the identical
+  code path. `MailDb` (`db.ts:337,362,376,393`) round-trips the attachments
+  array via plain `JSON.stringify`/`JSON.parse` with no per-field mapping,
+  so the new `path` field survives create and update unchanged — confirmed
+  structurally (no field allow-list anywhere in the DB layer) and by the
+  two rewritten B004/025 AC4 tests asserting `path` is present on the
+  `messages.create` call for both reply and forward.
+- **AC3**: `setAttachments`'s functional-update append and `removeAttachment`'s
+  index-based filter are unchanged from before this feature — only the
+  *source* of a new attachment (picker vs. typed text) changed. Covered by
+  the rewritten "opens a real file picker..." test (two sequential picks,
+  both attached) and "removes an attachment chip" test.
+- **AC4**: the `attachments:pick` dialog config (`src/main/index.ts:114-117`)
+  has no `filters` option — unlike `scenario:pickPack`/`personasFile:pick`,
+  which both restrict to `.json`. Covered by the new "picking a file of any
+  type (no extension filter) succeeds" test (`archive.tar.gz`).
+
+Not independently re-verified: an actual live OS file-picker dialog and
+real multi-window Electron click-through (no attached display on this dev
+box, and no existing pattern in this repo for mocking Electron's `dialog`
+module in a main-process test — same non-blocking gap class flagged on
+every prior feature touching `dialog`/main-process code, e.g. 021/022/031).
+The main-process `attachments:pick` handler itself has no dedicated
+unit test (mirrors the pre-existing, also-untested `scenario:pickPack`/
+`personasFile:pick` handlers — this repo's established pattern is to unit
+test the pure validation/formatting logic, not the `dialog`-wrapping
+handler, and this handler has no validation logic to extract).
+
+All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

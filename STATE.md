@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 062 (Mail — real outgoing attachments (file picker))
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
+  validated: lint/typecheck/build pass; full suite (714/714) re-run 3x,
+  stable; `git diff --stat` (734dd28..c37e44c) confirms `/implement`+`/test`
+  touched only the expected files. All 4 ACs re-verified directly against
+  current source: AC1 `attachments:pick` mirrors the `scenario:pickPack`/
+  `personasFile:pick` `dialog.showOpenDialog` pattern exactly, and the old
+  text-input form is fully gone from `ComposeWindow.tsx`; AC2 the picked
+  `path` flows through `persist()`'s single `fields` object into both
+  draft-update and sent-create calls, and `MailDb` round-trips the
+  attachments array via plain JSON with no per-field allow-list, so `path`
+  survives; AC3 the append/remove logic is unchanged from before this
+  feature, only the attachment source changed; AC4 the dialog config has no
+  `filters` option (unlike the two JSON-only handlers it's modeled on).
+  Not independently re-verified: a live OS dialog / real Electron
+  click-through (no attached display, same non-blocking gap as every prior
+  `dialog`-touching feature). All checks pass, no gaps found. Phase set to
+  `accept`.
 - 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
   tested: 713 → 714 net (+1, all passing; re-run 3x, stable), all within
   `ComposeWindow.test.tsx`. Rewrote the 5 tests `/implement` left failing
