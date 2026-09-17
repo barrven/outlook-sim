@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 058 (Color scheme infrastructure + revised default palette)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
+  palette) implemented: `<html>` gains `data-theme="default"`
+  (`index.html`), and `global.css`'s color tokens moved from the bare
+  `:root { ... }` block into `:root[data-theme='default'] { ... }` — the
+  switch point for future schemes (059/060) and Settings (061), each just
+  another selector/attribute value. Non-color radius tokens (037) stay in
+  the unconditional bare `:root`. Revised the default palette's flat
+  neutral grays into a soft blue-tinted family (border/ribbon-bg/
+  nav-rail-bg/hover-bg/text-muted), deepened accent/selected-border
+  slightly; `--pane-bg` stays pure white for content readability; 037's
+  semantic status colors left untouched. Updated `globalCssStyling.test.ts`'s
+  token-extraction helper to match the new selector (037's actual
+  guarantees unchanged, just relocated) — new dedicated tests for 058's
+  own ACs left for `/test`. Confirmed via the actual `npm run build`
+  output that `data-theme` survives Vite's HTML processing. lint/
+  typecheck/build pass; full suite unchanged at 755/755 (CSS-only change,
+  jsdom doesn't load the stylesheet — same pre-existing gap as every
+  prior CSS feature). Phase set to `test`.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
   accepted by user (selected "Accept (Recommended)" against the
   validation summary and the full two-round live-testing/fix history, no

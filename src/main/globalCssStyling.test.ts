@@ -10,9 +10,18 @@ function extractRootBlock(source: string): string {
   return match[1]
 }
 
+// The default color scheme's tokens live in this attribute-selector block
+// (058), not the bare `:root { ... }` one — which now holds only the
+// scheme-independent radius tokens (037).
+function extractDefaultThemeBlock(source: string): string {
+  const match = source.match(/:root\[data-theme=['"]default['"]\]\s*{([^}]*)}/)
+  if (!match) throw new Error(":root[data-theme='default'] block not found in global.css")
+  return match[1]
+}
+
 describe('global.css semantic tokens (037)', () => {
   it('AC1: defines the semantic status color tokens used across the app', () => {
-    const root = extractRootBlock(css)
+    const defaultTheme = extractDefaultThemeBlock(css)
 
     for (const token of [
       '--hover-bg',
@@ -24,14 +33,16 @@ describe('global.css semantic tokens (037)', () => {
       '--warning-border',
       '--success'
     ]) {
-      expect(root).toMatch(new RegExp(`${token}:\\s*#[0-9a-fA-F]{3,8};`))
+      expect(defaultTheme).toMatch(new RegExp(`${token}:\\s*#[0-9a-fA-F]{3,8};`))
     }
   })
 
-  it('AC1: no hardcoded hex color appears outside :root — every color is a token', () => {
-    const withoutRoot = css.replace(/:root\s*{[^}]*}/, '')
+  it('AC1: no hardcoded hex color appears outside a token-defining block — every color is a token', () => {
+    const withoutTokenBlocks = css
+      .replace(/:root\s*{[^}]*}/, '')
+      .replace(/:root\[data-theme=['"]default['"]\]\s*{[^}]*}/, '')
 
-    expect(withoutRoot).not.toMatch(/#[0-9a-fA-F]{3,8}/)
+    expect(withoutTokenBlocks).not.toMatch(/#[0-9a-fA-F]{3,8}/)
   })
 
   it('AC2: defines a single, consistent border-radius token pair', () => {

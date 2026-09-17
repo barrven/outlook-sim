@@ -1,18 +1,44 @@
 :root {
-  --border: #c6c6c6;
-  --ribbon-bg: #f3f2f1;
+  /* Border-radius tokens (037) — a modest, consistent rounding for
+     individual interactive elements (buttons, inputs, chips, dropdown
+     panels). The ribbon/pane chrome itself is deliberately left
+     unrounded (Core Requirement 2). Unconditional, not part of
+     color-scheme switching (058) below — these aren't colors, and every
+     scheme shares the same rounding. */
+  --radius: 6px;
+  --radius-pill: 999px;
+}
+
+/* Color-scheme infrastructure (058). The <html> element's data-theme
+   attribute (set in index.html; changed at runtime once Settings gets a
+   switcher, feature 061) selects which set of color tokens below
+   applies — swapping the whole app's palette is always just this one
+   attribute changing, never touching layout/chrome (Core Requirement 2).
+   Only "default" exists so far; features 059/060 add two more light
+   schemes and a dark one as further `:root[data-theme='...']` blocks
+   exactly like this one, each swapping colors only. */
+:root[data-theme='default'] {
+  /* Revised default palette (058) — less flat gray than the original
+     (037) neutrals, replaced with a soft blue tint that reads as
+     "distinct hue" while staying calm/professional enough for a classic
+     Outlook-style chrome (Core Requirement 2). --pane-bg stays pure
+     white: the message/reading content area itself should stay neutral
+     for readability regardless of scheme. */
+  --border: #a9c2dd;
+  --ribbon-bg: #dceafd;
   --pane-bg: #ffffff;
-  --nav-rail-bg: #f7f7f7;
+  --nav-rail-bg: #eef5fd;
   --selected-bg: #cce4f7;
-  --selected-border: #99caeb;
-  --text: #1b1b1b;
-  --text-muted: #6b6b6b;
-  --accent: #0f6cbd;
-  --hover-bg: #eaeaea;
+  --selected-border: #7ab6e6;
+  --text: #16233a;
+  --text-muted: #55698a;
+  --accent: #1462b0;
+  --hover-bg: #d6e7fa;
 
   /* Semantic status colors (037) — the single source for every red/yellow/
      green accent in the app, replacing what used to be several
-     slightly-different ad-hoc hex values per status. */
+     slightly-different ad-hoc hex values per status. Already distinct,
+     non-gray hues, so left as-is by 058's gray-reduction pass. */
   --danger: #b3261e;
   --danger-bg: #fde7e9;
   --danger-border: #d13438;
@@ -20,13 +46,6 @@
   --warning-bg: #fff4ce;
   --warning-border: #c19c00;
   --success: #107c10;
-
-  /* Border-radius tokens (037) — a modest, consistent rounding for
-     individual interactive elements (buttons, inputs, chips, dropdown
-     panels). The ribbon/pane chrome itself is deliberately left
-     unrounded (Core Requirement 2). */
-  --radius: 6px;
-  --radius-pill: 999px;
 }
 
 * {
