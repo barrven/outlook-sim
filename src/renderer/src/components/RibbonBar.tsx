@@ -12,7 +12,7 @@ const TABS = ['Home', 'FileVine', 'View']
 // (feature 033).
 type ClickableTab = 'Home' | 'FileVine' | 'View'
 
-const MAIL_ACTIONS = ['New Email', 'New Items', 'Delete', 'Reply', 'Reply All', 'Forward']
+const MAIL_ACTIONS = ['New Email', 'Delete']
 // Semantic action coloring (058) — only for actions with a real handler in
 // actionHandlers below (New Email, Delete); Reply/Reply All/Forward/New
 // Items have none yet and stay neutral rather than looking colored/active

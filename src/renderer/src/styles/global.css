@@ -25,27 +25,30 @@
      white: the message/reading content area itself should stay neutral
      for readability regardless of scheme. */
   --border: #a9c2dd;
-  --ribbon-bg: #dceafd;
+  --ribbon-bg: #e1e7ed;
   --pane-bg: #ffffff;
-  --nav-rail-bg: #eef5fd;
+  --nav-rail-bg: #e1e7ed;
   --selected-bg: #cce4f7;
   --selected-border: #7ab6e6;
   --text: #16233a;
   --text-muted: #55698a;
-  --accent: #1462b0;
+  --accent: #3573b0;
   --hover-bg: #d6e7fa;
 
   /* Semantic status colors (037) — the single source for every red/yellow/
      green accent in the app, replacing what used to be several
      slightly-different ad-hoc hex values per status. Already distinct,
      non-gray hues, so left as-is by 058's gray-reduction pass. */
-  --danger: #b3261e;
-  --danger-bg: #fde7e9;
-  --danger-border: #d13438;
+  --danger: #ffff;
+  --danger-bg: #dc3545;
+  --danger-border: #dc3545;
   --warning: #4a3f00;
   --warning-bg: #fff4ce;
   --warning-border: #c19c00;
   --success: #107c10;
+  --primary: #fff;
+  --primary-bg: #0d6efd;
+  --primary-border: #0d6efd;
 
   /* Flag/amber semantic color — distinct from --warning (a caution/error
      state, used for the LLM failure banner) even though both land in the
@@ -280,15 +283,17 @@ body {
    and :disabled above still wins if one of these is ever conditionally
    disabled (Delete is, depending on selection). */
 .ribbon-action-primary:not(:disabled) {
-  background: var(--selected-bg);
-  border-color: var(--selected-border);
-  color: var(--accent);
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+  color: var(--primary);
+  font-weight: bold;
 }
 
 .ribbon-action-danger:not(:disabled) {
   background: var(--danger-bg);
   border-color: var(--danger-border);
   color: var(--danger);
+  font-weight: bold;
 }
 
 /* Reading Pane Right/Off control (feature 042) — a View-tab action, like
@@ -306,8 +311,9 @@ body {
 .ribbon-reading-pane-control select {
   padding: 3px 6px;
   font-size: 12px;
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--primary);
+  background-color: var(--primary-bg);
+  border: 1px solid var(--primary-border);
   border-radius: var(--radius);
 }
 
@@ -318,6 +324,13 @@ body {
   padding-right: 10px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.btn-primary{
+  color: var(--primary) !important;
+  background-color: var(--primary-bg) !important;
+  border-color: var(--primary-border) !important;
+  font-weight: bold;
 }
 
 /* A <button> (feature 045) so it's clickable, styled to read like the
@@ -410,11 +423,11 @@ body {
 
 .office-clock-toggle {
   padding: 3px 10px;
-  background: var(--pane-bg);
-  border: 1px solid var(--selected-border);
+  background: var(--primary-bg);
+  border: 1px solid var(--primary-border);
   border-radius: var(--radius);
   font-size: 12px;
-  color: var(--accent);
+  color: var(--primary);
   cursor: pointer;
 }
 
@@ -917,11 +930,11 @@ body {
   border: none;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 20px;
 }
 
 .message-list-flag-btn.flagged {
-  color: var(--danger);
+  color: var(--flag-border);
 }
 
 .message-context-menu {
@@ -1061,25 +1074,30 @@ body {
   background: var(--danger-bg);
   border-color: var(--danger-border);
   color: var(--danger);
+  font-weight: bold;
 }
 
 .reading-pane-actions .reading-pane-read-toggle {
   background: var(--nav-rail-bg);
   border-color: var(--border);
   color: var(--text-muted);
+  font-weight: bold;
+  width: 120px;
 }
 
 .reading-pane-actions .reading-pane-flag-toggle {
   background: var(--flag-bg);
   border-color: var(--flag-border);
   color: var(--flag);
+  font-weight: bold;
+  width: 60px;
 }
 
-.reading-pane-flag-toggle.flagged {
+/* .reading-pane-flag-toggle.flagged {
   background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger);
-}
+} */
 
 .reading-pane-meta {
   display: flex;

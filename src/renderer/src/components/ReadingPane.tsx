@@ -172,13 +172,13 @@ function ReadingPane({
             </div>
           ) : (
             <div className="reading-pane-actions">
-              <button type="button" onClick={() => onReply(displayedMessage)}>
+              <button type="button" className="btn-primary" onClick={() => onReply(displayedMessage)}>
                 Reply
               </button>
-              <button type="button" onClick={() => onReplyAll(displayedMessage)}>
+              <button type="button" className="btn-primary" onClick={() => onReplyAll(displayedMessage)}>
                 Reply All
               </button>
-              <button type="button" onClick={() => onForward(displayedMessage)}>
+              <button type="button" className="btn-primary" onClick={() => onForward(displayedMessage)}>
                 Forward
               </button>
               <button type="button" className="reading-pane-delete-btn" onClick={() => onDelete(displayedMessage)}>
