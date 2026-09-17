@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 059 (Two additional light color schemes)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 059 (Two additional light color schemes)
+  validated: lint/typecheck/build pass; full suite (776/776) re-run 3x,
+  stable; `git diff --stat` (0114c28..57be71e) confirms `/implement`+
+  `/test` touched only expected files. All 4 ACs re-verified with
+  independent scripts (not just re-running the test file): AC1/AC2 a
+  fresh Node script confirms all three schemes define the identical
+  23-token set; AC3 an independent Python WCAG contrast implementation
+  confirms sage/plum both clear 4.5:1 (5.13-8.24:1 range) and that
+  accent/primary-bg/text are pairwise distinct across all three schemes;
+  AC4 zero layout properties anywhere in the feature's diff, no
+  disclosed exceptions needed this time. All checks pass, no gaps found.
+  Phase set to `accept`.
 - 2026-09-17 — feature 059 (Two additional light color schemes) tested:
   769 → 776 net (+7, all passing; re-run 3x, stable), all in
   `globalCssStyling.test.ts`'s new "two additional light color schemes

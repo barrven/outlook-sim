@@ -1,7 +1,7 @@
 ---
 id: 059
 title: Two additional light color schemes
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -11,15 +11,15 @@ full set of values for every existing semantic token, built on the
 scheme-switching mechanism from feature 058.
 
 ## Acceptance Criteria
-- [ ] Two new light color schemes exist, each defining a complete value
+- [x] Two new light color schemes exist, each defining a complete value
       for every semantic token the app uses
-- [ ] Switching to either scheme changes every themed surface in the app
+- [x] Switching to either scheme changes every themed surface in the app
       (ribbon, panes, buttons, chips, flags, etc.) consistently — no
       element left showing a different scheme's value
-- [ ] Each new scheme is visually distinct from the default and from each
+- [x] Each new scheme is visually distinct from the default and from each
       other (different accent/hue treatment) while remaining legible
       (adequate text/icon contrast against its own backgrounds)
-- [ ] No layout/chrome changes — same structural constraint as feature 058
+- [x] No layout/chrome changes — same structural constraint as feature 058
 
 ## Implementation Notes
 Scoped entirely to `src/renderer/src/styles/global.css` — two new
@@ -111,7 +111,42 @@ it change" flow, since that flow doesn't exist yet.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full suite 776/776, re-run 3x, stable.
+`git diff --stat` (0114c28..57be71e) confirms `/implement`+`/test`
+touched only the expected files — no drift.
+
+All 4 ACs re-verified directly against current source, each with an
+independent script (not just re-running the same test file):
+- **AC1**: a fresh Node script extracted every token name from all three
+  `:root[data-theme='...']` blocks — confirmed 23 tokens each for
+  default/sage/plum.
+- **AC2**: the same extraction confirms the token-name sets are
+  identical across all three schemes (already the mechanism proving "no
+  element left showing a different scheme's value" — same check the
+  dedicated test encodes, re-run independently here).
+- **AC3**: contrast re-verified with an independent Python implementation
+  of the WCAG relative-luminance formula (not the test file's JS helper)
+  — sage muted-on-pane 5.62:1, sage white-on-primary 5.13:1, plum
+  muted-on-pane 6.55:1, plum white-on-primary 8.24:1, all clearing the
+  4.5:1 AA threshold. Distinctness re-verified directly: `--accent`/
+  `--primary-bg`/`--text` are pairwise different across all three
+  schemes (default `#3573b0`/`#0d6efd`/`#16233a`, sage
+  `#2e7d32`/`#2e7d32`/`#16301b`, plum `#6a2fa3`/`#6a2fa3`/`#2c1b3d`).
+- **AC4**: `git diff` across the entire feature range for
+  `padding|margin|width|height|flex|gap|position|display` returns zero
+  matches — no disclosed exceptions this time (unlike 058's one
+  `opacity` case), since this feature added no new rules at all, only
+  two new token-value blocks.
+
+Not independently re-verified: the actual *rendered* appearance in a
+live browser/Electron window with `data-theme` switched at runtime —
+jsdom doesn't load the external stylesheet, so no test in this project
+can assert on computed styles (same non-blocking gap as every prior
+pure-CSS feature). There's also no Settings UI to switch through yet
+(feature 061) — this feature is provably correct at the CSS level, not
+yet reachable end-to-end by a user.
+
+All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
