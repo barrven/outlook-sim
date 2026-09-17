@@ -55,7 +55,7 @@
 | 038 | Move mail search into the ribbon | done | low | 038-search-in-ribbon.md |
 | 042 | View tab — Reading Pane Right/Off toggle | done | low | 042-reading-pane-toggle.md |
 | 044 | Double-click calendar item opens a pop-out window | done | low | 044-calendar-popout-window.md |
-| 045 | Simulated clock — black text and dropdown mini-calendar | testing | low | 045-clock-minicalendar.md |
+| 045 | Simulated clock — black text and dropdown mini-calendar | validating | low | 045-clock-minicalendar.md |
 
 <!--
 Status values: backlog | implementing | testing | validating | accept | done | blocked

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 045 (Simulated clock — black text and dropdown mini-calendar)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
+  mini-calendar) tested: 705 → 713 net (+8, all passing; re-run 3x,
+  stable) across 2 files. `globalCssStyling.test.ts` (+1, AC1) statically
+  confirms `.office-clock-time` uses `var(--text)`. `OfficeClock.test.tsx`
+  (+7, AC2-AC5) covers open/close via repeat-click/Escape/outside-click,
+  today's cell highlighting, Previous/Next explicitly asserting
+  `clock.pause`/`start`/`setSpeed` are never called and the real
+  displayed time stays unchanged, an exact "in 4 days, 14 hours" readout
+  for a future day (hand-verified date math), "... ago" for a past day,
+  and no readout for today itself. lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
   mini-calendar) implemented: scoped entirely to `OfficeClock.tsx` +
   CSS. AC1: `.office-clock-time` gained `color: var(--text)` (was

@@ -99,6 +99,125 @@ describe('OfficeClock', () => {
 
     expect(setIntervalSpy).not.toHaveBeenCalledWith(expect.any(Function), 1000)
   })
+
+  describe('Mini-calendar dropdown (045)', () => {
+    it('045 AC2: clicking the clock opens a dropdown mini-calendar, closed by default', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE)
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      expect(screen.queryByRole('dialog', { name: 'Mini Calendar' })).not.toBeInTheDocument()
+
+      await user.click(clockButton)
+      expect(await screen.findByRole('dialog', { name: 'Mini Calendar' })).toBeInTheDocument()
+
+      await user.click(clockButton)
+      expect(screen.queryByRole('dialog', { name: 'Mini Calendar' })).not.toBeInTheDocument()
+    })
+
+    it('045 AC2: Escape and an outside click both close it', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE)
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+      await user.keyboard('{Escape}')
+      expect(screen.queryByRole('dialog', { name: 'Mini Calendar' })).not.toBeInTheDocument()
+
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+      await user.click(document.body)
+      expect(screen.queryByRole('dialog', { name: 'Mini Calendar' })).not.toBeInTheDocument()
+    })
+
+    it('045 AC3: highlights the current simulated day', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE) // Jan 15, 2026
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+
+      const dayButtons = screen.getAllByText('15')
+      const todayButton = dayButtons.find((el) => el.className.includes('today'))
+      expect(todayButton).toBeDefined()
+    })
+
+    it('045 AC4: Previous/Next navigate the dropdown by month without touching the real clock', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE) // January 2026
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      await user.click(clockButton)
+      await screen.findByText('January 2026')
+
+      await user.click(screen.getByRole('button', { name: 'Next month' }))
+      expect(screen.getByText('February 2026')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Previous month' }))
+      await user.click(screen.getByRole('button', { name: 'Previous month' }))
+      expect(screen.getByText('December 2025')).toBeInTheDocument()
+
+      expect(window.api.data.clock.pause).not.toHaveBeenCalled()
+      expect(window.api.data.clock.start).not.toHaveBeenCalled()
+      expect(window.api.data.clock.setSpeed).not.toHaveBeenCalled()
+      expect(screen.getByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())).toBeInTheDocument()
+    })
+
+    it('045 AC5: clicking a future day shows how much simulated time remains until it', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE) // Jan 15, 2026, 10:00am
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+
+      // Jan 20 00:00 minus Jan 15 10:00 = 4 days, 14 hours.
+      const dayButtons = screen.getAllByText('20')
+      await user.click(dayButtons[0])
+
+      expect(screen.getByText('in 4 days, 14 hours')).toBeInTheDocument()
+    })
+
+    it('045 AC5: clicking a past day shows time elapsed since it, not "in"', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE) // Jan 15, 2026, 10:00am
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+
+      // Jan 10 00:00 is before Jan 15 10:00 — 5 days, 10 hours earlier.
+      const dayButtons = screen.getAllByText('10')
+      await user.click(dayButtons[0])
+
+      expect(screen.getByText('5 days, 10 hours ago')).toBeInTheDocument()
+    })
+
+    it('045 AC5: no readout shown for today itself', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.clock.get).mockResolvedValue(PAUSED_STATE)
+
+      render(<OfficeClock />)
+      const clockButton = await screen.findByText(new Date(PAUSED_STATE.anchorSimTime).toLocaleString())
+      await user.click(clockButton)
+      await screen.findByRole('dialog', { name: 'Mini Calendar' })
+
+      const dayButtons = screen.getAllByText('15')
+      const todayButton = dayButtons.find((el) => el.className.includes('today'))!
+      await user.click(todayButton)
+
+      expect(screen.queryByText(/in \d+ days|ago/)).not.toBeInTheDocument()
+    })
+  })
 })
 
 describe('computeDisplayTime', () => {

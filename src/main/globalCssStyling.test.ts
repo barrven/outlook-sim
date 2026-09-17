@@ -55,3 +55,11 @@ describe('global.css semantic tokens (037)', () => {
     expect(css).toMatch(/\.reading-pane-flag-toggle\.flagged\s*{[^}]*color:\s*var\(--danger\);/)
   })
 })
+
+describe('office clock (045)', () => {
+  it('AC1: the clock display text uses the near-black --text token, not the muted color', () => {
+    const rule = css.match(/\.office-clock-time\s*{[^}]*}/)
+    expect(rule).not.toBeNull()
+    expect(rule![0]).toMatch(/color:\s*var\(--text\);/)
+  })
+})

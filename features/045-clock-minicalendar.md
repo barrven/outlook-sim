@@ -1,7 +1,7 @@
 ---
 id: 045
 title: Simulated clock — black text and dropdown mini-calendar
-status: testing
+status: validating
 priority: low
 ---
 
@@ -70,7 +70,30 @@ full suite unchanged at 705/705 (no existing test asserted on
 updating).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+705 → 713 net (+8, all passing; re-run 3x, stable), across 2 files:
+
+- `src/main/globalCssStyling.test.ts` (+1, AC1): a static/structural check
+  (same pattern feature 037 established) confirming `.office-clock-time`
+  sets `color: var(--text)`, since jsdom in this project's test setup
+  never loads the external stylesheet, so computed style can't be
+  asserted directly.
+- `src/renderer/src/components/OfficeClock.test.tsx` (+7, AC2-AC5): opens/
+  closes on a repeat click, and via Escape/outside-click (mirroring
+  `RibbonBar`'s file-menu test conventions); today's cell carries the
+  `today` class; Previous/Next change only the dropdown's own month label
+  — explicitly asserting `clock.pause`/`start`/`setSpeed` are never
+  called and the real clock's displayed time is unchanged (AC4's
+  strongest guarantee); a future-day click shows the exact "in 4 days, 14
+  hours" text (hand-verified date math, not just a loose regex); a
+  past-day click shows "... ago" instead of a nonsensical negative
+  duration; clicking today itself shows no readout at all.
+
+Deliberately not covered: the mini-calendar's own live re-render while
+the clock is *running* (i.e. "today" or the readout updating mid-tick) —
+not required by any AC, which only specifies static per-click behavior;
+and a live GUI screenshot of the black text/dropdown appearance (no
+attached display), same non-blocking gap as every prior feature.
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
