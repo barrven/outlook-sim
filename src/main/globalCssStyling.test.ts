@@ -27,7 +27,7 @@ function extractDefaultThemeBlock(source: string): string {
 // Every known scheme's selector, so tests that need to look past ALL of
 // them (e.g. "no color outside a token block") don't need updating each
 // time a new scheme (059/060/...) is added — only this list does.
-const KNOWN_THEMES = ['default', 'sage', 'plum']
+const KNOWN_THEMES = ['default', 'sage', 'plum', 'dark']
 
 function stripAllThemeBlocks(source: string): string {
   return KNOWN_THEMES.reduce(
@@ -287,6 +287,92 @@ describe('two additional light color schemes (059)', () => {
       const block = extractThemeBlock(css, theme)
       expect(block).not.toMatch(/\b(padding|margin|width|height|flex|gap|position|display)\s*:/)
     }
+  })
+})
+
+describe('dark color scheme (060)', () => {
+  const ALL_TOKENS = [
+    '--border',
+    '--ribbon-bg',
+    '--pane-bg',
+    '--nav-rail-bg',
+    '--selected-bg',
+    '--selected-border',
+    '--text',
+    '--text-muted',
+    '--accent',
+    '--hover-bg',
+    '--danger',
+    '--danger-bg',
+    '--danger-border',
+    '--warning',
+    '--warning-bg',
+    '--warning-border',
+    '--success',
+    '--primary',
+    '--primary-bg',
+    '--primary-border',
+    '--flag',
+    '--flag-bg',
+    '--flag-border'
+  ]
+
+  it('AC1: "dark" defines a complete value for every semantic token the app uses', () => {
+    const block = extractThemeBlock(css, 'dark')
+    for (const token of ALL_TOKENS) {
+      expect(block, `dark should define ${token}`).toMatch(new RegExp(`${token}:\\s*#[0-9a-fA-F]{3,8};`))
+    }
+  })
+
+  it('AC2: "dark" defines the exact same set of token names as every other scheme — switching changes every themed surface consistently, nothing falls through to an undefined value', () => {
+    const tokenNames = (block: string): string[] => [...block.matchAll(/--[a-z-]+(?=:)/g)].map((m) => m[0]).sort()
+
+    const defaultNames = tokenNames(extractDefaultThemeBlock(css))
+    const darkNames = tokenNames(extractThemeBlock(css, 'dark'))
+
+    expect(darkNames).toEqual(defaultNames)
+  })
+
+  it('AC1: "dark" actually uses dark backgrounds for chrome and the message/reading pane alike — unlike the light schemes, --pane-bg is dark too', () => {
+    const block = extractThemeBlock(css, 'dark')
+    for (const token of ['--pane-bg', '--ribbon-bg', '--nav-rail-bg']) {
+      const hex = getToken(block, token)
+      expect(relativeLuminance(hexToRgb(hex)), `${token} should be a dark color`).toBeLessThan(0.1)
+    }
+  })
+
+  it('AC3: text, muted text and the accent hue all clear WCAG AA (>=4.5:1) against the dark --pane-bg', () => {
+    const block = extractThemeBlock(css, 'dark')
+    const paneBg = getToken(block, '--pane-bg')
+
+    for (const token of ['--text', '--text-muted', '--accent']) {
+      expect(contrastRatio(getToken(block, token), paneBg)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('AC3: white-on-primary-button text clears WCAG AA against this scheme\'s own --primary-bg', () => {
+    const block = extractThemeBlock(css, 'dark')
+
+    expect(contrastRatio(getToken(block, '--primary'), getToken(block, '--primary-bg'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('AC3: tokens used as standalone text with no background of their own (--danger-border, --success, --flag-border) clear WCAG AA against the dark surfaces they actually appear on', () => {
+    const block = extractThemeBlock(css, 'dark')
+    const paneBg = getToken(block, '--pane-bg')
+    const navRailBg = getToken(block, '--nav-rail-bg')
+
+    // .settings-test-result-error and .calendar-event-form-error
+    expect(contrastRatio(getToken(block, '--danger-border'), paneBg)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(getToken(block, '--danger-border'), navRailBg)).toBeGreaterThanOrEqual(4.5)
+    // .settings-test-result-ok
+    expect(contrastRatio(getToken(block, '--success'), paneBg)).toBeGreaterThanOrEqual(4.5)
+    // .message-list-flag-btn.flagged
+    expect(contrastRatio(getToken(block, '--flag-border'), paneBg)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('AC4: no layout-affecting property (padding/margin/width/height/flex/gap/position/display) appears in the dark scheme block', () => {
+    const block = extractThemeBlock(css, 'dark')
+    expect(block).not.toMatch(/\b(padding|margin|width|height|flex|gap|position|display)\s*:/)
   })
 })
 

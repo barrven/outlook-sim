@@ -1,7 +1,7 @@
 ---
 id: 060
 title: Dark color scheme
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -50,7 +50,29 @@ text/text-muted/accent on `--pane-bg` run 7.4-14.9:1, white-on-
 as 058/059.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+Added a "dark color scheme (060)" block to `globalCssStyling.test.ts`
+(776 → 783, net +7), mirroring 059's test structure. Also added
+`'dark'` to the file's `KNOWN_THEMES` list so the pre-existing "no
+hardcoded hex outside a token block" check keeps stripping it
+correctly.
+
+Covered: AC1 the dark scheme defines all 23 tokens, and that its
+chrome/pane backgrounds are actually dark (relative luminance < 0.1, not
+just "different"). AC2 exact same token-name set as every other scheme
+(nothing undefined on switch). AC3 WCAG contrast (>=4.5:1), split into
+three checks: text/text-muted/accent against `--pane-bg`; white against
+this scheme's own `--primary-bg`; and the standalone-text tokens
+(`--danger-border`, `--success`, `--flag-border`) against whichever
+background they actually render on in the app (`--pane-bg`/
+`--nav-rail-bg`), the same set called out in Implementation Notes as
+needing brighter values. AC4 no layout property anywhere in the `dark`
+block.
+
+Deliberately not covered: runtime theme switching (no switcher exists
+yet — feature 061), and pixel/visual rendering (same as 058/059, this
+suite only checks the CSS source, not a rendered page).
+
+Full suite: 783/783 passing (776 + 7 new), re-run twice, stable.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

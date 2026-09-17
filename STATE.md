@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 060 (Dark color scheme)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 060 (Dark color scheme) tested: 776 → 783 net
+  (+7, all passing; re-run twice, stable), all in
+  `globalCssStyling.test.ts`'s new "dark color scheme (060)" block. AC1
+  checks the full 23-token set plus that pane/ribbon/nav-rail
+  backgrounds are genuinely dark (relative luminance < 0.1). AC2 checks
+  the exact token-name set matches every other scheme. AC3 checks WCAG
+  contrast (>=4.5:1) for text/text-muted/accent on --pane-bg, white on
+  this scheme's --primary-bg, and the standalone-text tokens
+  (--danger-border/--success/--flag-border) against the actual
+  background they render on in the app. AC4 no layout property in the
+  dark block. Phase set to `validate`.
 - 2026-09-17 — feature 060 (Dark color scheme) implemented: added a
   `:root[data-theme='dark']` block to global.css with the same 23-token
   set as the other schemes, dark backgrounds throughout (including
