@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 058 (Color scheme infrastructure + revised default palette)
+- **Phase:** implement
+- **Active feature:** 059 (Two additional light color schemes)
 - **Last updated:** 2026-09-17
 
 ## Phases
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
+  palette) accepted by user: after the initial /validate pass, the user
+  pushed their own manual styling edits (filled-button look, new
+  `--primary` token, simplified ribbon actions, flagged-state color
+  intentionally removed). Found and fixed one real regression from that
+  pass (invisible white-on-white error text after `--danger` was
+  remapped to white) after the user confirmed the fix and confirmed the
+  flagged-state removal was intentional; updated tests to match the
+  final design. Re-validated (769/769, lint/typecheck/build clean), then
+  user selected "Accept (Recommended)"; logged to CHANGELOG. Active
+  feature set to 059 (Two additional light color schemes, next in
+  BACKLOG.md table order, directly building on 058's infrastructure),
+  phase set to `implement`.
 - 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
   palette) validated: lint/typecheck/build pass; full suite (768/768)
   re-run 3x, stable; `git diff --stat` (1ee7b5d..844db12) confirms the

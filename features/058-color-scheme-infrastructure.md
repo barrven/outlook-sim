@@ -1,7 +1,7 @@
 ---
 id: 058
 title: Color scheme infrastructure + revised default palette
-status: accept
+status: done
 priority: medium
 ---
 
@@ -326,4 +326,17 @@ stable; lint/typecheck/build all pass.
 Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-17 — The user reviewed the revised palette live, requested
+semantic button coloring mid-review (added as AC5), then made their own
+manual styling pass on top (filled-button look, simplified ribbon
+actions, flagged-state color intentionally removed) and pushed it
+directly. Before finalizing, flagged two likely side effects of that
+pass: invisible white-on-white error text in two places, and the
+Reading Pane's flag-toggle no longer changing color when flagged. User
+asked to fix the former and confirmed the latter was intentional
+("the button doesn't need a different style when flagged because it
+already says 'unflag'"). Fixed the invisible-text regression, updated
+tests to match the final design, re-validated (769/769, lint/typecheck/
+build clean). User then selected "Accept (Recommended)" against this
+full summary. Decision: accepted, current state taken as the default
+style.

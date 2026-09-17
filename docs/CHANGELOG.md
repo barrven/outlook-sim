@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-17 — Color scheme infrastructure + revised default palette (features/058-color-scheme-infrastructure.md)
+The app's whole color palette can now be swapped from a single switch
+point, laying the groundwork for the additional light/dark schemes
+coming next. The default palette itself is revised — less flat gray,
+more distinct hue — and the always-visible action buttons (New Email,
+Reply/Reply All/Forward, Delete, Mark as read/unread, Flag) now carry
+their own semantic colors instead of a uniform look.
+
 ## 2026-09-17 — Mail — LLM-generated incoming attachments (features/065-llm-generated-incoming-attachments.md)
 When a scenario calls for a persona to send a document, the LLM's reply
 can now include real document content, distinct from the email itself,
