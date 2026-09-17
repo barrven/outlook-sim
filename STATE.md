@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 045 (Simulated clock — black text and dropdown mini-calendar)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
+  mini-calendar) validated: lint/typecheck/build pass; full suite
+  (713/713) re-run 3x, stable; `git diff --stat` (b837c4e..027ed92)
+  confirms `/test` touched only docs/test files, no implementation
+  drift. All 5 ACs re-verified directly against current source: AC1
+  `.office-clock-time` sets `color: var(--text)`; AC2 the clock button's
+  `onClick` toggles the `role="dialog"` mini-calendar; AC3 today's grid
+  cell gets `today` via the same live `computeDisplayTime` the clock
+  itself uses; AC4 Previous/Next call only `setMiniCalendarAnchorMs`,
+  nowhere near any `clock.pause/start/setSpeed` call; AC5 the readout
+  only renders for a non-today selection, computed against the live
+  simulated time. All checks pass, no gaps found. Phase set to `accept`.
 - 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
   mini-calendar) tested: 705 → 713 net (+8, all passing; re-run 3x,
   stable) across 2 files. `globalCssStyling.test.ts` (+1, AC1) statically

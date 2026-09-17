@@ -1,7 +1,7 @@
 ---
 id: 045
 title: Simulated clock — black text and dropdown mini-calendar
-status: validating
+status: accept
 priority: low
 ---
 
@@ -96,7 +96,35 @@ attached display), same non-blocking gap as every prior feature.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (713/713) re-run 3x,
+stable. `git diff --stat` (b837c4e..027ed92) confirms `/test` touched
+only `STATE.md`/feature/backlog docs plus the two test files — no
+implementation drift.
+
+All 5 ACs re-verified directly against current source (not just trusting
+prior notes):
+- AC1 (black text): `.office-clock-time` sets `color: var(--text)`
+  (`#1b1b1b`, effectively black), confirmed by reading the rule directly.
+- AC2 (click opens a dropdown): the clock `<button>`'s `onClick` calls
+  `toggleMiniCalendar`, which renders `.office-clock-minicalendar`
+  (`role="dialog"`) when open.
+- AC3 (today highlighted): the grid's `className` includes `today`
+  whenever `isSameDay(day, simulatedNowMs)`, where `simulatedNowMs` comes
+  from the same live `computeDisplayTime(state)` the clock display itself
+  uses.
+- AC4 (Previous/Next don't touch the real clock): both nav buttons call
+  only `setMiniCalendarAnchorMs` via `shiftAnchor('month', ...)` — neither
+  is anywhere near `window.api.data.clock.pause/start/setSpeed`, which
+  are called exclusively from the unrelated `handleToggle`/
+  `handleSpeedChange` handlers.
+- AC5 (time-remaining readout): the readout only renders when a day other
+  than today is selected, computed via `formatTimeUntil` against the same
+  live simulated time, not wall-clock time.
+
+Not independently re-verified: actual rendered appearance in a live
+browser/Electron window (no attached display), same non-blocking gap as
+every prior feature. All checks pass, no gaps found. Phase set to
+`accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
