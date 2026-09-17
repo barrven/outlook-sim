@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 044 (Double-click calendar item opens a pop-out window)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
+  window) implemented: extracted feature 043's view/edit/recurrence-scope
+  state machine out of `CalendarView.tsx` into a new, prop-driven
+  `CalendarItemPanel` component (pure code-motion, confirmed
+  behavior-preserving — full suite passed unchanged afterward) so it can
+  be reused by a new `CalendarPopoutWindow`. Added
+  `broadcastCalendarItemsChanged()` (calendar items never broadcast
+  cross-window before this feature) wired into the calendarItems IPC
+  handlers, plus the standard pop-out plumbing (main/windows.ts,
+  window:openCalendarPopout handler, preload API, main.tsx routing)
+  mirroring feature 041. The pop-out reconstructs its exact occurrence via
+  `expandOccurrences([series], originalStartTime, originalStartTime + 1)`
+  and closes itself after save/delete or if the item vanishes elsewhere
+  while open. Live verification caught and fixed a real bug: the
+  close-on-vanished guard used `items.length` instead of a `hasFetched`
+  flag, which failed specifically when the popped-out item was the only
+  one and got deleted. lint/typecheck/build pass; full suite unchanged at
+  688/688. Phase set to `test`.
 - 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
   accepted by user (selected "Accept (Recommended)", no changes
   requested); logged to CHANGELOG. Active feature set to 044

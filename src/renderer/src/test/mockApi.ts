@@ -112,6 +112,9 @@ export function createMockApi(): Window['api'] {
     messagePopout: {
       open: vi.fn().mockResolvedValue(undefined)
     },
+    calendarPopout: {
+      open: vi.fn().mockResolvedValue(undefined)
+    },
     session: {
       startFreePlay: vi.fn().mockResolvedValue({ ok: true })
     },
@@ -131,6 +134,7 @@ export function createMockApi(): Window['api'] {
       generatePersonas: vi.fn().mockResolvedValue({ ok: false, error: 'not mocked' })
     },
     onMessagesChanged: vi.fn().mockReturnValue(() => {}),
+    onCalendarItemsChanged: vi.fn().mockReturnValue(() => {}),
     onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),
     onUnsolicitedMailFailed: vi.fn().mockReturnValue(() => {}),
     onReminderFired: vi.fn().mockReturnValue(() => {})

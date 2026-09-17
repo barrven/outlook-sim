@@ -1,11 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type {
-  CalendarItem,
-  CalendarItemType,
-  CalendarRecurrenceException,
-  NewCalendarItem,
-  RecurrenceFrequency
-} from '../../../shared/data-types'
+import type { CalendarItem, CalendarRecurrenceException, NewCalendarItem } from '../../../shared/data-types'
 import {
   addDaysMs,
   formatRangeLabel,
@@ -16,6 +10,7 @@ import {
   type CalendarViewId
 } from '../calendarDates'
 import { expandOccurrences, upsertException, type CalendarOccurrence } from '../../../shared/recurrence'
+import CalendarItemPanel, { CalendarItemForm, formatEventTime } from './CalendarItemPanel'
 
 const VIEW_OPTIONS: { id: CalendarViewId; label: string }[] = [
   { id: 'day', label: 'Day' },
@@ -24,306 +19,9 @@ const VIEW_OPTIONS: { id: CalendarViewId; label: string }[] = [
   { id: 'month', label: 'Month' }
 ]
 
-const ITEM_TYPE_OPTIONS: { value: CalendarItemType; label: string }[] = [
-  { value: 'event', label: 'Event' },
-  { value: 'deadline', label: 'Deadline' }
-]
-
-// Value is a string so it can back a <select>; '' means "does not repeat"
-// (recurrenceRule: null).
-const RECURRENCE_OPTIONS: { value: RecurrenceFrequency | ''; label: string }[] = [
-  { value: '', label: 'Does not repeat' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' }
-]
-
-// Value is a string so it can back a <select>; '' means "no reminder"
-// (reminderMinutesBefore: null).
-const REMINDER_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: '0', label: 'At time of event' },
-  { value: '5', label: '5 minutes before' },
-  { value: '15', label: '15 minutes before' },
-  { value: '30', label: '30 minutes before' },
-  { value: '60', label: '1 hour before' },
-  { value: '1440', label: '1 day before' }
-]
-
-const HOUR_MS = 60 * 60 * 1000
-
 interface CalendarViewProps {
   showCreateForm: boolean
   onCloseCreateForm: () => void
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0')
-}
-
-function msToDatetimeLocal(ms: number): string {
-  const date = new Date(ms)
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-function datetimeLocalToMs(value: string): number | null {
-  if (!value) return null
-  const ms = new Date(value).getTime()
-  return Number.isNaN(ms) ? null : ms
-}
-
-// Native <input type="date"> values ("YYYY-MM-DD") parse as UTC midnight per
-// the ISO-8601 spec, which would silently shift the date in most timezones —
-// unlike datetime-local strings, which parse as local time. Build the local
-// Date explicitly instead of handing the string to `new Date(...)`.
-function msToDateOnly(ms: number): string {
-  const date = new Date(ms)
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-function dateOnlyToMs(value: string): number | null {
-  if (!value) return null
-  const [year, month, day] = value.split('-').map(Number)
-  if (!year || !month || !day) return null
-  return new Date(year, month - 1, day).getTime()
-}
-
-function formatEventTime(ms: number): string {
-  return new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-}
-
-interface CalendarItemFormProps {
-  initialItem?: CalendarItem
-  initialStartMs: number
-  // Hidden when editing a single occurrence of a recurring series — the
-  // repeat pattern belongs to the series as a whole, not one instance of it.
-  hideRecurrenceField?: boolean
-  onSave: (fields: NewCalendarItem) => void | Promise<void>
-  onDelete?: () => void | Promise<void>
-  onCancel: () => void
-}
-
-// A separate component (rather than an effect in the parent) so that
-// re-mounting it fresh each time it's shown is what resets/reseeds its
-// fields — no imperative "reseed on open" effect needed.
-function CalendarItemForm({
-  initialItem,
-  initialStartMs,
-  hideRecurrenceField,
-  onSave,
-  onDelete,
-  onCancel
-}: CalendarItemFormProps): ReactElement {
-  const isEditing = Boolean(initialItem)
-  const [title, setTitle] = useState(initialItem?.title ?? '')
-  const [description, setDescription] = useState(initialItem?.description ?? '')
-  const [itemType, setItemType] = useState<CalendarItemType>(initialItem?.itemType ?? 'event')
-  const [allDay, setAllDay] = useState(initialItem?.allDay ?? false)
-  const [startInput, setStartInput] = useState(() =>
-    initialItem?.allDay ? msToDateOnly(initialStartMs) : msToDatetimeLocal(initialStartMs)
-  )
-  const [endInput, setEndInput] = useState(() =>
-    msToDatetimeLocal(initialItem?.endTime ?? initialStartMs + HOUR_MS)
-  )
-  const [reminderSelection, setReminderSelection] = useState(
-    initialItem?.reminderMinutesBefore != null ? String(initialItem.reminderMinutesBefore) : ''
-  )
-  const [recurrenceSelection, setRecurrenceSelection] = useState<RecurrenceFrequency | ''>(
-    initialItem?.recurrenceRule ?? ''
-  )
-  const [formError, setFormError] = useState<string | null>(null)
-
-  function handleAllDayChange(checked: boolean): void {
-    setAllDay(checked)
-    setStartInput((prev) => (checked ? prev.slice(0, 10) : `${prev.slice(0, 10)}T09:00`))
-  }
-
-  function handleSubmit(): void {
-    const startTime = allDay ? dateOnlyToMs(startInput) : datetimeLocalToMs(startInput)
-    if (!title.trim() || startTime === null) {
-      setFormError('Title and start time are required.')
-      return
-    }
-    onSave({
-      title: title.trim(),
-      description,
-      startTime,
-      endTime: allDay ? null : datetimeLocalToMs(endInput),
-      allDay,
-      reminderMinutesBefore: reminderSelection === '' ? null : Number(reminderSelection),
-      recurrenceRule: hideRecurrenceField ? null : recurrenceSelection || null,
-      itemType
-    })
-  }
-
-  return (
-    <div className="calendar-event-form" role="dialog" aria-label={isEditing ? 'Edit Calendar Item' : 'New Event'}>
-      <div className="calendar-event-form-row">
-        <label htmlFor="calendar-event-title">Title</label>
-        <input
-          id="calendar-event-title"
-          autoFocus
-          type="text"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </div>
-      <div className="calendar-event-form-row">
-        <label htmlFor="calendar-event-description">Description</label>
-        <textarea
-          id="calendar-event-description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-      </div>
-      <div className="calendar-event-form-row">
-        <label htmlFor="calendar-event-type">Type</label>
-        <select
-          id="calendar-event-type"
-          value={itemType}
-          onChange={(event) => setItemType(event.target.value as CalendarItemType)}
-        >
-          {ITEM_TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="calendar-event-form-row calendar-event-form-row-checkbox">
-        <label htmlFor="calendar-event-allday">All day</label>
-        <input
-          id="calendar-event-allday"
-          type="checkbox"
-          checked={allDay}
-          onChange={(event) => handleAllDayChange(event.target.checked)}
-        />
-      </div>
-      <div className="calendar-event-form-row">
-        <label htmlFor="calendar-event-start">Start</label>
-        <input
-          id="calendar-event-start"
-          type={allDay ? 'date' : 'datetime-local'}
-          value={startInput}
-          onChange={(event) => setStartInput(event.target.value)}
-        />
-      </div>
-      {/* Kept mounted (just visually hidden) rather than unmounted when All
-          day is checked, so the form's height — and everything above this
-          row, like the All-day checkbox itself — doesn't shift on screen. */}
-      <div className={`calendar-event-form-row${allDay ? ' calendar-event-form-row-hidden' : ''}`}>
-        <label htmlFor="calendar-event-end">End</label>
-        <input
-          id="calendar-event-end"
-          type="datetime-local"
-          value={endInput}
-          onChange={(event) => setEndInput(event.target.value)}
-        />
-      </div>
-      <div className="calendar-event-form-row">
-        <label htmlFor="calendar-event-reminder">Reminder</label>
-        <select
-          id="calendar-event-reminder"
-          value={reminderSelection}
-          onChange={(event) => setReminderSelection(event.target.value)}
-        >
-          {REMINDER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      {!hideRecurrenceField && (
-        <div className="calendar-event-form-row">
-          <label htmlFor="calendar-event-recurrence">Repeat</label>
-          <select
-            id="calendar-event-recurrence"
-            value={recurrenceSelection}
-            onChange={(event) => setRecurrenceSelection(event.target.value as RecurrenceFrequency | '')}
-          >
-            {RECURRENCE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {formError && <p className="calendar-event-form-error">{formError}</p>}
-      <div className="calendar-event-form-actions">
-        <button type="button" onClick={handleSubmit}>
-          {isEditing ? 'Save' : 'Create'}
-        </button>
-        {onDelete && (
-          <button type="button" onClick={onDelete}>
-            Delete
-          </button>
-        )}
-        <button type="button" onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}
-
-interface CalendarItemViewProps {
-  occurrence: CalendarOccurrence
-  onEdit: () => void
-  onClose: () => void
-}
-
-// Read-only display of an already-existing item — no form controls, so a
-// stray click can't edit anything. `Edit` is the only way into the mutable
-// form.
-function CalendarItemView({ occurrence, onEdit, onClose }: CalendarItemViewProps): ReactElement {
-  const reminderLabel =
-    REMINDER_OPTIONS.find(
-      (option) => option.value === (occurrence.reminderMinutesBefore == null ? '' : String(occurrence.reminderMinutesBefore))
-    )?.label ?? 'None'
-  const typeLabel = ITEM_TYPE_OPTIONS.find((option) => option.value === occurrence.itemType)?.label ?? occurrence.itemType
-
-  return (
-    <div className="calendar-event-view" role="dialog" aria-label="View Calendar Item">
-      <div className="calendar-event-form-row">
-        <span className="calendar-event-view-label">Title</span>
-        <span className="calendar-event-view-value">{occurrence.title}</span>
-      </div>
-      {occurrence.description && (
-        <div className="calendar-event-form-row">
-          <span className="calendar-event-view-label">Description</span>
-          <span className="calendar-event-view-value">{occurrence.description}</span>
-        </div>
-      )}
-      <div className="calendar-event-form-row">
-        <span className="calendar-event-view-label">Type</span>
-        <span className="calendar-event-view-value">
-          {occurrence.isRecurring && <span aria-hidden="true">🔁 </span>}
-          {typeLabel}
-        </span>
-      </div>
-      <div className="calendar-event-form-row">
-        <span className="calendar-event-view-label">When</span>
-        <span className="calendar-event-view-value">
-          {occurrence.allDay ? 'All day' : formatEventTime(occurrence.startTime)}
-          {!occurrence.allDay && occurrence.endTime !== null && ` – ${formatEventTime(occurrence.endTime)}`}
-        </span>
-      </div>
-      <div className="calendar-event-form-row">
-        <span className="calendar-event-view-label">Reminder</span>
-        <span className="calendar-event-view-value">{reminderLabel}</span>
-      </div>
-      <div className="calendar-event-form-actions">
-        <button type="button" onClick={onEdit}>
-          Edit
-        </button>
-        <button type="button" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
-  )
 }
 
 function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps): ReactElement {
@@ -367,6 +65,15 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
 
   useEffect(() => {
     refreshItems()
+  }, [])
+
+  // Feature 044 — a calendar pop-out window editing/deleting an item
+  // broadcasts the same way messages do, so this view refetches and
+  // re-renders live, same cross-window pattern as everywhere else.
+  useEffect(() => {
+    return window.api.onCalendarItemsChanged(() => {
+      refreshItems()
+    })
   }, [])
 
   async function handleCreate(fields: NewCalendarItem): Promise<void> {
@@ -457,6 +164,13 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
     setEditScope(null)
   }
 
+  // Double-clicking opens the item in its own window (feature 044) — purely
+  // additive alongside the single-click inline panel above (AC4); doesn't
+  // touch this window's own state at all.
+  function openPopout(occurrence: CalendarOccurrence): void {
+    window.api.calendarPopout.open(occurrence.seriesId, occurrence.originalStartTime)
+  }
+
   const days = getVisibleDays(view, anchorMs)
   const rangeLabel = formatRangeLabel(view, anchorMs)
   const rangeStartMs = days[0]
@@ -514,6 +228,7 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
                     type="button"
                     className={`calendar-month-event${occurrence.itemType === 'deadline' ? ' deadline' : ''}`}
                     onClick={() => openView(occurrence)}
+                    onDoubleClick={() => openPopout(occurrence)}
                   >
                     {occurrence.isRecurring && <span aria-hidden="true">🔁 </span>}
                     {occurrence.title}
@@ -540,6 +255,7 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
                     type="button"
                     className={`calendar-day-event${occurrence.itemType === 'deadline' ? ' deadline' : ''}`}
                     onClick={() => openView(occurrence)}
+                    onDoubleClick={() => openPopout(occurrence)}
                   >
                     <span className="calendar-day-event-time">
                       {occurrence.isRecurring && <span aria-hidden="true">🔁 </span>}
@@ -556,53 +272,21 @@ function CalendarView({ showCreateForm, onCloseCreateForm }: CalendarViewProps):
 
       {showCreateForm ? (
         <CalendarItemForm initialStartMs={anchorMs} onSave={handleCreate} onCancel={onCloseCreateForm} />
-      ) : openOccurrence && panelMode === 'view' ? (
-        <CalendarItemView occurrence={openOccurrence} onEdit={startEdit} onClose={closePanel} />
-      ) : openOccurrence && editScope === null ? (
-        <div className="calendar-recurrence-scope-chooser" role="dialog" aria-label="Edit Recurring Item">
-          <p>“{openOccurrence.title}” is part of a recurring series. Apply your change to:</p>
-          <div className="calendar-event-form-actions">
-            <button type="button" onClick={() => setEditScope('instance')}>
-              This event
-            </button>
-            <button type="button" onClick={() => setEditScope('series')}>
-              The whole series
-            </button>
-            <button type="button" onClick={cancelEdit}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : openOccurrence && editScope === 'series' && seriesForEdit ? (
-        <CalendarItemForm
-          initialItem={seriesForEdit}
-          initialStartMs={seriesForEdit.startTime}
-          onSave={(fields) => handleUpdateSeries(seriesForEdit.id, fields)}
-          onDelete={() => handleDeleteSeries(seriesForEdit.id)}
-          onCancel={cancelEdit}
-        />
       ) : (
-        openOccurrence &&
-        editScope === 'instance' && (
-          <CalendarItemForm
-            initialItem={{
-              id: openOccurrence.seriesId,
-              title: openOccurrence.title,
-              description: openOccurrence.description,
-              startTime: openOccurrence.startTime,
-              endTime: openOccurrence.endTime,
-              allDay: openOccurrence.allDay,
-              reminderMinutesBefore: openOccurrence.reminderMinutesBefore,
-              recurrenceRule: null,
-              recurrenceExceptions: [],
-              itemType: openOccurrence.itemType,
-              remindersFired: []
-            }}
-            initialStartMs={openOccurrence.startTime}
-            hideRecurrenceField
-            onSave={(fields) => handleSaveInstance(openOccurrence, fields)}
-            onDelete={() => handleDeleteInstance(openOccurrence)}
-            onCancel={cancelEdit}
+        openOccurrence && (
+          <CalendarItemPanel
+            openOccurrence={openOccurrence}
+            panelMode={panelMode}
+            editScope={editScope}
+            seriesForEdit={seriesForEdit}
+            onEdit={startEdit}
+            onCancelEdit={cancelEdit}
+            onChooseScope={setEditScope}
+            onClose={closePanel}
+            onUpdateSeries={handleUpdateSeries}
+            onDeleteSeries={handleDeleteSeries}
+            onSaveInstance={handleSaveInstance}
+            onDeleteInstance={handleDeleteInstance}
           />
         )
       )}

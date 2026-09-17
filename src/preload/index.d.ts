@@ -115,6 +115,10 @@ export interface MessagePopoutApi {
   open: (messageId: string) => Promise<void>
 }
 
+export interface CalendarPopoutApi {
+  open: (seriesId: string, originalStartTime: number) => Promise<void>
+}
+
 export interface SessionApi {
   startFreePlay: (confirmed?: boolean) => Promise<StartFreePlayResult>
 }
@@ -146,11 +150,13 @@ declare global {
       data: DataApi
       compose: ComposeApi
       messagePopout: MessagePopoutApi
+      calendarPopout: CalendarPopoutApi
       session: SessionApi
       scenario: ScenarioApi
       personasFile: PersonasFileApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
+      onCalendarItemsChanged: (callback: () => void) => () => void
       onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
       onReminderFired: (callback: (reminder: FiredReminder) => void) => () => void

@@ -126,3 +126,37 @@ export function createMessagePopoutWindow(parent: BrowserWindow, messageId: stri
 
   return popoutWindow
 }
+
+export function createCalendarPopoutWindow(
+  parent: BrowserWindow,
+  seriesId: string,
+  originalStartTime: number,
+  title: string
+): BrowserWindow {
+  const popoutWindow = new BrowserWindow({
+    width: 480,
+    height: 520,
+    parent,
+    autoHideMenuBar: true,
+    title,
+    backgroundColor: '#ffffff',
+    icon: ICON_PATH,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  popoutWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  loadRenderer(popoutWindow, {
+    calendarPopout: '1',
+    seriesId,
+    originalStartTime: String(originalStartTime)
+  })
+
+  return popoutWindow
+}

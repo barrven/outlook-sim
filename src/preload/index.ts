@@ -104,6 +104,10 @@ const api = {
   messagePopout: {
     open: (messageId: string) => ipcRenderer.invoke('window:openMessagePopout', messageId)
   },
+  calendarPopout: {
+    open: (seriesId: string, originalStartTime: number) =>
+      ipcRenderer.invoke('window:openCalendarPopout', seriesId, originalStartTime)
+  },
   session: {
     startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
       ipcRenderer.invoke('session:startFreePlay', confirmed)
@@ -129,6 +133,11 @@ const api = {
     const listener = (): void => callback()
     ipcRenderer.on('data:messages-changed', listener)
     return () => ipcRenderer.removeListener('data:messages-changed', listener)
+  },
+  onCalendarItemsChanged: (callback: () => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('data:calendar-items-changed', listener)
+    return () => ipcRenderer.removeListener('data:calendar-items-changed', listener)
   },
   onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => {
     const listener = (_event: unknown, sentMessageId: string, error: string): void => callback(sentMessageId, error)

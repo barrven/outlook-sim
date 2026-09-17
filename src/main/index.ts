@@ -21,7 +21,7 @@ import { ReminderScheduler } from './data/reminderScheduler'
 import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
 import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
-import { createComposeWindow, createMainWindow, createMessagePopoutWindow } from './windows'
+import { createCalendarPopoutWindow, createComposeWindow, createMainWindow, createMessagePopoutWindow } from './windows'
 
 app.whenReady().then(() => {
   const userDataDir = app.getPath('userData')
@@ -58,6 +58,16 @@ app.whenReady().then(() => {
   ipcMain.handle('window:openMessagePopout', (_event, messageId: string) => {
     const message = mailDb.getMessage(messageId)
     createMessagePopoutWindow(mainWindow, messageId, message ? message.subject || '(no subject)' : 'Message')
+  })
+
+  ipcMain.handle('window:openCalendarPopout', (_event, seriesId: string, originalStartTime: number) => {
+    const series = mailDb.getCalendarItem(seriesId)
+    createCalendarPopoutWindow(
+      mainWindow,
+      seriesId,
+      originalStartTime,
+      series ? series.title || '(no title)' : 'Calendar Item'
+    )
   })
 
   ipcMain.handle('scenario:pickPack', async (): Promise<PickScenarioPackResult> => {

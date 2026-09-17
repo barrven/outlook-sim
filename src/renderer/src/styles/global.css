@@ -1278,6 +1278,15 @@ body {
   background: var(--pane-bg);
 }
 
+/* Calendar item pop-out window (feature 044) */
+
+.calendar-popout-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pane-bg);
+}
+
 .compose-toolbar {
   display: flex;
   gap: 6px;

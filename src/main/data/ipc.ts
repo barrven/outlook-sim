@@ -54,6 +54,15 @@ export function broadcastReminderFired(reminder: FiredReminder): void {
   }
 }
 
+// Feature 044 — mirrors broadcastMessagesChanged: a calendar item edited or
+// deleted from a pop-out window needs the main window's own CalendarView to
+// refetch and re-render live, same cross-window pattern messages already use.
+export function broadcastCalendarItemsChanged(): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('data:calendar-items-changed')
+  }
+}
+
 export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: SimClock): void {
   ipcMain.handle('db:folders:list', () => db.listFolders())
   ipcMain.handle('db:folders:create', (_event, folder: NewFolder) => db.createFolder(folder))
@@ -79,11 +88,20 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
 
   ipcMain.handle('db:calendarItems:list', () => db.listCalendarItems())
   ipcMain.handle('db:calendarItems:get', (_event, id: string) => db.getCalendarItem(id))
-  ipcMain.handle('db:calendarItems:create', (_event, item: NewCalendarItem) => db.createCalendarItem(item))
-  ipcMain.handle('db:calendarItems:update', (_event, id: string, patch: CalendarItemPatch) =>
-    db.updateCalendarItem(id, patch)
-  )
-  ipcMain.handle('db:calendarItems:delete', (_event, id: string) => db.deleteCalendarItem(id))
+  ipcMain.handle('db:calendarItems:create', (_event, item: NewCalendarItem) => {
+    const created = db.createCalendarItem(item)
+    broadcastCalendarItemsChanged()
+    return created
+  })
+  ipcMain.handle('db:calendarItems:update', (_event, id: string, patch: CalendarItemPatch) => {
+    const updated = db.updateCalendarItem(id, patch)
+    broadcastCalendarItemsChanged()
+    return updated
+  })
+  ipcMain.handle('db:calendarItems:delete', (_event, id: string) => {
+    db.deleteCalendarItem(id)
+    broadcastCalendarItemsChanged()
+  })
 
   ipcMain.handle('db:fileVineFolders:list', () => db.listFileVineFolders())
   ipcMain.handle('db:fileVineFolders:get', (_event, id: string) => db.getFileVineFolder(id))
