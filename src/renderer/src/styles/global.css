@@ -59,6 +59,76 @@
   --flag-border: #e2a33d;
 }
 
+/* Two more light schemes (059), same mechanism/structure as "default"
+   above — a full value for every token, selected purely by swapping
+   `data-theme`. --pane-bg stays pure white in both, same reasoning as
+   "default": message/reading content should stay neutral for readability
+   regardless of scheme. The semantic status colors (danger/warning/
+   success/flag) are deliberately identical across all light schemes —
+   already-validated, universally-recognizable red/yellow/green/amber
+   meanings that shouldn't shift with the "brand" palette; each scheme's
+   own identity comes entirely from its neutral chrome + accent/primary
+   hue. Muted-text and white-on-primary contrast checked by hand against
+   WCAG's relative-luminance formula (AC3): sage muted-on-white ~5.6:1,
+   plum muted-on-white ~6.5:1, sage white-on-primary ~5.1:1, plum
+   white-on-primary ~8.2:1 — all clear the 4.5:1 AA threshold for normal
+   text with room to spare. */
+:root[data-theme='sage'] {
+  --border: #9fc7a3;
+  --ribbon-bg: #e2eee3;
+  --pane-bg: #ffffff;
+  --nav-rail-bg: #e2eee3;
+  --selected-bg: #cdeacd;
+  --selected-border: #6fb876;
+  --text: #16301b;
+  --text-muted: #4f6f54;
+  --accent: #2e7d32;
+  --hover-bg: #d2ead4;
+
+  --danger: #ffff;
+  --danger-bg: #dc3545;
+  --danger-border: #dc3545;
+  --warning: #4a3f00;
+  --warning-bg: #fff4ce;
+  --warning-border: #c19c00;
+  --success: #107c10;
+  --primary: #fff;
+  --primary-bg: #2e7d32;
+  --primary-border: #2e7d32;
+
+  --flag: #a15c00;
+  --flag-bg: #fdedd3;
+  --flag-border: #e2a33d;
+}
+
+:root[data-theme='plum'] {
+  --border: #c5aedb;
+  --ribbon-bg: #f1e9f7;
+  --pane-bg: #ffffff;
+  --nav-rail-bg: #f1e9f7;
+  --selected-bg: #e3d3f2;
+  --selected-border: #a97fd1;
+  --text: #2c1b3d;
+  --text-muted: #6b5480;
+  --accent: #6a2fa3;
+  --hover-bg: #ead9f5;
+
+  --danger: #ffff;
+  --danger-bg: #dc3545;
+  --danger-border: #dc3545;
+  --warning: #4a3f00;
+  --warning-bg: #fff4ce;
+  --warning-border: #c19c00;
+  --success: #107c10;
+  --primary: #fff;
+  --primary-bg: #6a2fa3;
+  --primary-border: #6a2fa3;
+
+  --flag: #a15c00;
+  --flag-bg: #fdedd3;
+  --flag-border: #e2a33d;
+}
+
 * {
   box-sizing: border-box;
 }

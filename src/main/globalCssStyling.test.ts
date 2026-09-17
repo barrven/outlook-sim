@@ -11,13 +11,29 @@ function extractRootBlock(source: string): string {
   return match[1]
 }
 
-// The default color scheme's tokens live in this attribute-selector block
+// A color scheme's tokens live in one of these attribute-selector blocks
 // (058), not the bare `:root { ... }` one — which now holds only the
 // scheme-independent radius tokens (037).
-function extractDefaultThemeBlock(source: string): string {
-  const match = source.match(/:root\[data-theme=['"]default['"]\]\s*{([^}]*)}/)
-  if (!match) throw new Error(":root[data-theme='default'] block not found in global.css")
+function extractThemeBlock(source: string, theme: string): string {
+  const match = source.match(new RegExp(`:root\\[data-theme=['"]${theme}['"]\\]\\s*{([^}]*)}`))
+  if (!match) throw new Error(`:root[data-theme='${theme}'] block not found in global.css`)
   return match[1]
+}
+
+function extractDefaultThemeBlock(source: string): string {
+  return extractThemeBlock(source, 'default')
+}
+
+// Every known scheme's selector, so tests that need to look past ALL of
+// them (e.g. "no color outside a token block") don't need updating each
+// time a new scheme (059/060/...) is added — only this list does.
+const KNOWN_THEMES = ['default', 'sage', 'plum']
+
+function stripAllThemeBlocks(source: string): string {
+  return KNOWN_THEMES.reduce(
+    (acc, theme) => acc.replace(new RegExp(`:root\\[data-theme=['"]${theme}['"]\\]\\s*{[^}]*}`), ''),
+    source.replace(/:root\s*{[^}]*}/, '')
+  )
 }
 
 describe('global.css semantic tokens (037)', () => {
@@ -39,11 +55,7 @@ describe('global.css semantic tokens (037)', () => {
   })
 
   it('AC1: no hardcoded hex color appears outside a token-defining block — every color is a token', () => {
-    const withoutTokenBlocks = css
-      .replace(/:root\s*{[^}]*}/, '')
-      .replace(/:root\[data-theme=['"]default['"]\]\s*{[^}]*}/, '')
-
-    expect(withoutTokenBlocks).not.toMatch(/#[0-9a-fA-F]{3,8}/)
+    expect(stripAllThemeBlocks(css)).not.toMatch(/#[0-9a-fA-F]{3,8}/)
   })
 
   it('AC2: defines a single, consistent border-radius token pair', () => {

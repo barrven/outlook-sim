@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 059 (Two additional light color schemes)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 059 (Two additional light color schemes)
+  implemented: two new `:root[data-theme='sage']`/`:root[data-theme='plum']`
+  blocks in `global.css`, mirroring 058's exact structure (including its
+  post-acceptance `--primary`/filled-button revision) — no component/JSX
+  changes needed, since every themed surface already reads colors only
+  through tokens. Each scheme gets its own neutral chrome + accent/
+  primary hue (green/purple respectively); `--pane-bg` stays white in
+  both; semantic status colors (danger/warning/success/flag) kept
+  identical across all light schemes on purpose. AC1 verified
+  structurally — all three scheme blocks define the exact same 23-token
+  set, so switching can never leave a surface with an undefined value.
+  Contrast checked by hand against WCAG's luminance formula for the two
+  highest-risk pairs (muted text, white-on-primary), both schemes
+  comfortably clear 4.5:1. Generalized `globalCssStyling.test.ts`'s
+  "no hex outside a token block" helper to a `KNOWN_THEMES` list so 060's
+  dark scheme won't need a parallel regex. lint/typecheck/build pass;
+  full suite unchanged at 769/769; `git diff` confirms zero layout
+  properties touched. Phase set to `test`.
 - 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
   palette) accepted by user: after the initial /validate pass, the user
   pushed their own manual styling edits (filled-button look, new
