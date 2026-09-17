@@ -270,8 +270,92 @@ body {
   color: var(--text-muted);
 }
 
+/* A <button> (feature 045) so it's clickable, styled to read like the
+   plain text it was before — no button chrome — except the text itself
+   is now black rather than inheriting .office-clock's muted color. */
 .office-clock-time {
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--text);
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.office-clock-minicalendar-wrapper {
+  position: relative;
+}
+
+.office-clock-minicalendar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  width: 220px;
+  padding: 8px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.office-clock-minicalendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.office-clock-minicalendar-nav button {
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.office-clock-minicalendar-label {
+  font-weight: 600;
+}
+
+.office-clock-minicalendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.office-clock-minicalendar-day {
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.office-clock-minicalendar-day:hover {
+  background: var(--hover-bg);
+}
+
+.office-clock-minicalendar-day.today {
+  background: var(--selected-bg);
+  border: 1px solid var(--selected-border);
+  font-weight: 600;
+}
+
+.office-clock-minicalendar-day.selected {
+  border: 1px solid var(--accent);
+}
+
+.office-clock-minicalendar-readout {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  text-align: center;
 }
 
 .office-clock-toggle {

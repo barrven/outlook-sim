@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 045 (Simulated clock — black text and dropdown mini-calendar)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 045 (Simulated clock — black text and dropdown
+  mini-calendar) implemented: scoped entirely to `OfficeClock.tsx` +
+  CSS. AC1: `.office-clock-time` gained `color: var(--text)` (was
+  inheriting the container's muted color). AC2: the clock display is now
+  a `<button>` (was a `<span>`, styled identically) toggling a
+  `miniCalendarAnchorMs` state, mirroring `RibbonBar`'s file-menu click-
+  outside/Escape pattern. AC3/AC4: the mini-calendar reuses
+  `calendarDates.ts`'s existing month-grid helpers (same math
+  `CalendarView`'s own Month view uses) with its own anchor state fully
+  separate from the real clock — Previous/Next never call any
+  `clock.*` API; "today" highlight compares against the live simulated
+  time each render. AC5: clicking another day computes "in N days, M
+  hours" (or "... ago") against the live simulated time. Verified live
+  via a throwaway RTL script (correct month/today highlight, nav leaves
+  the real clock untouched, correct readout text, click-outside closes).
+  lint/typecheck/build pass; full suite unchanged at 705/705. Phase set
+  to `test`.
 - 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
   window) accepted by user (selected "Accept (Recommended)", no changes
   requested); logged to CHANGELOG. Active feature set to 045 (Simulated
