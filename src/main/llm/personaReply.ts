@@ -2,7 +2,7 @@ import type { MailMessage, Persona, PersonaReplyResult, TraineeIdentity } from '
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
 import { buildFileVineContextPrompt } from './fileVineContext'
-import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlock, writeGeneratedAttachment } from './generatedAttachment'
+import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
@@ -127,8 +127,8 @@ export async function generatePersonaReply(
     return { ok: false, error: result.error }
   }
 
-  const { text: withoutAttachment, attachment } = extractAttachmentBlock(result.text)
-  const text = withoutAttachment.trim()
+  const { text: withoutAttachments, attachments: parsedAttachments } = extractAttachmentBlocks(result.text)
+  const text = withoutAttachments.trim()
   if (text === NO_REPLY_MARKER) {
     return { ok: true, replied: false }
   }
@@ -140,8 +140,10 @@ export async function generatePersonaReply(
   const body = `${text}${quoteBody(sentMessage)}`
 
   // Most replies have no document attached (AC5) — only written to disk
-  // when the model actually included one.
-  const attachments = attachment ? [writeGeneratedAttachment(userDataDir, attachment.filename, attachment.markdown)] : []
+  // for each attachment the model actually included.
+  const attachments = parsedAttachments.map((attachment) =>
+    writeGeneratedAttachment(userDataDir, attachment.filename, attachment.markdown)
+  )
 
   const message = db.createMessage({
     folderId: 'inbox',

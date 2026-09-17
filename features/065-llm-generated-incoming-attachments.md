@@ -99,6 +99,52 @@ Left for `/test`: actual test coverage of the new attachment-generation
 paths themselves (the throwaway script proved it works; nothing yet
 locks it in as a regression test).
 
+### Post-`/validate`, pre-`/accept` fix (live-testing bug report)
+Before running `/accept`, the user tested against a real Anthropic
+(Claude Sonnet 4.6) API and reported that a persona claimed to have sent
+attachments but none showed up in the UI. Diagnosed directly against the
+live app's own SQLite database (`~/.config/outlook-sim/outlook-sim.db`,
+`node:sqlite` read-only): across 37 real messages, several personas
+narrated fictional attachments in prose (e.g. "Attaching three things for
+you right now: 1... 2... 3...") but the literal string `---ATTACHMENT`
+never appeared anywhere in any message body — the model never attempted
+the protocol at all, purely a prompt-compliance gap, not a parsing or UI
+bug (confirmed: zero non-empty `attachments` columns from any LLM-
+generated message; the only non-empty ones were the trainee's own real
+outgoing attachments, feature 062).
+
+Root cause: `ATTACHMENT_PROMPT_INSTRUCTION`'s original wording only said
+the block *may* be included when warranted — nothing tied that permission
+to the model's very natural tendency to *narrate* attachments in realistic
+office-email prose, so a capable model wrote the prose and simply never
+remembered the separate mechanical step. Fixed by rewording the
+instruction into an explicit two-way rule: narrating an attachment without
+including its block is now called out as a hard violation ("text alone
+does not create a real attachment"), and including a block for something
+not mentioned is equally disallowed.
+
+While fixing the prompt, also generalized the protocol from "at most one
+attachment per response" to "one block per document, however many the
+model includes" — `extractAttachmentBlock` (singular) became
+`extractAttachmentBlocks` (plural), matching a global (not end-anchored)
+regex so blocks can be interleaved through the text rather than forced to
+the very end. This directly serves the real failure case (a model listing
+several realistic documents in one email) rather than fighting that
+tendency. Both `personaReply.ts` and `scheduler.ts` now map over however
+many attachments were parsed instead of a single ternary. Also fixed a
+formatting side effect caught during live re-verification: the original
+regex ate the newline(s) *after* a removed block along with the one
+before it, squishing adjacent list items together in the body
+("...form.2. **Medical Report..."); now only the leading newline is
+consumed, preserving the original paragraph breaks.
+
+Re-verified live with a throwaway script replaying the exact real-world
+failure shape (a multi-document reply modeled on the actual Danny
+Ferreira message from the live db, now with blocks included per the
+strengthened instruction): both attachments land as real files on disk
+with correct content, and the body reads cleanly with blocks stripped and
+paragraph breaks intact. lint/typecheck/build pass; full suite green.
+
 ## Test Notes
 733 → 751 net (+18, all passing; re-run 3x, stable) across 4 files.
 
@@ -148,58 +194,67 @@ throwaway script, not re-encoded as a permanent test, since it would only
 be re-testing `MailDb`'s own JSON round-trip (already covered elsewhere).
 lint/typecheck/build all pass.
 
+### Post-`/validate`, pre-`/accept` fix round
+751 → 753 net (+2, all passing; re-run 3x, stable). `generatedAttachment.test.ts`'s
+`extractAttachmentBlock` describe block was renamed to `extractAttachmentBlocks`
+and rewritten for the new plural `{ text, attachments: [] }` shape (all
+prior single-attachment/no-block/malformed-block/empty-field cases kept,
+now asserting an array); added one new case proving multiple interleaved
+blocks in one response all get extracted, in order, with the surrounding
+prose left intact. `personaReply.test.ts` gained one regression test
+modeled directly on the real failure (a multi-document reply, each
+document's mention immediately followed by its own block) confirming both
+attachments are written as real files and the narrative text around them
+survives untouched. `scheduler.test.ts`/`ReadingPane.test.tsx` needed no
+changes — they exercise the generators/UI through their public shape,
+which didn't change (an array was always possible; it just always had 0
+or 1 entries before).
+
 ## Validation Notes
-lint/typecheck/build all pass. Full suite 751/751, re-run 3x, stable.
-`git diff --stat` (1b39043..31fa317) confirms `/implement`+`/test` touched
-only the expected files — no drift.
+First pass (`git diff --stat` 1b39043..31fa317): lint/typecheck/build
+passed, full suite 751/751 stable across 3 runs, all 4 ACs looked correct
+by static inspection and mocked-response tests. **That validation missed a
+real gap**: AC1 was only checked structurally (the code calls the parser
+before other parsing, mocked tests supply well-formed blocks) — nothing in
+that pass exercised what a real provider actually returns for a
+"realistically-written email" prompt. The user's own live testing against
+a real Anthropic API caught what static/mocked checks couldn't: the model
+reliably narrated fictional attachments without ever invoking the
+protocol. See the Implementation Notes' "Post-`/validate`, pre-`/accept`
+fix" subsection for the full diagnosis (done by reading the live app's own
+SQLite database directly) and fix.
 
-All 4 ACs re-verified directly against current source:
-- **AC1**: both `personaReply.ts:5,59` and `scheduler.ts:4,42` import and
-  append the shared `ATTACHMENT_PROMPT_INSTRUCTION` to their system
-  prompts, then both call `extractAttachmentBlock(result.text)`
-  (`personaReply.ts:130`, `scheduler.ts:127`) before any other parsing —
-  the same shared protocol in both generators, confirmed structurally and
-  by the 5 new `personaReply.test.ts`/`scheduler.test.ts` cases exercising
-  real (mocked) LLM responses end-to-end.
-- **AC2**: `main/index.ts:29`'s `userDataDir = app.getPath('userData')` —
-  the same value already passed to `MailDb`/`ConfigStore`/`SimClock` — is
-  threaded through `registerDataIpcHandlers`/`UnsolicitedMailScheduler`
-  into `writeGeneratedAttachment(userDataDir, ...)`
-  (`personaReply.ts:144`, `scheduler.ts:135`), which writes a real,
-  Markdown-rendered HTML file there (not a filename placeholder) —
-  confirmed by `generatedAttachment.test.ts`'s file-on-disk assertions and
-  live during `/implement`'s throwaway script.
-- **AC3**: `main/index.ts:134`'s `attachments:open` handler
-  (`shell.openPath`) is wired into `ReadingPane.tsx:123-124`'s attachment
-  click handler for any attachment carrying a real `path` — confirmed by
-  the new `ReadingPane.test.tsx` case, and by inspection that this also
-  applies to feature 062's real outgoing attachments (same shared
-  component), closing a gap those earlier features left open.
-- **AC4**: falls out of AC2's persistent-directory choice
-  (`app.getPath('userData')`, not a temp dir) plus `MailDb`'s existing
-  JSON round-trip for the `attachments` column (unchanged by this
-  feature) — proven live during `/implement` by reopening a fresh `MailDb`
-  instance against the same directory and confirming the attachment was
-  still there. Not re-encoded as a permanent test, since doing so would
-  only re-test `MailDb`'s own already-covered JSON persistence.
-- **AC5**: `ATTACHMENT_PROMPT_INSTRUCTION` explicitly tells the model
-  "only... if a real document genuinely belongs... most emails do NOT
-  need one"; structurally, `attachments = attachment ? [...] : []`
-  (`personaReply.ts:144`, `scheduler.ts:135`) means the everyday case is
-  byte-for-byte the same `[]` this code always produced before this
-  feature. Confirmed by the two AC5-labeled tests plus every pre-existing
-  test in both files (24+29 of them) continuing to pass unmodified — none
-  needed updating for the new optional behavior, which is itself evidence
-  the everyday path is unaffected.
+Second pass, after the fix (lint/typecheck/build all pass; full suite
+753/753, re-run 3x, stable):
+- **AC1**: re-verified the same way as before (both generators call
+  `extractAttachmentBlocks` before other parsing) — the meaningful
+  addition this time is the regression test in `personaReply.test.ts`
+  modeled directly on the real failure shape (a multi-document reply,
+  blocks interleaved with narrative text), plus the live verification
+  script replaying the actual Danny Ferreira message from the live
+  database with blocks now included. AC1 was NOT re-verified against a
+  second live API call in this pass (that's the user's to confirm) — the
+  fix's evidence is the diagnosed root cause plus the strengthened,
+  explicit instruction wording; whether the new wording achieves 100%
+  compliance against every provider/model is inherently the same
+  category of manual/live check as this project's other live-LLM ACs.
+- **AC2/AC3/AC4**: unaffected by the fix (file-writing, IPC, and UI wiring
+  are untouched) — still hold for the same reasons as the first pass.
+- **AC5**: still holds — `parsedAttachments.map(...)` on an empty array is
+  still `[]`, byte-for-byte the same as before; the two AC5 tests and
+  every pre-existing test in both generator files still pass unmodified.
 
-Not independently re-verified: a live OS file-association double-click
-(no attached display on this dev box) and the `attachments:open`/
-`extractText`/`pick` IPC handlers' actual `shell`/`dialog` delegation (no
-established main-process `dialog`/`shell` mocking pattern in this repo —
-same non-blocking gap category as every prior `dialog`-touching feature,
-e.g. 021/022/031/062).
+Not independently re-verified: a second live LLM call confirming the
+strengthened instruction actually changes real-world model behavior (the
+user's own follow-up test, once they resume `/accept`), a live OS
+file-association double-click (no attached display on this dev box), and
+the `attachments:open`/`extractText`/`pick` IPC handlers' actual
+`shell`/`dialog` delegation (no established main-process mocking pattern
+in this repo — same non-blocking gap category as every prior
+`dialog`-touching feature).
 
-All checks pass, no gaps found. Phase set to `accept`.
+All checks pass except the one item above that only the user can confirm
+live. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

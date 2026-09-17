@@ -262,6 +262,35 @@ describe('generatePersonaReply', () => {
     }
   })
 
+  it('065 regression: a reply narrating several attachments each includes its own block, all get written', async () => {
+    // Mirrors the real-world failure this regression test was added for:
+    // a model asked to write a "realistic" email naturally lists multiple
+    // documents in prose, one block per document interleaved through the
+    // text rather than bunched at the very end.
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      chatResponse(
+        'Attaching three things for you right now:\n\n1. Intake form\n---ATTACHMENT: intake-form.html---\n# Intake Form\n---END ATTACHMENT---\n\n2. Document index\n---ATTACHMENT: document-index.html---\n# Document Index\n---END ATTACHMENT---\n\nLet me know if you need anything else!'
+      )
+    )
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.replied) {
+      expect(result.message.attachments).toHaveLength(2)
+      expect(result.message.attachments.map((a) => a.filename)).toEqual(['intake-form.html', 'document-index.html'])
+      for (const attachment of result.message.attachments) {
+        expect(existsSync(attachment.path!)).toBe(true)
+      }
+      expect(result.message.body).toContain('Attaching three things for you right now:')
+      expect(result.message.body).toContain('Let me know if you need anything else!')
+      expect(result.message.body).not.toContain('---ATTACHMENT')
+    } else {
+      expect.fail('expected a reply to be sent')
+    }
+  })
+
   it('065 AC5: a reply with no attachment block still sends normally, with an empty attachments array', async () => {
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))

@@ -8,38 +8,50 @@ import type { MessageAttachment } from '../../shared/data-types'
 const ATTACHMENTS_SUBDIR = 'generated-attachments'
 
 // LLM protocol (feature 065): a persona reply or unsolicited-mail response
-// may optionally end with this fenced block naming a document to attach,
-// distinct from the email body itself. Anchored to the end of the raw
-// response — everything before it is the actual email text, regardless of
-// which format that text is in (a bare reply body, or scheduler.ts's
-// "Subject: ...\n\n<body>").
-const ATTACHMENT_BLOCK_REGEX = /\n*---ATTACHMENT:\s*(.+?)\s*---\n([\s\S]*?)\n---END ATTACHMENT---\s*$/
+// may include one or more of these fenced blocks, each naming a document to
+// attach, distinct from the email body itself. Not anchored to a fixed
+// position (a `g` match below finds every occurrence anywhere in the raw
+// response) since a model narrating several documents tends to place each
+// block right after mentioning that document, not all bunched at the very
+// end.
+// Only the leading newline (the one separating the block from whatever
+// precedes it) is consumed — never the trailing one(s) — so removing a
+// block doesn't also swallow the paragraph break/blank line that follows
+// it (e.g. before the next numbered item in a list of several documents).
+const ATTACHMENT_BLOCK_REGEX = /\n*---ATTACHMENT:\s*(.+?)\s*---\n([\s\S]*?)\n---END ATTACHMENT---/g
 
 // The prompt instruction both personaReply.ts and scheduler.ts append,
-// verbatim, so the protocol only needs to be described in one place.
+// verbatim, so the protocol only needs to be described in one place. Found
+// via live testing (feature 065's post-accept bug report): a real model
+// asked to write a "realistic" email defaults to *narrating* attachments in
+// prose ("Attaching the following: 1... 2... 3...") without ever emitting
+// the mechanical block below, since nothing tied the two together — this
+// wording now makes that combination explicitly wrong in both directions.
 export const ATTACHMENT_PROMPT_INSTRUCTION =
-  'If, and only if, a real document genuinely belongs with this email (e.g. an invoice, contract draft, settlement offer, or report the persona would realistically send) — most emails do NOT need one — append it after the email text in exactly this format, with nothing after it:\n---ATTACHMENT: <filename.html>---\n<the document\'s full content, written in Markdown>\n---END ATTACHMENT---'
+  'Most emails do NOT need a document attached — when in doubt, don\'t attach one and don\'t mention attaching one. If a real document genuinely belongs with this email (e.g. an invoice, contract draft, settlement offer, or report the persona would realistically send), you MUST include it using the block format below, one block per document, placed anywhere after the email text. This is a hard rule: NEVER write text like "attached is...", "please see the attached...", or a list of attachment names UNLESS you also include a matching block for each one — text alone does not create a real attachment. Conversely, never include a block for a document you don\'t actually mention in the email.\nBlock format (repeat once per document):\n---ATTACHMENT: <filename.html>---\n<the document\'s full content, written in Markdown>\n---END ATTACHMENT---'
 
 export interface ParsedGeneration {
-  /** The raw response with the attachment block (if any) stripped from the end. */
+  /** The raw response with every attachment block stripped out. */
   text: string
-  attachment: { filename: string; markdown: string } | null
+  attachments: { filename: string; markdown: string }[]
 }
 
 /**
- * Splits an optional trailing attachment block off a raw LLM response.
- * Never throws: a missing or malformed block (e.g. the model didn't close
- * it properly) just means `attachment: null` and the raw text passed
- * through untouched, since attaching a document is opportunistic, never
- * required (AC5).
+ * Splits zero or more attachment blocks out of a raw LLM response, wherever
+ * they appear. Never throws: a malformed block (e.g. the model didn't close
+ * it properly) is simply left in place as ordinary text and contributes no
+ * attachment, since attaching a document is opportunistic, never required
+ * (AC5) — a parsing edge case should never be able to break a send.
  */
-export function extractAttachmentBlock(rawText: string): ParsedGeneration {
-  const match = rawText.match(ATTACHMENT_BLOCK_REGEX)
-  if (!match) return { text: rawText, attachment: null }
-  const filename = match[1].trim()
-  const markdown = match[2].trim()
-  if (!filename || !markdown) return { text: rawText, attachment: null }
-  return { text: rawText.slice(0, match.index), attachment: { filename, markdown } }
+export function extractAttachmentBlocks(rawText: string): ParsedGeneration {
+  const attachments: { filename: string; markdown: string }[] = []
+  const text = rawText.replace(ATTACHMENT_BLOCK_REGEX, (_match, rawFilename: string, rawMarkdown: string) => {
+    const filename = rawFilename.trim()
+    const markdown = rawMarkdown.trim()
+    if (filename && markdown) attachments.push({ filename, markdown })
+    return ''
+  })
+  return { text, attachments }
 }
 
 // The filename comes from the LLM, so it's untrusted input that ends up in

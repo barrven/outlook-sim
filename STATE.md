@@ -18,6 +18,29 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments):
+  before running `/accept`, the user live-tested against a real Anthropic
+  API and reported a persona claimed to send attachments that never
+  appeared in the UI. Diagnosed directly against the live app's own
+  SQLite db (`~/.config/outlook-sim/outlook-sim.db`): the model narrated
+  fictional attachments in prose but never once emitted the
+  `---ATTACHMENT---` protocol block across 37 real messages — a prompt-
+  compliance gap, not a UI or parsing bug. Fixed by (1) rewording
+  `ATTACHMENT_PROMPT_INSTRUCTION` into an explicit two-way rule (narrating
+  an attachment without its block, or vice versa, is now a stated
+  violation) and (2) generalizing the protocol from one attachment per
+  response to `extractAttachmentBlocks` (plural) supporting several
+  interleaved blocks, matching the real failure shape (a model listing
+  multiple realistic documents) instead of fighting it; also fixed a
+  formatting bug caught during re-verification where removing a block ate
+  the paragraph break after it. Re-verified live by replaying the actual
+  failing message (Danny Ferreira's multi-attachment reply) through the
+  fixed code. New regression tests added (751 → 753, stable); lint/
+  typecheck/build pass. Feature file's Implementation/Test/Validation
+  Notes updated to document the gap and fix; status remains `accept` —
+  ready for the user to re-run `/accept` (optionally after confirming
+  live once more, since AC1's real-provider compliance is inherently a
+  manual check, same category as this project's other live-LLM ACs).
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
   validated: lint/typecheck/build pass; full suite (751/751) re-run 3x,
   stable; `git diff --stat` (1b39043..31fa317) confirms `/implement`+

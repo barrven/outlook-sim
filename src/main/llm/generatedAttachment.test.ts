@@ -2,60 +2,76 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { extractAttachmentBlock, writeGeneratedAttachment } from './generatedAttachment'
+import { extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
 
-describe('extractAttachmentBlock', () => {
+describe('extractAttachmentBlocks', () => {
   it('AC1: splits a well-formed trailing attachment block off the raw text', () => {
     const raw =
       'Sure, attached is the breakdown.\n---ATTACHMENT: breakdown.html---\n# Breakdown\n\nMedical: $12,000\n---END ATTACHMENT---'
 
-    const { text, attachment } = extractAttachmentBlock(raw)
+    const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(text.trim()).toBe('Sure, attached is the breakdown.')
-    expect(attachment).toEqual({ filename: 'breakdown.html', markdown: '# Breakdown\n\nMedical: $12,000' })
+    expect(attachments).toEqual([{ filename: 'breakdown.html', markdown: '# Breakdown\n\nMedical: $12,000' }])
   })
 
-  it('AC5: returns no attachment for a plain response with no block', () => {
-    const { text, attachment } = extractAttachmentBlock('Sure, noon works!')
+  it('AC5: returns no attachments for a plain response with no block', () => {
+    const { text, attachments } = extractAttachmentBlocks('Sure, noon works!')
 
     expect(text).toBe('Sure, noon works!')
-    expect(attachment).toBeNull()
+    expect(attachments).toEqual([])
   })
 
   it('does not require a block to be present in Subject/body-formatted text', () => {
     const raw = 'Subject: Invoice due\n\nPlease see the attached invoice.'
 
-    const { text, attachment } = extractAttachmentBlock(raw)
+    const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(text).toBe(raw)
-    expect(attachment).toBeNull()
+    expect(attachments).toEqual([])
   })
 
   it('extracts the block from the tail of Subject/body-formatted text, leaving the rest intact', () => {
     const raw =
       'Subject: Invoice due\n\nPlease see the attached invoice.\n---ATTACHMENT: invoice.html---\n# Invoice\n\nAmount due: $500\n---END ATTACHMENT---'
 
-    const { text, attachment } = extractAttachmentBlock(raw)
+    const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(text.trim()).toBe('Subject: Invoice due\n\nPlease see the attached invoice.')
-    expect(attachment).toEqual({ filename: 'invoice.html', markdown: '# Invoice\n\nAmount due: $500' })
+    expect(attachments).toEqual([{ filename: 'invoice.html', markdown: '# Invoice\n\nAmount due: $500' }])
   })
 
-  it('gracefully falls back to no attachment for a malformed block missing the closing marker', () => {
+  it('extracts multiple attachment blocks from a single response, in order, each mentioned before its own block', () => {
+    const raw =
+      'Attaching two things:\n---ATTACHMENT: intake.html---\n# Intake form\n---END ATTACHMENT---\nAlso this one:\n---ATTACHMENT: checklist.html---\n# Checklist\n---END ATTACHMENT---\nLet me know if you need anything else.'
+
+    const { text, attachments } = extractAttachmentBlocks(raw)
+
+    expect(attachments).toEqual([
+      { filename: 'intake.html', markdown: '# Intake form' },
+      { filename: 'checklist.html', markdown: '# Checklist' }
+    ])
+    expect(text).toContain('Attaching two things:')
+    expect(text).toContain('Also this one:')
+    expect(text).toContain('Let me know if you need anything else.')
+    expect(text).not.toContain('---ATTACHMENT')
+  })
+
+  it('leaves a malformed block missing its closing marker in place as ordinary text, no attachment produced', () => {
     const raw = 'Here you go.\n---ATTACHMENT: report.html---\n# Report\n\nSome content, never closed.'
 
-    const { text, attachment } = extractAttachmentBlock(raw)
+    const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(text).toBe(raw)
-    expect(attachment).toBeNull()
+    expect(attachments).toEqual([])
   })
 
-  it('gracefully falls back to no attachment for an empty filename or empty content', () => {
+  it('gracefully skips a block with an empty filename or empty content', () => {
     const emptyFilename = 'Here.\n---ATTACHMENT: ---\nSome content\n---END ATTACHMENT---'
     const emptyContent = 'Here.\n---ATTACHMENT: report.html---\n\n---END ATTACHMENT---'
 
-    expect(extractAttachmentBlock(emptyFilename).attachment).toBeNull()
-    expect(extractAttachmentBlock(emptyContent).attachment).toBeNull()
+    expect(extractAttachmentBlocks(emptyFilename).attachments).toEqual([])
+    expect(extractAttachmentBlocks(emptyContent).attachments).toEqual([])
   })
 })
 
