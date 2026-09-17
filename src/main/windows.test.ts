@@ -28,7 +28,8 @@ vi.mock('electron', () => ({
 
 vi.mock('@electron-toolkit/utils', () => ({ is: { dev: false } }))
 
-const { createMainWindow, createComposeWindow, createMessagePopoutWindow } = await import('./windows')
+const { createMainWindow, createComposeWindow, createMessagePopoutWindow, createCalendarPopoutWindow } =
+  await import('./windows')
 
 function asMock(win: ElectronBrowserWindow): MockBrowserWindow {
   return win as unknown as MockBrowserWindow
@@ -53,6 +54,15 @@ describe('window icon (036)', () => {
     const main = asMock(createMainWindow())
     const popout = asMock(
       createMessagePopoutWindow(main as unknown as ElectronBrowserWindow, 'msg-1', 'Subject')
+    )
+
+    expect(popout.options.icon).toBe(main.options.icon)
+  })
+
+  it('044: gives the calendar pop-out window the same icon as the main window', () => {
+    const main = asMock(createMainWindow())
+    const popout = asMock(
+      createCalendarPopoutWindow(main as unknown as ElectronBrowserWindow, 'series-1', 1000, 'Team sync')
     )
 
     expect(popout.options.icon).toBe(main.options.icon)

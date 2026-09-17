@@ -253,6 +253,31 @@ describe('registerDataIpcHandlers', () => {
     expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:messages-changed')
   })
 
+  it('044: broadcasts a calendar-items-changed event to every open window on create, update, and delete', () => {
+    const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+    getAllWindowsMock.mockReturnValue([fakeWindow])
+
+    const created = handlers.get('db:calendarItems:create')!(fakeEvent, {
+      title: 'Deadline',
+      description: '',
+      startTime: 100,
+      endTime: null,
+      allDay: false,
+      reminderMinutesBefore: null,
+      recurrenceRule: null,
+      itemType: 'deadline'
+    }) as CalendarItem
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:calendar-items-changed')
+
+    vi.mocked(fakeWindow.webContents.send).mockClear()
+    handlers.get('db:calendarItems:update')!(fakeEvent, created.id, { title: 'Renamed' })
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:calendar-items-changed')
+
+    vi.mocked(fakeWindow.webContents.send).mockClear()
+    handlers.get('db:calendarItems:delete')!(fakeEvent, created.id)
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('data:calendar-items-changed')
+  })
+
   it('round-trips settings through the config channels', () => {
     handlers.get('config:settings:set')!(fakeEvent, {
       provider: 'anthropic',

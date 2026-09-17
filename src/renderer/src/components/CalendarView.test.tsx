@@ -832,4 +832,58 @@ describe('CalendarView', () => {
       })
     })
   })
+
+  describe('Pop-out window (044)', () => {
+    it('044 AC1: double-clicking an item in the day view opens the pop-out with its series id and original start time', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const item = makeItem()
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([item])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.dblClick(await screen.findByText('Team sync'))
+
+      expect(window.api.calendarPopout.open).toHaveBeenCalledWith(item.id, item.startTime)
+    })
+
+    it('044 AC1: double-clicking an item in the month view opens the pop-out too', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const item = makeItem()
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([item])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await user.click(screen.getByRole('tab', { name: 'Month' }))
+      await user.dblClick(await screen.findByText('Team sync'))
+
+      expect(window.api.calendarPopout.open).toHaveBeenCalledWith(item.id, item.startTime)
+    })
+
+    it('044 AC4: single-click inline view still works — double-click is purely additive', async () => {
+      const user = userEvent.setup()
+      setAnchorClock(ANCHOR_MS)
+      const item = makeItem()
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([item])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      const eventButton = await screen.findByText('Team sync')
+
+      await user.click(eventButton)
+      expect(await screen.findByRole('dialog', { name: 'View Calendar Item' })).toBeInTheDocument()
+      expect(window.api.calendarPopout.open).not.toHaveBeenCalled()
+    })
+
+    it('044 AC2: refetches when the main-process data:calendar-items-changed broadcast fires', async () => {
+      setAnchorClock(ANCHOR_MS)
+      vi.mocked(window.api.data.calendarItems.list).mockResolvedValue([])
+
+      render(<CalendarView showCreateForm={false} onCloseCreateForm={vi.fn()} />)
+      await waitFor(() => expect(window.api.data.calendarItems.list).toHaveBeenCalledTimes(1))
+
+      const [onCalendarItemsChanged] = vi.mocked(window.api.onCalendarItemsChanged).mock.calls[0]
+      onCalendarItemsChanged()
+
+      await waitFor(() => expect(window.api.data.calendarItems.list).toHaveBeenCalledTimes(2))
+    })
+  })
 })

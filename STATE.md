@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 044 (Double-click calendar item opens a pop-out window)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
+  window) tested: 688 → 705 net (+17, all passing; re-run 3x, stable)
+  across 4 files. New `CalendarPopoutWindow.test.tsx` (+11) covers view/
+  edit/recurrence-scope via the pop-out, save/delete closing the window,
+  cross-window broadcast refetch, and the close-on-vanished fix found
+  during `/implement`. `CalendarView.test.tsx` (+4) covers double-click
+  opening the pop-out from both day and month views, single-click staying
+  unaffected, and the main window's own broadcast refetch.
+  `ipc.test.ts`/`windows.test.ts` (+1 each) mirror existing
+  messages-changed-broadcast and same-icon-everywhere coverage for the
+  new calendar mechanism/window. The pre-existing `CalendarView.test.tsx`
+  suite (43 tests) ran unchanged and green throughout, serving as the
+  refactor's own regression check. lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
   window) implemented: extracted feature 043's view/edit/recurrence-scope
   state machine out of `CalendarView.tsx` into a new, prop-driven

@@ -1,7 +1,7 @@
 ---
 id: 044
 title: Double-click calendar item opens a pop-out window
-status: testing
+status: validating
 priority: low
 ---
 
@@ -102,7 +102,46 @@ exercised calendar cross-window broadcast or the new pop-out, so nothing
 needed updating — new coverage is `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+688 → 705 net (+17, all passing; re-run 3x, stable), across 4 files:
+
+- New `src/renderer/src/CalendarPopoutWindow.test.tsx` (+11, mirroring
+  `MessagePopoutWindow.test.tsx`'s structure): AC1 view mode by default
+  via the real content, Edit reaches the pre-filled form for a
+  non-recurring item, a recurring item shows the this-event/whole-series
+  chooser first; AC2 Save/Delete (series and single-instance-via-
+  exception) call the real `calendarItems.update`/`delete` IPC then close
+  the window, and a `data:calendar-items-changed` broadcast refetches
+  live content into this window too (plus subscribe/unsubscribe
+  lifecycle); AC3 is structural, not unit-tested here (same call this
+  project made for feature 041 — a separate window/process with no
+  shared React state to assert against at this layer); a design-decision
+  test (mirroring feature 043's own convention) confirms Close/Cancel
+  distinguish "close the window" from "back to view mode" the same way
+  the inline panel does. Also covers the real bug found and fixed during
+  `/implement`: the pop-out closes itself if the item vanishes after a
+  broadcast-triggered refetch.
+- `CalendarView.test.tsx` (+4, AC1/AC2/AC4): double-click opens the
+  pop-out with the right `seriesId`/`originalStartTime` in both the day
+  and month views (two separate render paths this feature touched);
+  single-click inline view still works with the pop-out API left
+  uncalled (AC4, "purely additive"); the main window's own view refetches
+  on the new broadcast too.
+- `src/main/data/ipc.test.ts` (+1): a calendar-item create/update/delete
+  through the real IPC handlers broadcasts `data:calendar-items-changed`
+  to every open window — mirrors the existing messages-changed broadcast
+  test exactly, now that calendar items have the same mechanism.
+- `src/main/windows.test.ts` (+1): the calendar pop-out window gets the
+  same icon as the main window, extending feature 036's existing
+  same-icon-everywhere coverage to the new window-creation site.
+
+Deliberately not covered: a live multi-window Electron GUI click-through
+(no attached display, same non-blocking gap as every prior pop-out
+feature) and the `CalendarView.tsx` refactor's own correctness — not
+re-tested directly, since the full pre-existing `CalendarView.test.tsx`
+suite (43 tests covering feature 043's view/edit/recurrence-scope
+behavior) already ran unchanged and green throughout, which is itself
+the regression check for a pure code-motion extraction. lint/typecheck/
+build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
