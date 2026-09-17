@@ -1,7 +1,7 @@
 ---
 id: 058
 title: Color scheme infrastructure + revised default palette
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -14,19 +14,20 @@ lays the groundwork features 059-061 build on. No ribbon/pane layout
 changes — colors only (Core Requirement 2).
 
 ## Acceptance Criteria
-- [ ] Every color value used throughout the app is still expressed via CSS
+- [x] Every color value used throughout the app is still expressed via CSS
       custom properties (tokens) — no new hardcoded colors introduced
-- [ ] A scheme-switching mechanism exists (e.g. a root-level
+- [x] A scheme-switching mechanism exists (e.g. a root-level
       attribute/class selecting which token set applies) that can swap
       every token's value in one place, even with only one scheme defined
       so far
-- [ ] The default scheme's token values are revised to reduce the amount
+- [x] The default scheme's token values are revised to reduce the amount
       of gray/muted color and introduce more distinct hues, while every
       existing acceptance criterion from feature 037 (semantic tokens,
       consistent border-radius, red flags) still holds
-- [ ] No ribbon/pane layout, sizing, or chrome changes — this is a
-      color-only revision
-- [ ] (Added mid-review, user-requested) The always-visible action buttons
+- [x] No ribbon/pane layout, sizing, or chrome changes — this is a
+      color-only revision (see Validation Notes: one disclosed `opacity`
+      exception for disabled-button dimming, judged in-scope)
+- [x] (Added mid-review, user-requested) The always-visible action buttons
       (ribbon's New Email/Delete; Reading Pane's Reply/Reply All/Forward/
       Delete/Mark-as-(un)read/Flag) each get their own semantic identity
       color — destructive actions red, communicative actions blue, the
@@ -229,7 +230,59 @@ the same way any CSS-only bug in this codebase would surface.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full suite 768/768, re-run 3x, stable.
+`git diff --stat` (1ee7b5d..844db12) confirms `/implement`+`/test`+the
+mid-review button-coloring addition touched only the expected files — no
+drift.
+
+All 5 ACs re-verified directly against current source:
+- **AC1**: `grep`'d the whole `global.css` for hex colors — every one
+  (including the new `--flag`/`--flag-bg`/`--flag-border` trio) lives
+  inside the `:root[data-theme='default']` block (lines 20-57); nothing
+  outside it. No hardcoded color anywhere.
+- **AC2**: `index.html`'s `<html>` carries `data-theme="default"`;
+  `global.css` gates every color token behind `:root[data-theme='default']`,
+  never duplicated in the plain `:root` — confirmed both by direct
+  inspection and by the dedicated test that asserts the plain `:root`
+  block does NOT contain any color token.
+- **AC3**: the pre-existing, updated 037 test suite (semantic tokens,
+  radius, red flags) all pass unchanged in substance; the 5 grayest
+  original tokens are confirmed no longer their exact original hex
+  values, and `--pane-bg` stays pure white.
+- **AC4**: `git diff` across the *entire* feature range (both the initial
+  palette revision and the later button-coloring addition) for
+  `padding|margin|width|height|flex|gap|position|display` declarations
+  returns zero matches. One disclosed, deliberate exception: a new
+  `.ribbon-action:disabled { opacity: 0.6; }` rule (fixing a latent gap —
+  disabled ribbon buttons previously had no visual dimming at all).
+  `opacity` doesn't reflow or resize anything and only applies to an
+  individual interactive element's disabled state, the same category
+  Core Requirement 2 already scopes to "buttons, chips, panels, flags,
+  etc." — judged in-scope for a color/appearance-only feature, not a
+  layout/chrome change, but flagged explicitly here rather than silently
+  passed over.
+- **AC5** (user-requested addition): `RibbonBar.tsx`'s `ACTION_COLOR_CLASS`
+  lookup is applied only when `handler` is truthy — confirmed structurally
+  and by the dedicated test proving the permanently-disabled Reply/Reply
+  All/Forward/New Items never get a color class regardless. `ReadingPane.tsx`'s
+  three JSX branches (default/Drafts/Deleted Items) all carry the new
+  `reading-pane-delete-btn`/`reading-pane-read-toggle` classNames, matched
+  by CSS rules resolving to `--danger`/`--text-muted`/`--flag` respectively
+  (and `--accent` for the ribbon's primary action) — confirmed both via
+  `grep` and the passing dedicated tests in all three files.
+
+Not independently re-verified: the actual *rendered* appearance and colors
+in a live browser/Electron window — jsdom doesn't load the external
+stylesheet, so no test in this project can assert on computed styles or
+CSS specificity outcomes (same non-blocking gap as every prior pure-CSS
+feature, e.g. 037/042). The user did visually confirm the underlying
+palette revision live during this feature's review; the button-coloring
+addition (this round) has not yet had that same live confirmation —
+worth a look during `/accept`.
+
+All checks pass; the two items above (the disclosed `opacity` exception
+and pending live look at the button colors) are noted, not blocking.
+Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

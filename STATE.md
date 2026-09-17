@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 058 (Color scheme infrastructure + revised default palette)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
+  palette) validated: lint/typecheck/build pass; full suite (768/768)
+  re-run 3x, stable; `git diff --stat` (1ee7b5d..844db12) confirms the
+  whole feature (palette revision + button-coloring addition) touched
+  only expected files. All 5 ACs re-verified directly against current
+  source: AC1 every hex color lives inside `:root[data-theme='default']`,
+  none outside it; AC2 `data-theme="default"` + tokens gated behind that
+  selector, never duplicated in the plain `:root`; AC3 037's tests still
+  pass, the 5 grayest original tokens confirmed changed, `--pane-bg`
+  stays white; AC4 zero layout-property changes across the entire diff,
+  one disclosed `opacity` exception for disabled-button dimming judged
+  in-scope; AC5 the color-class lookup is gated on a real handler,
+  confirmed disabled ribbon actions never get colored, and all 3
+  `ReadingPane.tsx` branches carry their new classes. Not independently
+  re-verified: rendered appearance in a live browser (no attached
+  display) — the palette revision itself got the user's own live look
+  earlier, but the newer button-coloring addition hasn't yet; worth a
+  glance during `/accept`. All checks pass, no blocking gaps. Phase set
+  to `accept`.
 - 2026-09-17 — feature 058 (Color scheme infrastructure + revised default
   palette): after seeing the revised palette live (post-`/test`, before
   `/validate`), the user asked for semantic button coloring — Delete red,
