@@ -1,7 +1,7 @@
 ---
 id: 065
 title: Mail — LLM-generated incoming attachments
-status: accept
+status: done
 priority: high
 ---
 
@@ -334,4 +334,14 @@ real generated attachment now actually appears. The one remaining
 live-only gap is closed — all checks pass with no open items.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-17 — Before formally running `/accept`, the user's own live
+testing against a real Anthropic API surfaced two real gaps that static
+validation and mocked tests had missed: (1) the model narrated fictional
+attachments in prose without ever invoking the protocol at all, and (2)
+once that was fixed, a long generated document opened correctly but was
+never closed, leaving raw Markdown in the message body. Both were
+diagnosed directly against the live app's own database and fixed —
+details in Implementation/Test/Validation Notes above. The user then
+re-tested live and confirmed a real attachment actually appears. User
+selected "Accept (Recommended)" against the validation summary and this
+full history. No further changes requested. Decision: accepted.

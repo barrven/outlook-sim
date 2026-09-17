@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-17 — Mail — LLM-generated incoming attachments (features/065-llm-generated-incoming-attachments.md)
+When a scenario calls for a persona to send a document, the LLM's reply
+can now include real document content, distinct from the email itself,
+which gets rendered into an actual HTML file on disk and attached to the
+message — openable from the reading pane via your system's default
+handler, and persisting normally across restarts. Not every reply
+includes one; the everyday no-attachment case is unaffected.
+
 ## 2026-09-17 — Mail — extract real attachment content into persona LLM context (features/063-attachment-content-extraction.md)
 Sending a message with a real attachment (PDF, plain text, DOCX, XLSX,
 CSV, or PPTX) now extracts its readable text and includes it in the

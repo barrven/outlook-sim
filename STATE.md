@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 065 (Mail — LLM-generated incoming attachments)
+- **Phase:** implement
+- **Active feature:** 058 (Color scheme infrastructure + revised default palette)
 - **Last updated:** 2026-09-17
 
 ## Phases
@@ -18,6 +18,14 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments)
+  accepted by user (selected "Accept (Recommended)" against the
+  validation summary and the full two-round live-testing/fix history, no
+  further changes requested); logged to CHANGELOG. This was the last
+  `backlog`-status high-priority feature — remaining backlog is all
+  medium/low priority. Active feature set to 058 (Color scheme
+  infrastructure + revised default palette, next in BACKLOG.md table
+  order), phase set to `implement`.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments):
   user re-tested live after the second fix round and confirmed a real
   generated attachment now actually appears. The last open item
