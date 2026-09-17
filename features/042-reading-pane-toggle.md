@@ -1,7 +1,7 @@
 ---
 id: 042
 title: View tab — Reading Pane Right/Off toggle
-status: validating
+status: accept
 priority: low
 ---
 
@@ -92,7 +92,40 @@ attached display), same non-blocking category as every prior feature.
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (688/688) re-run 3x,
+stable. `git diff --stat` (3cbecaa..83802d5) confirms `/test` touched
+only `STATE.md`/feature/backlog docs plus the three test files — no
+implementation drift.
+
+All 4 ACs re-verified directly against current source (not just trusting
+prior notes):
+- AC1 (View tab has a Reading Pane control with Right/Off): read
+  `RibbonBar.tsx` directly — the `<select aria-label="Reading Pane">` is
+  gated on `viewTabActive` (same scoping as the Tasks toggle) with
+  exactly the two `Right`/`Off` `<option>`s.
+- AC2 (Off removes the inline pane, message list uses the freed space, no
+  dead panel): `App.tsx` only renders `<ReadingPane>` when
+  `readingPaneMode === 'right'`; `<MessageListPane fullWidth={readingPaneMode
+  === 'off'}>` applies `.full-width`, which in `global.css` sets `flex: 1
+  1 auto` (fills the space) and `border-right: none` (no leftover divider
+  line dangling with nothing beside it).
+- AC3 (Off: single-click no longer opens inline, double-click still pops
+  out): structural by construction — with no `<ReadingPane>` mounted
+  there is nothing for a click-driven selection to render into;
+  `MessageListPane`'s `onDoubleClick={() =>
+  window.api.messagePopout.open(message.id)}` is untouched and has no
+  dependency on `readingPaneMode` at all.
+- AC4 (persists at minimum for the session): `readingPaneMode` is a plain
+  `useState` in `App.tsx`, defaulting to `'right'` — a deliberate,
+  AC-permitted choice documented in Implementation Notes rather than a
+  gap (a persisted config file was judged disproportionate for a
+  low-priority cosmetic toggle).
+
+Not independently re-verified: actual rendered appearance in a live
+browser/Electron window (no attached display) and restart-survival
+(moot, since AC4's chosen scope is explicitly session-only) — same class
+of gap as every prior feature. All checks pass, no gaps found. Phase set
+to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

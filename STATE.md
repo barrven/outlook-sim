@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 042 (View tab — Reading Pane Right/Off toggle)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
+  validated: lint/typecheck/build pass; full suite (688/688) re-run 3x,
+  stable; `git diff --stat` (3cbecaa..83802d5) confirms `/test` touched
+  only docs/test files, no implementation drift. All 4 ACs re-verified
+  directly against current source: AC1 the `<select>` is gated on
+  `viewTabActive` with the two Right/Off options; AC2 `<ReadingPane>`
+  renders only when `readingPaneMode === 'right'` and `.full-width`
+  (`flex: 1 1 auto`, no border-right) fills the freed space; AC3 the
+  double-click pop-out handler has zero dependency on `readingPaneMode`,
+  and with no `<ReadingPane>` mounted there's nothing for a click to open
+  inline; AC4 confirmed as a deliberate session-only `useState`, matching
+  the AC's explicit permission. All checks pass, no gaps found. Phase set
+  to `accept`.
 - 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
   tested: 681 → 688 net (+7, all passing; re-run 3x, stable) across 3
   files. `RibbonBar.test.tsx` (+2) covers the control's View-tab scoping
