@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 062 (Mail — real outgoing attachments (file picker))
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
+  tested: 713 → 714 net (+1, all passing; re-run 3x, stable), all within
+  `ComposeWindow.test.tsx`. Rewrote the 5 tests `/implement` left failing
+  (driving the removed text-input UI) to mock `window.api.attachments.pick`
+  and use the new "Add attachment..." button instead — covers multiple
+  attachments added in sequence, a canceled dialog adding nothing, chip
+  removal, and both reply/forward Sent-copy tests now asserting the `path`
+  field round-trips. Added one new test: picking a file with an unusual
+  extension succeeds (AC4, no type filtering). While rewriting, found and
+  fixed a real bug from `/implement`: the field's `<label htmlFor=...>`
+  still pointed at the button's `id`, and since `<button>` is a native
+  labelable element, the label's text silently overrode the button's own
+  accessible name, breaking every `getByRole` lookup for it — fixed by
+  making the caption a plain, unassociated `<span>` and restoring matching
+  CSS (also replacing now-dead `.compose-attachment-add-form` rules left
+  over from the removed mock form). lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
   implemented: new `attachments:pick` IPC handler in `main/index.ts` mirrors
   the existing `scenario:pickPack`/`personasFile:pick` `dialog.showOpenDialog`

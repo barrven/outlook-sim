@@ -35,7 +35,7 @@
 | 026 | Fix — recurring event reminders fire per occurrence | done | high | 026-fix-recurring-reminder-per-occurrence.md |
 | 047 | FileVine tab — folder structure and client association | done | high | 047-filevine-folders-and-clients.md |
 | 048 | FileVine notes/files CRUD with Markdown content | done | high | 048-filevine-notes-markdown.md |
-| 062 | Mail — real outgoing attachments (file picker) | testing | high | 062-real-outgoing-attachments.md |
+| 062 | Mail — real outgoing attachments (file picker) | validating | high | 062-real-outgoing-attachments.md |
 | 063 | Mail — extract real attachment content into persona LLM context | backlog | high | 063-attachment-content-extraction.md |
 | 065 | Mail — LLM-generated incoming attachments | backlog | high | 065-llm-generated-incoming-attachments.md |
 | 027 | LLM error banner — Retry button and durable failure log | done | medium | 027-llm-error-retry-and-log.md |

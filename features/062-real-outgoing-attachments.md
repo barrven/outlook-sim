@@ -1,7 +1,7 @@
 ---
 id: 062
 title: Mail — real outgoing attachments (file picker)
-status: testing
+status: validating
 priority: high
 ---
 
@@ -57,7 +57,39 @@ as features 033/034/035/038). Full suite otherwise green (708/713 passing);
 lint/typecheck/build all pass.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+713 → 714 net (+1, all passing; re-run 3x, stable), all within
+`ComposeWindow.test.tsx`. Rewrote the 5 tests `/implement` left failing
+(they drove the old text-input UI) to instead mock
+`window.api.attachments.pick` and click the new "Add attachment..." button:
+adds one-or-more picked files as chips with real `filename`+`path` and sends
+them along (AC1/AC2/AC3 — picking is mocked to resolve twice in sequence to
+prove multiple adds work), a canceled dialog (`{ ok: false, canceled: true
+}`) adds nothing, and removing a chip still works unchanged. Added one new
+test (AC4): picking a file with an unusual/non-specific extension
+(`archive.tar.gz`) succeeds and attaches normally, confirming no
+extension/type filtering exists anywhere in the flow. Updated both
+B004/025 AC4 reply/forward tests (attachment survives onto the Sent Items
+copy) to go through the same picker mock and assert the `path` field is
+preserved end-to-end through `messages.create`. Left unchanged: "loads
+existing attachments from a draft" (filename-only legacy data, no picker
+involved) and "does not carry attachments over on reply/forward" — neither
+touches the picker.
+
+While rewriting, found and fixed a real accessibility bug introduced by
+`/implement`: the `<label htmlFor="compose-attachment">` still pointed at
+the new button's `id`, and per HTML's native-labelling rules a `<button>`
+is a labelable element, so the label's text ("Attachments") silently
+overrode the button's own accessible name ("Add attachment...") — every
+`getByRole('button', { name: 'Add attachment...' })` query failed to find
+it despite the button rendering correctly. Fixed by making the field caption
+a plain `<span className="compose-field-label">` (no label association),
+restoring the button's own text as its accessible name; added the matching
+CSS selector so the caption keeps its original visual style, and replaced
+now-dead `.compose-attachment-add-form`/`input` rules (left over from the
+removed mock-input form) with styling for the new button. Not independently
+covered by a test: actual computed CSS in a live browser (jsdom here doesn't
+load the external stylesheet, the same pre-existing gap as every other CSS
+change in this codebase). lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

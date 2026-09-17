@@ -348,19 +348,24 @@ describe('ComposeWindow', () => {
       mockClose()
       vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'updated-numbers.xlsx',
+        path: '/home/trainee/updated-numbers.xlsx'
+      })
 
       render(<ComposeWindow sourceMessageId="src-1" intent="reply" />)
 
       await screen.findByDisplayValue('Re: Quarterly numbers')
-      await user.type(screen.getByLabelText('Attachments'), 'updated-numbers.xlsx')
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      await screen.findByText(/updated-numbers\.xlsx/)
       await user.click(screen.getByRole('button', { name: 'Send' }))
 
       await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
       expect(window.api.data.messages.create).toHaveBeenCalledWith(
         expect.objectContaining({
           folderId: 'sent',
-          attachments: [{ filename: 'updated-numbers.xlsx' }]
+          attachments: [{ filename: 'updated-numbers.xlsx', path: '/home/trainee/updated-numbers.xlsx' }]
         })
       )
     })
@@ -371,12 +376,17 @@ describe('ComposeWindow', () => {
       vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
       vi.mocked(window.api.data.messages.get).mockResolvedValue(SOURCE_MESSAGE)
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'cover-sheet.pdf',
+        path: '/home/trainee/cover-sheet.pdf'
+      })
 
       render(<ComposeWindow sourceMessageId="src-1" intent="forward" />)
 
       await screen.findByDisplayValue('Fwd: Quarterly numbers')
-      await user.type(screen.getByLabelText('Attachments'), 'cover-sheet.pdf')
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      await screen.findByText(/cover-sheet\.pdf/)
       await user.selectOptions(screen.getByLabelText('To'), 'morgan@example.com')
       await user.click(screen.getByRole('button', { name: 'Send' }))
 
@@ -384,7 +394,7 @@ describe('ComposeWindow', () => {
       expect(window.api.data.messages.create).toHaveBeenCalledWith(
         expect.objectContaining({
           folderId: 'sent',
-          attachments: [{ filename: 'cover-sheet.pdf' }]
+          attachments: [{ filename: 'cover-sheet.pdf', path: '/home/trainee/cover-sheet.pdf' }]
         })
       )
     })
@@ -475,23 +485,24 @@ describe('ComposeWindow', () => {
   })
 
   describe('attachments', () => {
-    it('adds one or more mock attachments by typed filename, shown as chips, and sends them along', async () => {
+    it('opens a real file picker, attaches the picked file(s) with their real path, shown as chips, and sends them along', async () => {
       const user = userEvent.setup()
       mockClose()
       vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
       vi.mocked(window.api.data.identity.get).mockResolvedValue(IDENTITY)
+      vi.mocked(window.api.attachments.pick)
+        .mockResolvedValueOnce({ ok: true, filename: 'report.pdf', path: '/home/trainee/report.pdf' })
+        .mockResolvedValueOnce({ ok: true, filename: 'photo.jpg', path: '/home/trainee/photo.jpg' })
 
       render(<ComposeWindow />)
 
-      const input = screen.getByLabelText('Attachments')
-      await user.type(input, 'report.pdf')
-      await user.click(screen.getByRole('button', { name: 'Add' }))
-      expect(screen.getByText(/report\.pdf/)).toBeInTheDocument()
-      expect(input).toHaveValue('')
+      const addButton = screen.getByRole('button', { name: 'Add attachment...' })
+      await user.click(addButton)
+      expect(await screen.findByText(/report\.pdf/)).toBeInTheDocument()
 
-      await user.type(input, 'photo.jpg')
-      await user.click(screen.getByRole('button', { name: 'Add' }))
-      expect(screen.getByText(/photo\.jpg/)).toBeInTheDocument()
+      await user.click(addButton)
+      expect(await screen.findByText(/photo\.jpg/)).toBeInTheDocument()
+      expect(window.api.attachments.pick).toHaveBeenCalledTimes(2)
 
       await user.selectOptions(await screen.findByLabelText('To'), 'morgan@example.com')
       await user.click(screen.getByRole('button', { name: 'Send' }))
@@ -499,34 +510,56 @@ describe('ComposeWindow', () => {
       await waitFor(() => expect(window.api.data.messages.create).toHaveBeenCalled())
       expect(window.api.data.messages.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          attachments: [{ filename: 'report.pdf' }, { filename: 'photo.jpg' }]
+          attachments: [
+            { filename: 'report.pdf', path: '/home/trainee/report.pdf' },
+            { filename: 'photo.jpg', path: '/home/trainee/photo.jpg' }
+          ]
         })
       )
     })
 
-    it('does not add a blank attachment when submitting an empty filename', async () => {
+    it('does not add an attachment when the file-picker dialog is canceled', async () => {
       const user = userEvent.setup()
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({ ok: false, canceled: true })
 
       render(<ComposeWindow />)
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
 
       expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
     })
 
     it('removes an attachment chip via its remove button', async () => {
       const user = userEvent.setup()
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'report.pdf',
+        path: '/home/trainee/report.pdf'
+      })
 
       render(<ComposeWindow />)
 
-      const input = screen.getByLabelText('Attachments')
-      await user.type(input, 'report.pdf')
-      await user.click(screen.getByRole('button', { name: 'Add' }))
-      expect(screen.getByText(/report\.pdf/)).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+      expect(await screen.findByText(/report\.pdf/)).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Remove attachment report.pdf' }))
 
       expect(screen.queryByText(/report\.pdf/)).not.toBeInTheDocument()
+    })
+
+    it('picking a file of any type (no extension filter) succeeds', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.attachments.pick).mockResolvedValue({
+        ok: true,
+        filename: 'archive.tar.gz',
+        path: '/home/trainee/archive.tar.gz'
+      })
+
+      render(<ComposeWindow />)
+
+      await user.click(screen.getByRole('button', { name: 'Add attachment...' }))
+
+      expect(await screen.findByText(/archive\.tar\.gz/)).toBeInTheDocument()
     })
 
     it('loads existing attachments from a draft', async () => {

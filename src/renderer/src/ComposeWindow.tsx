@@ -206,7 +206,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
         />
       </div>
       <div className="compose-field-row compose-field-row-attachments">
-        <label htmlFor="compose-attachment">Attachments</label>
+        <span className="compose-field-label">Attachments</span>
         <div className="compose-attachments-field">
           {attachments.length > 0 && (
             <ul className="compose-attachments-list">
@@ -224,7 +224,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
               ))}
             </ul>
           )}
-          <button id="compose-attachment" type="button" onClick={() => void handleAddAttachment()}>
+          <button type="button" onClick={() => void handleAddAttachment()}>
             Add attachment...
           </button>
         </div>

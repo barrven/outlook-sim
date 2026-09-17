@@ -1402,7 +1402,8 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.compose-field-row label {
+.compose-field-row label,
+.compose-field-row .compose-field-label {
   flex: 0 0 60px;
   font-size: 12px;
   color: var(--text-muted);
@@ -1494,18 +1495,15 @@ body {
   padding: 0;
 }
 
-.compose-attachment-add-form {
-  display: flex;
-  gap: 6px;
-}
-
-.compose-attachment-add-form input {
-  flex: 1 1 auto;
-  padding: 4px 6px;
+.compose-attachments-field > button {
+  align-self: flex-start;
+  padding: 4px 10px;
   font-size: 13px;
   color: var(--text);
+  background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  cursor: pointer;
 }
 
 .compose-body {
