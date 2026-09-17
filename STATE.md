@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 062 (Mail — real outgoing attachments (file picker))
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 062 (Mail — real outgoing attachments (file picker))
+  implemented: new `attachments:pick` IPC handler in `main/index.ts` mirrors
+  the existing `scenario:pickPack`/`personasFile:pick` `dialog.showOpenDialog`
+  pattern (no file-type filter or JSON validation needed — any file type is
+  attachable), returning `{ ok: true, filename, path }` or
+  `{ ok: false, canceled: true }` (new `PickAttachmentResult` type), using
+  `BrowserWindow.fromWebContents(event.sender)` so the dialog is modal to the
+  Compose window itself rather than always `mainWindow`. `MessageAttachment`
+  gained an optional `path` field; `ComposeWindow.tsx`'s old
+  text-input-plus-form mock UI is replaced by a single "Add attachment..."
+  button wired to `window.api.attachments.pick()`, feeding the same
+  `attachments` state persistence already handles unchanged. Exposed through
+  preload + a mock entry in `test/mockApi.ts`. Left the 5 pre-existing
+  `ComposeWindow.test.tsx` attachment tests (driving the old text-input UI)
+  failing for `/test` to rewrite, per this repo's established convention;
+  full suite otherwise green (708/713); lint/typecheck/build all pass. Phase
+  set to `test`.
 - 2026-09-16 — `/features` (iteration 3): decomposed the post-retro spec
   additions into 18 new backlog features (050-067). 8 small UI fixes
   (low priority, straight from "Ideas for next spec revision": persona

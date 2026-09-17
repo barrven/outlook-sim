@@ -24,6 +24,7 @@ import type {
   NewTask,
   Persona,
   PersonaReplyResult,
+  PickAttachmentResult,
   PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
@@ -133,6 +134,10 @@ export interface PersonasFileApi {
   pick: () => Promise<PickPersonasFileResult>
 }
 
+export interface AttachmentsApi {
+  pick: () => Promise<PickAttachmentResult>
+}
+
 export interface LlmApi {
   generate: (input: LlmGenerateInput) => Promise<LlmGenerateResult>
   test: (settings: Settings) => Promise<LlmGenerateResult>
@@ -154,6 +159,7 @@ declare global {
       session: SessionApi
       scenario: ScenarioApi
       personasFile: PersonasFileApi
+      attachments: AttachmentsApi
       llm: LlmApi
       onMessagesChanged: (callback: () => void) => () => void
       onCalendarItemsChanged: (callback: () => void) => () => void

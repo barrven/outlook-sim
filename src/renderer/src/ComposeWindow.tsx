@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import type { ComposeIntent, MessageAttachment, MessageRecipient, Persona } from '../../shared/data-types'
 import { buildComposeSeed } from './composeIntent'
 
@@ -17,7 +17,6 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [attachments, setAttachments] = useState<MessageAttachment[]>([])
-  const [attachmentDraft, setAttachmentDraft] = useState('')
   const [loaded, setLoaded] = useState(!draftId && !sourceMessageId)
 
   useEffect(() => {
@@ -79,12 +78,10 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
     setCc((prev) => prev.filter((recipient) => recipient.email !== email))
   }
 
-  function handleAddAttachment(event: FormEvent): void {
-    event.preventDefault()
-    const filename = attachmentDraft.trim()
-    setAttachmentDraft('')
-    if (!filename) return
-    setAttachments((prev) => [...prev, { filename }])
+  async function handleAddAttachment(): Promise<void> {
+    const result = await window.api.attachments.pick()
+    if (!result.ok) return
+    setAttachments((prev) => [...prev, { filename: result.filename, path: result.path }])
   }
 
   function removeAttachment(index: number): void {
@@ -227,16 +224,9 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
               ))}
             </ul>
           )}
-          <form className="compose-attachment-add-form" onSubmit={handleAddAttachment}>
-            <input
-              id="compose-attachment"
-              type="text"
-              placeholder="Add attachment filename"
-              value={attachmentDraft}
-              onChange={(event) => setAttachmentDraft(event.target.value)}
-            />
-            <button type="submit">Add</button>
-          </form>
+          <button id="compose-attachment" type="button" onClick={() => void handleAddAttachment()}>
+            Add attachment...
+          </button>
         </div>
       </div>
       <textarea

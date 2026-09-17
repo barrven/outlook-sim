@@ -19,6 +19,11 @@ export interface NewFolder {
 
 export interface MessageAttachment {
   filename: string
+  // Absolute path to the real file on disk that was picked, so its actual
+  // content is available later (features 063/064's extraction) rather than
+  // just a typed-in name. Optional so pre-existing data (attached before
+  // this feature, when attachments were filename-only) keeps loading.
+  path?: string
 }
 
 export interface MessageRecipient {
@@ -410,3 +415,8 @@ export type SaveScenarioPackResult =
   | { ok: true; filePath: string }
   | { ok: false; error: string }
   | { ok: false; canceled: true }
+
+// Picking a real file to attach to a message (feature 062), mirroring
+// `PickScenarioPackResult`'s canceled outcome — there's nothing to validate
+// here (any file type is attachable), so no error case is needed.
+export type PickAttachmentResult = { ok: true; filename: string; path: string } | { ok: false; canceled: true }

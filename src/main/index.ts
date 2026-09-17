@@ -3,6 +3,7 @@ import { basename, extname } from 'path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type {
   ComposeOpenOptions,
+  PickAttachmentResult,
   PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult
@@ -104,6 +105,20 @@ app.whenReady().then(() => {
       return { ok: false, error: `Could not read or parse file: ${(error as Error).message}` }
     }
     return validatePersonasFile(data)
+  })
+
+  ipcMain.handle('attachments:pick', async (event): Promise<PickAttachmentResult> => {
+    // Compose is its own BrowserWindow, so the dialog should be modal to
+    // whichever window actually invoked it, not always the main window.
+    const parentWindow = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const { canceled, filePaths } = await dialog.showOpenDialog(parentWindow, {
+      title: 'Add Attachment',
+      properties: ['openFile']
+    })
+    if (canceled || filePaths.length === 0) {
+      return { ok: false, canceled: true }
+    }
+    return { ok: true, filename: basename(filePaths[0]), path: filePaths[0] }
   })
 
   ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {

@@ -16,6 +16,7 @@ import type {
   NewMailMessage,
   NewTask,
   Persona,
+  PickAttachmentResult,
   PickPersonasFileResult,
   PickScenarioPackResult,
   SaveScenarioPackResult,
@@ -120,6 +121,9 @@ const api = {
   },
   personasFile: {
     pick: (): Promise<PickPersonasFileResult> => ipcRenderer.invoke('personasFile:pick')
+  },
+  attachments: {
+    pick: (): Promise<PickAttachmentResult> => ipcRenderer.invoke('attachments:pick')
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),
