@@ -18,6 +18,26 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments),
+  second fix round: the first fix worked in one sense (the model started
+  using the `---ATTACHMENT:---` marker), but a second round of the user's
+  live testing showed the raw, unrendered Markdown block sitting in the
+  message body instead of a real attachment. Diagnosed by pulling the
+  exact failed message straight from the live SQLite db: the model wrote
+  a full 6-part, ~3,500-character OCF-3 legal form and simply never came
+  back to append the required closing `---END ATTACHMENT---` marker — a
+  required closing marker is inherently fragile for exactly the kind of
+  long document this feature exists to generate. Redesigned the protocol
+  to need no closing marker at all — a document's content now runs from
+  its marker line to the next marker (or end of response); a model that
+  still writes a closing marker gets it stripped for a clean result, but
+  it's optional. Also hardened `extractAttachmentBlocks` against an
+  unnamed marker silently discarding real trailing content. Re-verified
+  by running the trainee's exact previously-failed raw response (read
+  byte-for-byte from the live db) through the new code: now correctly
+  extracts the complete document. Full suite 753 → 755, stable; lint/
+  typecheck/build pass. Feature file's notes updated again; status
+  remains `accept`, still pending the user's own live re-test.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments):
   before running `/accept`, the user live-tested against a real Anthropic
   API and reported a persona claimed to send attachments that never

@@ -5,24 +5,29 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
 
 describe('extractAttachmentBlocks', () => {
-  it('AC1: splits a well-formed trailing attachment block off the raw text', () => {
+  it('AC1: captures a document with no closing marker at all, running to the end of the response', () => {
+    // The actual real-world failure this design was rewritten for: a model
+    // wrote a long, multi-section document and never appended a closing
+    // marker. There is no closing marker to forget in this protocol.
     const raw =
-      'Sure, attached is the breakdown.\n---ATTACHMENT: breakdown.html---\n# Breakdown\n\nMedical: $12,000\n---END ATTACHMENT---'
+      'Sure, attached is the breakdown.\n---ATTACHMENT: breakdown.html---\n# Breakdown\n\n## Part 1\n\nMedical: $12,000\n\n## Part 2\n\nLost wages: $4,500'
 
     const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(text.trim()).toBe('Sure, attached is the breakdown.')
-    expect(attachments).toEqual([{ filename: 'breakdown.html', markdown: '# Breakdown\n\nMedical: $12,000' }])
+    expect(attachments).toEqual([
+      { filename: 'breakdown.html', markdown: '# Breakdown\n\n## Part 1\n\nMedical: $12,000\n\n## Part 2\n\nLost wages: $4,500' }
+    ])
   })
 
-  it('AC5: returns no attachments for a plain response with no block', () => {
+  it('AC5: returns no attachments for a plain response with no marker', () => {
     const { text, attachments } = extractAttachmentBlocks('Sure, noon works!')
 
     expect(text).toBe('Sure, noon works!')
     expect(attachments).toEqual([])
   })
 
-  it('does not require a block to be present in Subject/body-formatted text', () => {
+  it('does not require a marker to be present in Subject/body-formatted text', () => {
     const raw = 'Subject: Invoice due\n\nPlease see the attached invoice.'
 
     const { text, attachments } = extractAttachmentBlocks(raw)
@@ -31,9 +36,8 @@ describe('extractAttachmentBlocks', () => {
     expect(attachments).toEqual([])
   })
 
-  it('extracts the block from the tail of Subject/body-formatted text, leaving the rest intact', () => {
-    const raw =
-      'Subject: Invoice due\n\nPlease see the attached invoice.\n---ATTACHMENT: invoice.html---\n# Invoice\n\nAmount due: $500\n---END ATTACHMENT---'
+  it('extracts a document that starts at the tail of Subject/body-formatted text, leaving the email text intact', () => {
+    const raw = 'Subject: Invoice due\n\nPlease see the attached invoice.\n---ATTACHMENT: invoice.html---\n# Invoice\n\nAmount due: $500'
 
     const { text, attachments } = extractAttachmentBlocks(raw)
 
@@ -41,37 +45,42 @@ describe('extractAttachmentBlocks', () => {
     expect(attachments).toEqual([{ filename: 'invoice.html', markdown: '# Invoice\n\nAmount due: $500' }])
   })
 
-  it('extracts multiple attachment blocks from a single response, in order, each mentioned before its own block', () => {
+  it('extracts multiple documents from one response, each running up to the next marker', () => {
     const raw =
-      'Attaching two things:\n---ATTACHMENT: intake.html---\n# Intake form\n---END ATTACHMENT---\nAlso this one:\n---ATTACHMENT: checklist.html---\n# Checklist\n---END ATTACHMENT---\nLet me know if you need anything else.'
+      'Attaching two things:\n---ATTACHMENT: intake.html---\n# Intake form\n\nSome detail.\n---ATTACHMENT: checklist.html---\n# Checklist\n\n- Item one\n- Item two'
 
     const { text, attachments } = extractAttachmentBlocks(raw)
 
     expect(attachments).toEqual([
-      { filename: 'intake.html', markdown: '# Intake form' },
-      { filename: 'checklist.html', markdown: '# Checklist' }
+      { filename: 'intake.html', markdown: '# Intake form\n\nSome detail.' },
+      { filename: 'checklist.html', markdown: '# Checklist\n\n- Item one\n- Item two' }
     ])
-    expect(text).toContain('Attaching two things:')
-    expect(text).toContain('Also this one:')
-    expect(text).toContain('Let me know if you need anything else.')
+    expect(text.trim()).toBe('Attaching two things:')
     expect(text).not.toContain('---ATTACHMENT')
   })
 
-  it('leaves a malformed block missing its closing marker in place as ordinary text, no attachment produced', () => {
-    const raw = 'Here you go.\n---ATTACHMENT: report.html---\n# Report\n\nSome content, never closed.'
+  it('still strips an optional closing marker when a model does include one, for a clean document', () => {
+    const raw = 'Here you go.\n---ATTACHMENT: report.html---\n# Report\n\nSome content.\n---END ATTACHMENT---'
+
+    const { attachments } = extractAttachmentBlocks(raw)
+
+    expect(attachments).toEqual([{ filename: 'report.html', markdown: '# Report\n\nSome content.' }])
+  })
+
+  it('treats an unnamed marker as ordinary text rather than a split point, so nothing after it is lost', () => {
+    const raw = 'Here.\n---ATTACHMENT: ---\nSome content that must not vanish.'
 
     const { text, attachments } = extractAttachmentBlocks(raw)
 
-    expect(text).toBe(raw)
     expect(attachments).toEqual([])
+    expect(text).toBe(raw)
+    expect(text).toContain('Some content that must not vanish.')
   })
 
-  it('gracefully skips a block with an empty filename or empty content', () => {
-    const emptyFilename = 'Here.\n---ATTACHMENT: ---\nSome content\n---END ATTACHMENT---'
-    const emptyContent = 'Here.\n---ATTACHMENT: report.html---\n\n---END ATTACHMENT---'
+  it('gracefully skips a marker with no real content after it (whitespace only)', () => {
+    const raw = 'Here.\n---ATTACHMENT: report.html---\n   \n'
 
-    expect(extractAttachmentBlocks(emptyFilename).attachments).toEqual([])
-    expect(extractAttachmentBlocks(emptyContent).attachments).toEqual([])
+    expect(extractAttachmentBlocks(raw).attachments).toEqual([])
   })
 })
 

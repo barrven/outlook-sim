@@ -8,49 +8,71 @@ import type { MessageAttachment } from '../../shared/data-types'
 const ATTACHMENTS_SUBDIR = 'generated-attachments'
 
 // LLM protocol (feature 065): a persona reply or unsolicited-mail response
-// may include one or more of these fenced blocks, each naming a document to
-// attach, distinct from the email body itself. Not anchored to a fixed
-// position (a `g` match below finds every occurrence anywhere in the raw
-// response) since a model narrating several documents tends to place each
-// block right after mentioning that document, not all bunched at the very
-// end.
-// Only the leading newline (the one separating the block from whatever
-// precedes it) is consumed — never the trailing one(s) — so removing a
-// block doesn't also swallow the paragraph break/blank line that follows
-// it (e.g. before the next numbered item in a list of several documents).
-const ATTACHMENT_BLOCK_REGEX = /\n*---ATTACHMENT:\s*(.+?)\s*---\n([\s\S]*?)\n---END ATTACHMENT---/g
+// may include one or more of these marker lines, each starting a document to
+// attach, distinct from the email body itself. Deliberately has NO closing
+// marker (an earlier version required one and it failed in live testing —
+// a model writing a long, multi-section document reliably forgets to also
+// append an arbitrary closing sentinel once it's done writing; a real
+// captured failure was a full OCF-3 form, thousands of characters, with no
+// end marker anywhere). Instead, a document's content is simply everything
+// from its marker line up to the next marker line, or the end of the
+// response — no separate "did the model close it" failure mode possible.
+const ATTACHMENT_MARKER_REGEX = /\n*---ATTACHMENT:\s*(.+?)\s*---\n/g
+
+// A model that DOES still write a closing marker (most likely for a short
+// document) gets it stripped for a clean result, but it's never required.
+const TRAILING_END_MARKER_REGEX = /\n*---END ATTACHMENT---\s*$/
 
 // The prompt instruction both personaReply.ts and scheduler.ts append,
 // verbatim, so the protocol only needs to be described in one place. Found
-// via live testing (feature 065's post-accept bug report): a real model
-// asked to write a "realistic" email defaults to *narrating* attachments in
-// prose ("Attaching the following: 1... 2... 3...") without ever emitting
-// the mechanical block below, since nothing tied the two together — this
-// wording now makes that combination explicitly wrong in both directions.
+// via live testing (feature 065's post-accept bug reports): (1) a real
+// model asked to write a "realistic" email defaults to *narrating*
+// attachments in prose ("Attaching the following: 1... 2... 3...") without
+// ever emitting the mechanical marker, since nothing tied the two together;
+// (2) once it does use the marker, a long generated document reliably never
+// reaches a required closing marker. This wording addresses both: the
+// marker is now an explicit hard requirement tied to any attachment
+// narration, and there is nothing to forget to close.
 export const ATTACHMENT_PROMPT_INSTRUCTION =
-  'Most emails do NOT need a document attached — when in doubt, don\'t attach one and don\'t mention attaching one. If a real document genuinely belongs with this email (e.g. an invoice, contract draft, settlement offer, or report the persona would realistically send), you MUST include it using the block format below, one block per document, placed anywhere after the email text. This is a hard rule: NEVER write text like "attached is...", "please see the attached...", or a list of attachment names UNLESS you also include a matching block for each one — text alone does not create a real attachment. Conversely, never include a block for a document you don\'t actually mention in the email.\nBlock format (repeat once per document):\n---ATTACHMENT: <filename.html>---\n<the document\'s full content, written in Markdown>\n---END ATTACHMENT---'
+  'Most emails do NOT need a document attached — when in doubt, don\'t attach one and don\'t mention attaching one. If a real document genuinely belongs with this email (e.g. an invoice, contract draft, settlement offer, or report the persona would realistically send), you MUST include it using the marker format below. This is a hard rule: NEVER write text like "attached is...", "please see the attached...", or a list of attachment names UNLESS you also include a matching marker for each one — text alone does not create a real attachment. Conversely, never include a marker for a document you don\'t actually mention.\nMarker format — put this exact line right before each document, with nothing else on that line, then simply write the full document as Markdown (there is no closing marker; the document runs until your response ends or the next such line begins, so ALL of your actual email text must come before the first one of these lines):\n---ATTACHMENT: <filename.html>---'
 
 export interface ParsedGeneration {
-  /** The raw response with every attachment block stripped out. */
+  /** The raw response with every attachment marker and its document content stripped out. */
   text: string
   attachments: { filename: string; markdown: string }[]
 }
 
 /**
- * Splits zero or more attachment blocks out of a raw LLM response, wherever
- * they appear. Never throws: a malformed block (e.g. the model didn't close
- * it properly) is simply left in place as ordinary text and contributes no
- * attachment, since attaching a document is opportunistic, never required
- * (AC5) — a parsing edge case should never be able to break a send.
+ * Splits zero or more attachment documents out of a raw LLM response. Each
+ * document runs from its `---ATTACHMENT: <filename>---` marker line to the
+ * next marker (or end of text) — never throws, and a response with no
+ * marker at all just returns it unchanged with an empty `attachments` array
+ * (AC5 — attaching a document is opportunistic, never required).
  */
 export function extractAttachmentBlocks(rawText: string): ParsedGeneration {
-  const attachments: { filename: string; markdown: string }[] = []
-  const text = rawText.replace(ATTACHMENT_BLOCK_REGEX, (_match, rawFilename: string, rawMarkdown: string) => {
-    const filename = rawFilename.trim()
-    const markdown = rawMarkdown.trim()
-    if (filename && markdown) attachments.push({ filename, markdown })
-    return ''
-  })
+  const markers: { filename: string; markerStart: number; contentStart: number }[] = []
+  ATTACHMENT_MARKER_REGEX.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = ATTACHMENT_MARKER_REGEX.exec(rawText)) !== null) {
+    const filename = match[1].trim()
+    // An unnamed marker is never treated as a split point — otherwise
+    // whatever real content follows it would be sliced off as that
+    // "attachment"'s content and then silently discarded once filtered out
+    // for having no filename, losing text that was never meant to vanish.
+    if (!filename) continue
+    markers.push({ filename, markerStart: match.index, contentStart: match.index + match[0].length })
+  }
+  if (markers.length === 0) return { text: rawText, attachments: [] }
+
+  const text = rawText.slice(0, markers[0].markerStart)
+  const attachments = markers
+    .map((marker, i) => {
+      const contentEnd = i + 1 < markers.length ? markers[i + 1].markerStart : rawText.length
+      const markdown = rawText.slice(marker.contentStart, contentEnd).replace(TRAILING_END_MARKER_REGEX, '').trim()
+      return { filename: marker.filename, markdown }
+    })
+    .filter((attachment) => attachment.markdown)
+
   return { text, attachments }
 }
 

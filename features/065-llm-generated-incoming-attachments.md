@@ -145,6 +145,48 @@ strengthened instruction): both attachments land as real files on disk
 with correct content, and the body reads cleanly with blocks stripped and
 paragraph breaks intact. lint/typecheck/build pass; full suite green.
 
+### Second post-`/validate` fix round — the prompt fix above wasn't enough
+The first fix worked in one sense (the model started using the marker),
+but a second round of live testing (same day) surfaced a second,
+different failure: the model correctly wrote `---ATTACHMENT:
+OCF-3_EXAMPLE_Redacted.html---` and then a full multi-section OCF-3
+disability certificate form (~3,500 characters, 6 numbered parts) —
+visible directly in the message body as raw, unrendered Markdown, meaning
+extraction failed. Diagnosed the same way: pulled the exact raw message
+straight from the live SQLite db by id. The closing `---END
+ATTACHMENT---` marker the original protocol required never appeared
+anywhere in the 3,500+ character response — the model, once immersed in
+writing a long legal-style document, simply never came back to append an
+unrelated meta-marker afterward. A required closing marker is inherently
+fragile for exactly the kind of long-form document this feature exists to
+generate.
+
+Redesigned the protocol to need no closing marker at all:
+`extractAttachmentBlocks` now finds every `---ATTACHMENT: <filename>---`
+marker line and treats each document's content as everything from there
+to the next marker (or the end of the response) — there is nothing left
+to forget to close. A model that still happens to write `---END
+ATTACHMENT---` gets it stripped for a clean result, but it's optional,
+never required. The trade-off: since a document's content now runs
+unboundedly to the next marker/end of text, ALL of the actual email text
+must come before the *first* marker — the instruction wording was updated
+to state this explicitly, and any trailing narrative a model writes
+*after* the last marker is no longer separable from that attachment's
+content (previously separable, when reliable closing worked). Given the
+alternative was "no attachment at all," this is a clear improvement.
+Also hardened against a narrower edge case surfaced while rewriting
+`extractAttachmentBlocks`'s tests: an unnamed marker (empty filename) is
+now never treated as a split point at all, so it can't silently swallow
+real trailing content into a doomed-to-be-filtered attachment.
+
+Re-verified by extracting the trainee's exact previously-failed raw
+message straight from the SQLite database (a persisted byte-for-byte
+snapshot of the actual bug) and running it through the new
+`extractAttachmentBlocks` directly: extracts the complete document (all 6
+numbered parts, 3,404 characters) as a single attachment, with the body
+correctly reduced to just the one-sentence intro. lint/typecheck/build
+pass; full suite 755/755 (was 753), re-run 3x, stable.
+
 ## Test Notes
 733 → 751 net (+18, all passing; re-run 3x, stable) across 4 files.
 
@@ -210,6 +252,22 @@ changes — they exercise the generators/UI through their public shape,
 which didn't change (an array was always possible; it just always had 0
 or 1 entries before).
 
+### Second post-`/validate` fix round (no-closing-marker redesign)
+753 → 755 net (+2, all passing; re-run 3x, stable). Rewrote
+`generatedAttachment.test.ts`'s cases for the no-closing-marker protocol:
+a document with nothing after it captures the rest of the response
+(AC1's real regression shape); multiple documents each run to the next
+marker instead of needing their own end marker; an optional trailing
+`---END ATTACHMENT---` is still stripped when present, for a clean
+result; an unnamed marker is now proven to leave ALL following text
+untouched rather than silently discarding it. `personaReply.test.ts`'s
+multi-attachment regression test was reshaped to match the new required
+ordering (all email text before the first marker); added a second
+regression test built directly from the trainee's actual failed raw
+response (read via a throwaway script from the live SQLite db, then
+hand-copied into the test as a literal string) proving the complete
+6-part document is captured with no closing marker present anywhere.
+
 ## Validation Notes
 First pass (`git diff --stat` 1b39043..31fa317): lint/typecheck/build
 passed, full suite 751/751 stable across 3 runs, all 4 ACs looked correct
@@ -253,8 +311,23 @@ the `attachments:open`/`extractText`/`pick` IPC handlers' actual
 in this repo — same non-blocking gap category as every prior
 `dialog`-touching feature).
 
-All checks pass except the one item above that only the user can confirm
-live. Phase set to `accept`.
+Third pass, after the no-closing-marker redesign (lint/typecheck/build all
+pass; full suite 755/755, re-run 3x, stable): the user's own second round
+of live testing caught what the second pass's evidence couldn't —
+compliance with the marker syntax itself (the strengthened instruction
+worked) doesn't guarantee compliance with a required *closing* marker for
+a long document. Re-verified this specific gap by running the trainee's
+own actual failed raw response (extracted byte-for-byte from the live
+SQLite db) through the redesigned `extractAttachmentBlocks` and confirming
+it now correctly captures the complete document. AC1 is otherwise in the
+same position as the second pass: the underlying "will a real model
+reliably use this exact syntax" question is inherently a live/manual
+check this repeated cycle can narrow but never fully close from a coding
+session alone — flagged clearly for the user's own live confirmation
+rather than claimed as proven.
+
+All checks pass except the live-model-compliance item above, which only
+the user can confirm by testing again. Phase set to `accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

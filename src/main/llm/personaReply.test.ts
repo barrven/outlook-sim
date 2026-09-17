@@ -262,15 +262,16 @@ describe('generatePersonaReply', () => {
     }
   })
 
-  it('065 regression: a reply narrating several attachments each includes its own block, all get written', async () => {
+  it('065 regression: a reply narrating several attachments, each mentioned before all the markers at the end, all get written', async () => {
     // Mirrors the real-world failure this regression test was added for:
     // a model asked to write a "realistic" email naturally lists multiple
-    // documents in prose, one block per document interleaved through the
-    // text rather than bunched at the very end.
+    // documents in prose. Under the current protocol, all email text must
+    // come before the first marker (no closing marker exists — each
+    // document simply runs to the next marker or end of response).
     const message = sendMessage()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       chatResponse(
-        'Attaching three things for you right now:\n\n1. Intake form\n---ATTACHMENT: intake-form.html---\n# Intake Form\n---END ATTACHMENT---\n\n2. Document index\n---ATTACHMENT: document-index.html---\n# Document Index\n---END ATTACHMENT---\n\nLet me know if you need anything else!'
+        'Attaching two things for you right now:\n\n1. Intake form\n2. Document index\n\nLet me know if you need anything else!\n---ATTACHMENT: intake-form.html---\n# Intake Form\n---ATTACHMENT: document-index.html---\n# Document Index'
       )
     )
 
@@ -283,9 +284,37 @@ describe('generatePersonaReply', () => {
       for (const attachment of result.message.attachments) {
         expect(existsSync(attachment.path!)).toBe(true)
       }
-      expect(result.message.body).toContain('Attaching three things for you right now:')
+      expect(result.message.body).toContain('Attaching two things for you right now:')
       expect(result.message.body).toContain('Let me know if you need anything else!')
       expect(result.message.body).not.toContain('---ATTACHMENT')
+    } else {
+      expect.fail('expected a reply to be sent')
+    }
+  })
+
+  it('065 regression: a document with no closing marker at all still captures its full content, to the end of the response', async () => {
+    // The actual observed live-testing failure: the model started the
+    // marker correctly but, after writing several sections of a long
+    // document, never appended a closing marker. There is none to forget.
+    const message = sendMessage()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      chatResponse(
+        'On it! Sending that over now.\n---ATTACHMENT: OCF-3_EXAMPLE.html---\n# OCF-3 — Disability Certificate\n\n## Part 1 — Applicant Information\n\nName: [REDACTED]\n\n## Part 2 — Health Practitioner Information\n\nName: Dr. Priya Mehta'
+      )
+    )
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.replied) {
+      expect(result.message.attachments).toHaveLength(1)
+      const attachment = result.message.attachments[0]
+      expect(existsSync(attachment.path!)).toBe(true)
+      const html = readFileSync(attachment.path!, 'utf-8')
+      expect(html).toContain('Part 1')
+      expect(html).toContain('Part 2')
+      expect(html).toContain('Dr. Priya Mehta')
+      expect(result.message.body.startsWith('On it! Sending that over now.')).toBe(true)
     } else {
       expect.fail('expected a reply to be sent')
     }
