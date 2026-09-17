@@ -485,6 +485,36 @@ describe('MessageListPane', () => {
     expect(await screen.findByText('Client one')).toBeInTheDocument()
   })
 
+  it('042 AC2: applies a full-width class when the Reading Pane is Off, and not otherwise', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([makeMessage({ id: 'a' })])
+
+    const { rerender, container } = render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+    await screen.findByText('Test subject')
+    expect(container.querySelector('.message-list-pane')).not.toHaveClass('full-width')
+
+    rerender(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+        fullWidth
+      />
+    )
+    expect(container.querySelector('.message-list-pane')).toHaveClass('full-width')
+  })
+
   // 038: the search input itself moved to the ribbon (RibbonBar owns it);
   // MessageListPane now just receives searchQuery/searchScope as props and
   // filters against them — these tests drive that via props/rerender

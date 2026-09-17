@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 042 (View tab — Reading Pane Right/Off toggle)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,16 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
+  tested: 681 → 688 net (+7, all passing; re-run 3x, stable) across 3
+  files. `RibbonBar.test.tsx` (+2) covers the control's View-tab scoping
+  and prop/callback wiring (AC1). `MessageListPane.test.tsx` (+1) covers
+  the `full-width` class (AC2 structural). `App.test.tsx` (+4) is the
+  real end-to-end coverage: default Right, Off removes the inline pane
+  with no dead placeholder and stops single-click from opening it while
+  double-click still pops out (AC2/AC3), the list widens when Off (AC2),
+  and switching back to Right restores both. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-16 — feature 042 (View tab — Reading Pane Right/Off toggle)
   implemented: new `readingPaneMode: 'right' | 'off'` state in `App.tsx`
   (session-only — AC4 explicitly permits this, and a persisted config

@@ -342,6 +342,37 @@ describe('RibbonBar', () => {
       expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-pressed', 'true')
       expect(screen.getByRole('button', { name: 'Tasks' })).toHaveClass('active')
     })
+
+    it('042 AC1: shows the Reading Pane Right/Off control only when View is active', () => {
+      const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps()} />)
+      expect(screen.queryByLabelText('Reading Pane')).not.toBeInTheDocument()
+
+      rerender(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} />)
+      const select = screen.getByLabelText('Reading Pane')
+      expect(select).toBeInTheDocument()
+      expect(Array.from(select.querySelectorAll('option')).map((option) => option.textContent)).toEqual([
+        'Right',
+        'Off'
+      ])
+    })
+
+    it('042: reflects the current readingPaneMode and reports changes via onReadingPaneModeChange', () => {
+      const onReadingPaneModeChange = vi.fn()
+      render(
+        <RibbonBar
+          activeModule="mail"
+          {...tabProps({ viewTabActive: true })}
+          readingPaneMode="off"
+          onReadingPaneModeChange={onReadingPaneModeChange}
+        />
+      )
+
+      const select = screen.getByLabelText('Reading Pane')
+      expect(select).toHaveValue('off')
+
+      fireEvent.change(select, { target: { value: 'right' } })
+      expect(onReadingPaneModeChange).toHaveBeenCalledWith('right')
+    })
   })
 
   describe('Mail search (038)', () => {

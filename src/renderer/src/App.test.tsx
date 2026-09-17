@@ -845,4 +845,90 @@ describe('App shell', () => {
       expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
     })
   })
+
+  describe('Reading Pane Right/Off toggle (042)', () => {
+    function mockMessage(): MailMessage {
+      return {
+        id: 'msg-1',
+        folderId: 'inbox',
+        previousFolderId: null,
+        subject: 'Hello there',
+        body: 'Body text',
+        fromName: 'Alex',
+        fromEmail: 'alex@example.com',
+        toName: 'Trainee',
+        toEmail: 'trainee@example.com',
+        cc: [],
+        timestamp: Date.now(),
+        isRead: false,
+        isFlagged: false,
+        categories: [],
+        attachments: []
+      }
+    }
+
+    it('AC1: View tab has a Reading Pane control defaulting to Right', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      expect(screen.getByLabelText('Reading Pane')).toHaveValue('right')
+    })
+
+    it('AC2/AC3: selecting Off removes the inline pane (no dead panel) and single-click stops opening it; double-click still pops out', async () => {
+      const user = userEvent.setup()
+      const message = mockMessage()
+      vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+      render(<App />)
+      await user.click(await screen.findByText('Hello there'))
+      expect(await screen.findByText('Body text')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      await user.selectOptions(screen.getByLabelText('Reading Pane'), 'Off')
+
+      expect(screen.queryByText('Body text')).not.toBeInTheDocument()
+      expect(screen.queryByText('Select an item to read.')).not.toBeInTheDocument()
+
+      await user.click(document.querySelector('.message-list-item')!)
+      expect(screen.queryByText('Body text')).not.toBeInTheDocument()
+
+      await user.dblClick(document.querySelector('.message-list-item')!)
+      expect(window.api.messagePopout.open).toHaveBeenCalledWith('msg-1')
+    })
+
+    it('AC2: the message list widens to fill the freed space when the Reading Pane is Off', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('button', { name: 'Inbox' })
+      expect(document.querySelector('.message-list-pane')).not.toHaveClass('full-width')
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      await user.selectOptions(screen.getByLabelText('Reading Pane'), 'Off')
+
+      expect(document.querySelector('.message-list-pane')).toHaveClass('full-width')
+    })
+
+    it('switching back to Right restores the inline pane and the normal-width list', async () => {
+      const user = userEvent.setup()
+      const message = mockMessage()
+      vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+      vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+      render(<App />)
+      await screen.findByText('Hello there')
+
+      await user.click(screen.getByRole('button', { name: 'View' }))
+      const select = screen.getByLabelText('Reading Pane')
+      await user.selectOptions(select, 'Off')
+      await user.selectOptions(select, 'Right')
+
+      expect(document.querySelector('.message-list-pane')).not.toHaveClass('full-width')
+
+      await user.click(document.querySelector('.message-list-item')!)
+      expect(await screen.findByText('Body text')).toBeInTheDocument()
+    })
+  })
 })

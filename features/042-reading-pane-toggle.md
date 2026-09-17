@@ -1,7 +1,7 @@
 ---
 id: 042
 title: View tab — Reading Pane Right/Off toggle
-status: testing
+status: validating
 priority: low
 ---
 
@@ -64,7 +64,32 @@ convention) — no pre-existing test genuinely broke, since nothing before
 this feature depended on Reading Pane visibility.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+681 → 688 net (+7, all passing; re-run 3x, stable), across 3 files:
+
+- `RibbonBar.test.tsx` (+2, AC1): the Reading Pane `<select>` only renders
+  when the View tab is active (same scoping as the Tasks toggle), with
+  exactly the two "Right"/"Off" options; it reflects the current
+  `readingPaneMode` prop and reports a change via
+  `onReadingPaneModeChange`.
+- `MessageListPane.test.tsx` (+1, AC2 structural): `.message-list-pane`
+  carries the `full-width` class only when `fullWidth` is true.
+- `App.test.tsx` (+4, AC1-AC4 end to end — this is where the real
+  functional coverage lives, since the ribbon control, the layout CSS
+  class, and the click-handling interaction all have to line up
+  together): the View tab's control defaults to Right; switching to Off
+  removes the inline pane with no "Select an item to read." placeholder
+  left behind (AC2's "no dead blank panel"), a subsequent single click no
+  longer opens the message inline while a double-click still calls
+  `messagePopout.open` (AC3, feature 041 unaffected); the message-list
+  pane picks up the `full-width` class when Off (AC2); and switching back
+  to Right restores both the inline pane and the normal-width list.
+
+Deliberately not covered: the session-only persistence choice (AC4) isn't
+itself something to unit-test — it's the *absence* of a restart-survival
+mechanism, which is what Implementation Notes documents as the
+deliberate, AC-permitted choice, not a gap. No live GUI screenshot (no
+attached display), same non-blocking category as every prior feature.
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
