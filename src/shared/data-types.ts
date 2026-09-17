@@ -24,6 +24,12 @@ export interface MessageAttachment {
   // just a typed-in name. Optional so pre-existing data (attached before
   // this feature, when attachments were filename-only) keeps loading.
   path?: string
+  // Text extracted from a supported file type at send time (feature 063),
+  // truncated the same way FileVine note content is (a 4000-char cap).
+  // Undefined for a draft attachment not yet sent, an unsupported file
+  // type, or a failed extraction — never blocks sending either way, just
+  // means no content is contributed to LLM context for that attachment.
+  extractedText?: string
 }
 
 export interface MessageRecipient {

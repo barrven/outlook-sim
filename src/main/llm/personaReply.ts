@@ -63,14 +63,24 @@ function buildSystemPrompt(
 function buildThreadTranscript(thread: MailMessage[]): string {
   return thread
     .map((message) => {
-      // Mock attachments have no real content (feature 009) — just tell the
-      // model a file was attached, by name, so it doesn't contradict what
-      // the trainee can see in their own mailbox by claiming there's none.
+      // Just tell the model a file was attached, by name, so it doesn't
+      // contradict what the trainee can see in their own mailbox by
+      // claiming there's none — this line always renders regardless of
+      // whether the attachment's content was extracted below.
       const attachmentsLine =
         message.attachments.length > 0
           ? `\nAttachments: ${message.attachments.map((attachment) => attachment.filename).join(', ')}`
           : ''
-      return `From: ${message.fromName} <${message.fromEmail}>\nTo: ${message.toName} <${message.toEmail}>\nDate: ${new Date(message.timestamp).toISOString()}\nSubject: ${message.subject}${attachmentsLine}\n\n${message.body}`
+      // Real attachment content extracted at send time (feature 063) —
+      // absent for mock/unsupported/failed-extraction attachments (feature
+      // 009's original mock attachments included), which contribute only
+      // the filename line above, nothing here.
+      const attachmentContent = message.attachments
+        .filter((attachment) => attachment.extractedText)
+        .map((attachment) => `--- Content of ${attachment.filename} ---\n${attachment.extractedText}`)
+        .join('\n\n')
+      const body = attachmentContent ? `${message.body}\n\n${attachmentContent}` : message.body
+      return `From: ${message.fromName} <${message.fromEmail}>\nTo: ${message.toName} <${message.toEmail}>\nDate: ${new Date(message.timestamp).toISOString()}\nSubject: ${message.subject}${attachmentsLine}\n\n${body}`
     })
     .join('\n\n---\n\n')
 }

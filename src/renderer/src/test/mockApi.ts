@@ -127,7 +127,8 @@ export function createMockApi(): Window['api'] {
       pick: vi.fn().mockResolvedValue({ ok: false, canceled: true })
     },
     attachments: {
-      pick: vi.fn().mockResolvedValue({ ok: false, canceled: true })
+      pick: vi.fn().mockResolvedValue({ ok: false, canceled: true }),
+      extractText: vi.fn().mockResolvedValue(undefined)
     },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),

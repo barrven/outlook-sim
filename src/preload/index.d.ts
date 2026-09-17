@@ -136,6 +136,7 @@ export interface PersonasFileApi {
 
 export interface AttachmentsApi {
   pick: () => Promise<PickAttachmentResult>
+  extractText: (filePath: string) => Promise<string | undefined>
 }
 
 export interface LlmApi {

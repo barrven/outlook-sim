@@ -90,6 +90,19 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
 
   async function persist(folderId: 'drafts' | 'sent'): Promise<void> {
     const [identity, timestamp] = await Promise.all([window.api.data.identity.get(), window.api.data.clock.now()])
+    // Extraction only happens at send time (not on every draft save) and
+    // only once per attachment — a draft re-sent later, or attached
+    // earlier and already extracted, doesn't redo the work.
+    const finalAttachments =
+      folderId === 'sent'
+        ? await Promise.all(
+            attachments.map(async (attachment) => {
+              if (!attachment.path || attachment.extractedText !== undefined) return attachment
+              const extractedText = await window.api.attachments.extractText(attachment.path)
+              return extractedText === undefined ? attachment : { ...attachment, extractedText }
+            })
+          )
+        : attachments
     const fields = {
       folderId,
       subject,
@@ -97,7 +110,7 @@ function ComposeWindow({ draftId, sourceMessageId, intent }: ComposeWindowProps)
       toName,
       toEmail,
       cc,
-      attachments,
+      attachments: finalAttachments,
       fromName: identity.displayName,
       fromEmail: identity.fromEmail,
       timestamp,

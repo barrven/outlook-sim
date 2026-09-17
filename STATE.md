@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 063 (Mail — extract real attachment content into persona LLM context)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 063 (Mail — extract real attachment content into
+  persona LLM context) implemented: new `src/main/llm/attachmentExtraction.ts`
+  dispatches by extension — `.txt`/`.csv` read directly as text,
+  `.pdf`/`.docx`/`.xlsx`/`.pptx` via the new `officeparser` dependency
+  (pinned to the 5.x line specifically to avoid its 6.0.0+ tesseract/OCR
+  dependency, which this project deliberately has none of); anything
+  unsupported or any extraction error resolves to `undefined`, never
+  throws. New `attachments:extractText` IPC + preload exposure;
+  `MessageAttachment` gained `extractedText?: string`, truncated at 4000
+  chars mirroring feature 049's FileVine convention. `ComposeWindow.tsx`'s
+  `persist()` extracts text per attachment only at send time (not on draft
+  autosave), idempotently. `personaReply.ts`'s thread transcript now
+  appends each attachment's extracted content as a labeled block after the
+  message body. Verified live: real LibreOffice-generated fixture files
+  (docx/xlsx/pptx/pdf/txt/csv, each with a unique marker string) all
+  extracted correctly via a throwaway script; unsupported extension and
+  missing file both degraded to `undefined` without throwing.
+  lint/typecheck/build pass; full suite unchanged at 714/714 (all new
+  fields optional). Phase set to `test`.
 - 2026-09-17 — feature 062 (Mail — real outgoing attachments (file picker))
   accepted by user (selected "Accept (Recommended)" against the validation
   summary, AC-by-AC mapping, and diff, no changes requested); logged to

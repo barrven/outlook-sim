@@ -21,6 +21,7 @@ import { validatePersonasFile } from './data/personasFile'
 import { ReminderScheduler } from './data/reminderScheduler'
 import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
 import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
+import { extractAttachmentText } from './llm/attachmentExtraction'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
 import { createCalendarPopoutWindow, createComposeWindow, createMainWindow, createMessagePopoutWindow } from './windows'
 
@@ -120,6 +121,10 @@ app.whenReady().then(() => {
     }
     return { ok: true, filename: basename(filePaths[0]), path: filePaths[0] }
   })
+
+  ipcMain.handle('attachments:extractText', (_event, filePath: string): Promise<string | undefined> =>
+    extractAttachmentText(filePath)
+  )
 
   ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
