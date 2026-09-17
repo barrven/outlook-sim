@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 2
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 044 (Double-click calendar item opens a pop-out window)
 - **Last updated:** 2026-09-16
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
+  window) validated: lint/typecheck/build pass; full suite (705/705)
+  re-run 3x, stable; `git diff --stat` (370eaf9..54e81fe) confirms
+  `/test` touched only docs/test files, no implementation drift. All 4
+  ACs re-verified directly against current source: AC1 double-click
+  wired to `openPopout` in both day/month views, pop-out renders the
+  real `CalendarItemPanel` starting in view mode; AC2
+  `broadcastCalendarItemsChanged()` now fires from all 3
+  `db:calendarItems:*` handlers, both windows subscribe and refetch,
+  mirroring the messages pattern exactly; AC3 the pop-out is a genuinely
+  separate `BrowserWindow`/process with zero reference to `App.tsx`'s
+  state; AC4 the single-click handler is untouched and independent of
+  the new double-click handler, and the full pre-existing
+  `CalendarView.test.tsx` suite ran green throughout. All checks pass,
+  no gaps found. Phase set to `accept`.
 - 2026-09-16 — feature 044 (Double-click calendar item opens a pop-out
   window) tested: 688 → 705 net (+17, all passing; re-run 3x, stable)
   across 4 files. New `CalendarPopoutWindow.test.tsx` (+11) covers view/

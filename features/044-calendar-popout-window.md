@@ -1,7 +1,7 @@
 ---
 id: 044
 title: Double-click calendar item opens a pop-out window
-status: validating
+status: accept
 priority: low
 ---
 
@@ -144,7 +144,41 @@ the regression check for a pure code-motion extraction. lint/typecheck/
 build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass. Full test suite (705/705) re-run 3x,
+stable. `git diff --stat` (370eaf9..54e81fe) confirms `/test` touched
+only `STATE.md`/feature/backlog docs plus the four test files — no
+implementation drift.
+
+All 4 ACs re-verified directly against current source (not just trusting
+prior notes):
+- AC1 (double-click opens a pop-out, view mode by default with the same
+  edit affordance): confirmed `openPopout` wired to `onDoubleClick` on
+  both the day- and month-view item buttons; `CalendarPopoutWindow.tsx`
+  renders the real `CalendarItemPanel` (the same component the inline
+  panel uses) starting in `panelMode: 'view'`.
+- AC2 (editing/deleting updates the main window live, cross-window
+  pattern): `broadcastCalendarItemsChanged()` is now called from all 3
+  `db:calendarItems:*` mutation handlers in `main/data/ipc.ts`; both
+  `CalendarView.tsx` and `CalendarPopoutWindow.tsx` subscribe via
+  `onCalendarItemsChanged` and refetch — the identical shape
+  `broadcastMessagesChanged`/`onMessagesChanged` already established.
+- AC3 (closing the pop-out doesn't affect the main window): confirmed
+  structurally — `createCalendarPopoutWindow` creates a genuinely
+  separate `BrowserWindow`/renderer process (same construction as
+  `createMessagePopoutWindow`), and `CalendarPopoutWindow.tsx` has zero
+  reference to `App.tsx`/`CalendarView`'s state, only its own local state
+  seeded from props.
+- AC4 (single-click inline behavior unaffected, double-click purely
+  additive): `onClick={() => openView(occurrence)}` is untouched and
+  independent of the new `onDoubleClick` handler on the same button; the
+  full pre-existing `CalendarView.test.tsx` suite (43 tests covering
+  043's inline behavior) ran unchanged and green throughout this
+  feature's implement/test stages.
+
+Not independently re-verified: a live multi-window Electron GUI
+click-through (no attached display) — same non-blocking gap as every
+prior pop-out feature. All checks pass, no gaps found. Phase set to
+`accept`.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
