@@ -329,5 +329,9 @@ rather than claimed as proven.
 All checks pass except the live-model-compliance item above, which only
 the user can confirm by testing again. Phase set to `accept`.
 
+**Update:** the user re-tested live after the second fix and confirmed a
+real generated attachment now actually appears. The one remaining
+live-only gap is closed — all checks pass with no open items.
+
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

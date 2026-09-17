@@ -18,6 +18,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments):
+  user re-tested live after the second fix round and confirmed a real
+  generated attachment now actually appears. The last open item
+  (live-model-compliance) is closed; all checks pass with nothing
+  outstanding. Ready for `/accept`.
 - 2026-09-17 — feature 065 (Mail — LLM-generated incoming attachments),
   second fix round: the first fix worked in one sense (the model started
   using the `---ATTACHMENT:---` marker), but a second round of the user's
