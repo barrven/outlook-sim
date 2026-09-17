@@ -282,6 +282,47 @@ worth a look during `/accept`.
 
 All checks pass; the two items above (the disclosed `opacity` exception
 and pending live look at the button colors) are noted, not blocking.
+
+### Post-validation: user's own manual styling pass, plus one targeted fix
+The user gave the button colors their own live look and then hand-edited
+`global.css`/`RibbonBar.tsx`/`ReadingPane.tsx` directly (commit
+`3158af7`, "made some manual changes to the styling to make it not suck
+so bad"): filled-button styling for the primary/danger actions (new
+`--primary`/`--primary-bg`/`--primary-border` trio, `--danger` remapped
+to white paired with a solid red `--danger-bg`/`--danger-border`, bold
+button text), the ribbon's Mail actions trimmed to just `New Email` +
+`Delete` (dropping the permanently-disabled `New Items`/`Reply`/`Reply
+All`/`Forward` placeholders entirely — those actions live in the Reading
+Pane, which already had them wired), a larger flag icon, and the
+`.reading-pane-flag-toggle.flagged` color rule commented out (a
+deliberate choice: the button's own "Unflag" label text already signals
+the flagged state, no color change needed).
+
+That last edit's ripple effect — `--danger` becoming white — silently
+broke 2 unrelated standalone-text usages that had no background of their
+own to pair with (`.settings-test-result-error`, the Settings Test
+Connection failure message, and `.calendar-event-form-error`, the
+Calendar event form's validation error): both would have rendered
+invisible white text on the white pane background. Caught this by
+`grep`ing every `var(--danger)` usage in the file and checking each had
+an accompanying background, not by visual inspection (no attached
+display). Flagged both issues to the user; they asked to fix the
+invisible-text bug specifically and confirmed the flagged-state color
+removal was intentional. Fixed by repointing those two rules to
+`--danger-border` (the still-red, still-standalone-safe token) instead
+of `--danger`.
+
+Updated the tests that were pinned to the pre-edit design rather than
+fighting the user's direction: `.message-list-flag-btn.flagged`'s test
+now checks `--flag-border` (its new, deliberately-chosen color) instead
+of `--danger`, and drops its previous assertion on the Reading Pane's
+flag-toggle color (intentionally no longer a thing); the ribbon-primary
+token test now checks `--primary` instead of `--accent`; and the ribbon
+test that asserted the disabled Reply/Reply All/Forward/New Items
+buttons exist-but-uncolored was replaced with one confirming they don't
+render in the ribbon at all anymore. 769/769 full suite, re-run 3x
+stable; lint/typecheck/build all pass.
+
 Phase set to `accept`.
 
 ## Acceptance Log

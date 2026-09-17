@@ -62,9 +62,15 @@ describe('global.css semantic tokens (037)', () => {
     }
   })
 
-  it('AC3: the flagged message-list indicator and Reading Pane flag toggle both use the danger token', () => {
-    expect(css).toMatch(/\.message-list-flag-btn\.flagged\s*{\s*color:\s*var\(--danger\);\s*}/)
-    expect(css).toMatch(/\.reading-pane-flag-toggle\.flagged\s*{[^}]*color:\s*var\(--danger\);/)
+  it('AC3: the flagged message-list indicator uses a semantic token, not a hardcoded color', () => {
+    // Originally --danger (037); revised to the amber --flag-border during
+    // 058's button-coloring pass, at the user's direction — still a
+    // semantic token either way, which is what this AC actually requires.
+    // The Reading Pane's own Flag/Unflag toggle deliberately has no
+    // color change on flagged state anymore (also the user's direction,
+    // 058) — its "Unflag" label text already signals the flagged state,
+    // so it's intentionally not covered by this test.
+    expect(css).toMatch(/\.message-list-flag-btn\.flagged\s*{\s*color:\s*var\(--flag-border\);\s*}/)
   })
 })
 
@@ -125,8 +131,16 @@ describe('color scheme infrastructure (058)', () => {
     expect(defaultTheme).toMatch(/--flag-border:\s*#[0-9a-fA-F]{3,8};/)
   })
 
+  it('defines a --primary token trio for filled "blue" buttons (New Email, Reading Pane toggle)', () => {
+    const defaultTheme = extractDefaultThemeBlock(css)
+
+    expect(defaultTheme).toMatch(/--primary:\s*#[0-9a-fA-F]{3,8};/)
+    expect(defaultTheme).toMatch(/--primary-bg:\s*#[0-9a-fA-F]{3,8};/)
+    expect(defaultTheme).toMatch(/--primary-border:\s*#[0-9a-fA-F]{3,8};/)
+  })
+
   it('the ribbon\'s enabled New Email/Delete actions use the primary/danger tokens, never a hardcoded color', () => {
-    expect(css).toMatch(/\.ribbon-action-primary:not\(:disabled\)\s*{[^}]*color:\s*var\(--accent\);/)
+    expect(css).toMatch(/\.ribbon-action-primary:not\(:disabled\)\s*{[^}]*color:\s*var\(--primary\);/)
     expect(css).toMatch(/\.ribbon-action-danger:not\(:disabled\)\s*{[^}]*color:\s*var\(--danger\);/)
   })
 

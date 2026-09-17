@@ -733,7 +733,10 @@ body {
 }
 
 .settings-test-result-error {
-  color: var(--danger);
+  /* --danger is white now (paired with a red --danger-bg for filled
+     buttons/banners) — standalone text with no background of its own
+     needs the red directly, or it's invisible on the white pane. */
+  color: var(--danger-border);
 }
 
 .settings-test-result-error button {
@@ -1398,7 +1401,9 @@ body {
 .calendar-event-form-error {
   margin: 0 0 12px;
   font-size: 12px;
-  color: var(--danger);
+  /* --danger is white now (paired with a red --danger-bg) — standalone
+     text needs the red directly, or it's invisible on the white pane. */
+  color: var(--danger-border);
 }
 
 .calendar-event-form-actions {
