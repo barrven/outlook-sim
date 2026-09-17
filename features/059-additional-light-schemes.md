@@ -1,7 +1,7 @@
 ---
 id: 059
 title: Two additional light color schemes
-status: accept
+status: done
 priority: medium
 ---
 
@@ -149,4 +149,5 @@ yet reachable end-to-end by a user.
 All checks pass, no gaps found. Phase set to `accept`.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-17 — User selected "Accept (Recommended)" against the validation
+summary and AC-by-AC mapping. No changes requested. Decision: accepted.

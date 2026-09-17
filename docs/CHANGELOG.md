@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-17 — Two additional light color schemes (features/059-additional-light-schemes.md)
+Two more selectable light color schemes — a green-accented "sage" and a
+purple-accented "plum" — join the revised default, each with its own
+complete palette across the ribbon, panes, buttons, chips, and flags.
+(A Settings switcher to actually pick between schemes is coming next.)
+
 ## 2026-09-17 — Color scheme infrastructure + revised default palette (features/058-color-scheme-infrastructure.md)
 The app's whole color palette can now be swapped from a single switch
 point, laying the groundwork for the additional light/dark schemes
