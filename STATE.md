@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 059 (Two additional light color schemes)
 - **Last updated:** 2026-09-17
 
@@ -18,6 +18,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-17 — feature 059 (Two additional light color schemes) tested:
+  769 → 776 net (+7, all passing; re-run 3x, stable), all in
+  `globalCssStyling.test.ts`'s new "two additional light color schemes
+  (059)" block. AC1 checks each scheme's full 23-token set; AC2 turns
+  the ad-hoc token-name-set-equality check from `/implement` into a
+  permanent test; AC3 adds a real WCAG relative-luminance contrast
+  calculator (written in the test file) confirming both new schemes
+  clear 4.5:1 for muted text and white-on-primary-button text, plus
+  pairwise distinctness across all three schemes' accent/primary/text
+  hues; AC4 confirms no layout property appears in either new scheme's
+  block. Deliberately uncovered: actual rendered appearance (jsdom
+  doesn't load the stylesheet) and any end-to-end switch-and-see-it-
+  change flow (no Settings UI yet — that's feature 061). lint/typecheck/
+  build all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-17 — feature 059 (Two additional light color schemes)
   implemented: two new `:root[data-theme='sage']`/`:root[data-theme='plum']`
   blocks in `global.css`, mirroring 058's exact structure (including its

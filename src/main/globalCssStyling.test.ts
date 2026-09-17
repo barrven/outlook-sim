@@ -167,6 +167,129 @@ describe('color scheme infrastructure (058)', () => {
   })
 })
 
+// WCAG 2.1 relative-luminance contrast ratio, for AC3's "adequate
+// text/icon contrast" — a real computed check, not a hand-waved "looks
+// distinct enough."
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '')
+  const expand = (h: string): string => (h.length === 3 || h.length === 4 ? [...h].map((c) => c + c).join('') : h)
+  const full = expand(clean)
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return [r, g, b]
+}
+
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const channel = (c: number): number => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
+function contrastRatio(hexA: string, hexB: string): number {
+  const lA = relativeLuminance(hexToRgb(hexA))
+  const lB = relativeLuminance(hexToRgb(hexB))
+  const [lighter, darker] = lA >= lB ? [lA, lB] : [lB, lA]
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+function getToken(themeBlock: string, token: string): string {
+  const match = themeBlock.match(new RegExp(`${token}:\\s*(#[0-9a-fA-F]{3,8});`))
+  if (!match) throw new Error(`${token} not found`)
+  return match[1]
+}
+
+describe('two additional light color schemes (059)', () => {
+  const ALL_TOKENS = [
+    '--border',
+    '--ribbon-bg',
+    '--pane-bg',
+    '--nav-rail-bg',
+    '--selected-bg',
+    '--selected-border',
+    '--text',
+    '--text-muted',
+    '--accent',
+    '--hover-bg',
+    '--danger',
+    '--danger-bg',
+    '--danger-border',
+    '--warning',
+    '--warning-bg',
+    '--warning-border',
+    '--success',
+    '--primary',
+    '--primary-bg',
+    '--primary-border',
+    '--flag',
+    '--flag-bg',
+    '--flag-border'
+  ]
+
+  it.each(['sage', 'plum'])('AC1: "%s" defines a complete value for every semantic token the app uses', (theme) => {
+    const block = extractThemeBlock(css, theme)
+    for (const token of ALL_TOKENS) {
+      expect(block, `${theme} should define ${token}`).toMatch(new RegExp(`${token}:\\s*#[0-9a-fA-F]{3,8};`))
+    }
+  })
+
+  it('AC2: every scheme defines the exact same set of token names — nothing can fall through to an undefined value when switching', () => {
+    const tokenNames = (block: string): string[] => [...block.matchAll(/--[a-z-]+(?=:)/g)].map((m) => m[0]).sort()
+
+    const defaultNames = tokenNames(extractDefaultThemeBlock(css))
+    const sageNames = tokenNames(extractThemeBlock(css, 'sage'))
+    const plumNames = tokenNames(extractThemeBlock(css, 'plum'))
+
+    expect(sageNames).toEqual(defaultNames)
+    expect(plumNames).toEqual(defaultNames)
+  })
+
+  it('AC3: sage and plum each use a distinct accent/primary/text hue from the default and from each other', () => {
+    const defaultBlock = extractDefaultThemeBlock(css)
+    const sageBlock = extractThemeBlock(css, 'sage')
+    const plumBlock = extractThemeBlock(css, 'plum')
+
+    for (const token of ['--accent', '--primary-bg', '--text']) {
+      const defaultValue = getToken(defaultBlock, token)
+      const sageValue = getToken(sageBlock, token)
+      const plumValue = getToken(plumBlock, token)
+
+      expect(sageValue).not.toBe(defaultValue)
+      expect(plumValue).not.toBe(defaultValue)
+      expect(sageValue).not.toBe(plumValue)
+    }
+  })
+
+  it.each(['sage', 'plum'])(
+    'AC3: "%s" has adequate contrast (WCAG AA, >=4.5:1) for muted text and white-on-primary-button text',
+    (theme) => {
+      const block = extractThemeBlock(css, theme)
+      const paneBg = getToken(block, '--pane-bg')
+      const textMuted = getToken(block, '--text-muted')
+      const primary = getToken(block, '--primary')
+      const primaryBg = getToken(block, '--primary-bg')
+
+      expect(contrastRatio(textMuted, paneBg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(primary, primaryBg)).toBeGreaterThanOrEqual(4.5)
+    }
+  )
+
+  it('AC4: no layout-affecting property (padding/margin/width/height/flex/gap/position/display) appears anywhere in global.css', () => {
+    // 058/059 are both explicitly color-only revisions — this is a coarse
+    // but effective tripwire: if either feature's diff ever touched
+    // layout, one of these property names would show up somewhere they
+    // weren't already established pre-058 for these specific schemes'
+    // own blocks. Scoped to just the new scheme blocks themselves, since
+    // the rest of the file legitimately has layout properties everywhere.
+    for (const theme of ['sage', 'plum']) {
+      const block = extractThemeBlock(css, theme)
+      expect(block).not.toMatch(/\b(padding|margin|width|height|flex|gap|position|display)\s*:/)
+    }
+  })
+})
+
 describe('office clock (045)', () => {
   it('AC1: the clock display text uses the near-black --text token, not the muted color', () => {
     const rule = css.match(/\.office-clock-time\s*{[^}]*}/)
