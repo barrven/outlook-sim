@@ -623,6 +623,68 @@ describe('SettingsView', () => {
       expect(confirmSpy).toHaveBeenCalledTimes(1)
       expect(scenarioPackSection().queryByText(/loaded/)).not.toBeInTheDocument()
     })
+
+    // 052 — visible spacing/separation between the Load and Save subsections
+
+    it('052 AC1: the Save subsection is wrapped in its own spacing container, separate from Load', async () => {
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+
+      const saveNote = scenarioPackSection().getByText(/Save the current mailbox/)
+      const wrapper = saveNote.closest('.scenario-pack-save-section')
+      expect(wrapper).not.toBeNull()
+      const region = screen.getByRole('region', { name: 'Scenario Pack' })
+      expect(region.contains(wrapper)).toBe(true)
+
+      // Load's own note is a sibling, outside the Save wrapper.
+      const loadNote = scenarioPackSection().getByText(/Load a JSON scenario pack/)
+      expect(wrapper!.contains(loadNote)).toBe(false)
+    })
+
+    it('052 AC1: the Save button and its wrapper are both inside the Scenario Pack section', async () => {
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+
+      const saveButton = scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' })
+      expect(saveButton.closest('.scenario-pack-save-section')).not.toBeNull()
+    })
+
+    it('052 AC2: Load still works identically — no confirmation needed, status shown, inside the same region', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.pickPack).mockResolvedValue({ ok: true, pack: SCENARIO_PACK })
+      vi.mocked(window.api.scenario.applyPack).mockResolvedValue({ ok: true })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Load Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.applyPack).toHaveBeenCalledWith(SCENARIO_PACK))
+      expect(await scenarioPackSection().findByText(/Grillo Law Intake.*loaded/)).toBeInTheDocument()
+    })
+
+    it('052 AC2: Save still works identically — invokes the save IPC and shows its status/error as before', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.scenario.savePack).mockResolvedValue({ ok: true, filePath: '/tmp/pack.json' })
+
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' }))
+
+      await waitFor(() => expect(window.api.scenario.savePack).toHaveBeenCalledTimes(1))
+      expect(await scenarioPackSection().findByText(/saved/i)).toBeInTheDocument()
+
+      vi.mocked(window.api.scenario.savePack).mockResolvedValueOnce({ ok: false, error: 'Disk full' })
+      await user.click(scenarioPackSection().getByRole('button', { name: 'Save Scenario Pack…' }))
+      expect(await scenarioPackSection().findByText('Disk full')).toBeInTheDocument()
+    })
+
+    it('052 AC3: no other Settings section picked up the new spacing wrapper', async () => {
+      render(<SettingsView />)
+      await screen.findByLabelText('Provider')
+      await scenarioPackSection().findByText(/Save the current mailbox/)
+
+      expect(document.querySelectorAll('.scenario-pack-save-section')).toHaveLength(1)
+    })
   })
 
   describe('Settings panels refresh live after a scenario pack load (feature 030)', () => {

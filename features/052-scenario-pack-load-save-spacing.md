@@ -1,7 +1,7 @@
 ---
 id: 052
 title: Settings — spacing between Scenario Pack Load and Save sections
-status: testing
+status: validating
 priority: low
 ---
 
@@ -50,7 +50,28 @@ label/role/text within `scenarioPackSection()`, not DOM structure; new
 structural coverage is `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+841 → 846 net (+5, all passing; re-run 3x, stable), all in the existing
+`SettingsView.test.tsx`'s "Scenario Pack" describe block. Pre-existing 48
+tests (unmodified) confirm no regression.
+
+New tests: AC1 — the Save subsection's note is found inside a
+`.scenario-pack-save-section` element that's a descendant of the
+"Scenario Pack" region, while the Load subsection's note is confirmed NOT
+inside that wrapper (proves it's a genuine sub-boundary, not just a class
+on an unrelated ancestor); a second test confirms the Save button itself
+is inside the wrapper too. AC2 — both Load and Save exercised end-to-end
+through the new markup: Load still applies a pack with no confirmation
+and shows its "...loaded" status; Save still calls the save IPC and shows
+both its success status (with the real file path interpolated) and, on a
+second click with a failing mock, its error message — the exact same
+`handleLoadScenarioPack`/`handleSaveScenarioPack` flows as before, now
+just rendered inside the new wrapper. AC3 — exactly one
+`.scenario-pack-save-section` element exists anywhere in the rendered
+Settings view (no other section picked up the new class).
+
+Deliberately uncovered: the actual rendered visual spacing/divider
+appearance (no attached display — same non-blocking gap as every prior
+CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

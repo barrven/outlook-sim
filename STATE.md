@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 052 (Settings — spacing between Scenario Pack Load and Save sections)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
+  and Save sections) tested: 841 → 846 net (+5, all passing; re-run 3x,
+  stable), all in `SettingsView.test.tsx`'s existing "Scenario Pack"
+  block. AC1 confirms the Save subsection sits inside the new wrapper
+  while Load's own note does not (a genuine sub-boundary), plus the Save
+  button itself is inside it. AC2 exercises both Load and Save end-to-end
+  through the new markup (success + error paths for Save). AC3 confirms
+  exactly one wrapper element exists app-wide. lint/typecheck/build all
+  pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
   and Save sections) implemented: `SettingsView.tsx`'s Save subsection
   (note + actions + error) wrapped in a new
