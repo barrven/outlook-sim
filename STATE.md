@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 052 (Settings — spacing between Scenario Pack Load and Save sections)
+- **Phase:** implement
+- **Active feature:** 053 (Ribbon — Home tab: remove dead placeholder buttons)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
+  and Save sections) accepted by user (selected "Accept (Recommended)"
+  against the validation summary and AC-by-AC mapping, no changes
+  requested); logged to CHANGELOG. Active feature set to 053 (Ribbon —
+  Home tab: remove dead placeholder buttons, next in BACKLOG.md table
+  order), phase set to `implement`.
 - 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
   and Save sections) validated: lint/typecheck/build pass; full suite
   (846/846) re-run 4x total, stable; `git diff --stat` (2e33bfe..HEAD)

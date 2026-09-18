@@ -7,6 +7,11 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Settings — spacing between Scenario Pack Load and Save sections (features/052-scenario-pack-load-save-spacing.md)
+The Load and Save subsections of Settings' Scenario Pack section now have
+a clear divider between them, so the two distinct actions no longer read
+as one run-together block.
+
 ## 2026-09-18 — Settings — Persona editor's Client checkbox left-aligned (features/051-persona-editor-checkbox-alignment.md)
 The "Client" checkbox in the persona editor no longer drifts out of place
 — it now sits immediately after its label, the same fixed alignment

@@ -1,7 +1,7 @@
 ---
 id: 052
 title: Settings — spacing between Scenario Pack Load and Save sections
-status: accept
+status: done
 priority: low
 ---
 
@@ -103,4 +103,5 @@ appearance (no attached display — same non-blocking gap as every prior
 CSS-touching feature). All checks pass, no blocking gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user selected "Accept (Recommended)" against the validation
+summary and AC-by-AC mapping, no changes requested. Decision: accepted.
