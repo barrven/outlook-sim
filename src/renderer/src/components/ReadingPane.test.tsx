@@ -469,45 +469,53 @@ describe('ReadingPane', () => {
     expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
   })
 
-  describe('066: Save a generated attachment into FileVine', () => {
-    const GENERATED_ATTACHMENT: MailMessage['attachments'][number] = {
+  describe('066: Save an attachment into FileVine', () => {
+    // Content from an LLM-generated attachment (065's `extractedText` is
+    // its Markdown source) and content from a real attachment's extraction
+    // (063) look identical from `ReadingPane`'s point of view — the whole
+    // point of this feature is that neither gets special-cased.
+    const ATTACHMENT_WITH_CONTENT: MailMessage['attachments'][number] = {
       filename: 'settlement-offer.html',
       path: '/data/generated-attachments/uuid/settlement-offer.html',
-      extractedText: '# Settlement Offer\n\nAmount: $5,000',
-      generated: true
+      extractedText: '# Settlement Offer\n\nAmount: $5,000'
     }
     const FOLDER: FileVineFolder = { id: 'folder-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }
     const OTHER_FOLDER: FileVineFolder = { id: 'folder-2', name: 'Doe Estate', parentId: null, clientPersonaId: null }
 
-    it('AC1: a generated attachment shows a "Save to FileVine" action; a real attachment does not', async () => {
+    it('AC1: any attachment with content shows the action — a real one and an LLM-generated one alike', async () => {
       const message: MailMessage = {
         ...MESSAGE,
-        attachments: [GENERATED_ATTACHMENT, { filename: 'report.pdf', path: '/tmp/report.pdf', extractedText: 'Q3 revenue.' }]
+        attachments: [
+          ATTACHMENT_WITH_CONTENT,
+          { filename: 'report.pdf', path: '/tmp/report.pdf', extractedText: 'Q3 revenue.' }
+        ]
       }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
       await screen.findByRole('button', { name: /settlement-offer\.html/ })
-      expect(screen.getAllByRole('button', { name: /Save to FileVine/ })).toHaveLength(1)
+      // Both attachments have content — neither is a "generated" vs "real"
+      // special case, so both get the action.
+      expect(screen.getAllByRole('button', { name: /Save to FileVine/ })).toHaveLength(2)
     })
 
-    it('a real attachment with extracted text (feature 063) still gets no Save to FileVine action', async () => {
+    it('AC1: an attachment with no content (a true mock, or an unsupported/failed extraction) gets no action', async () => {
       const message: MailMessage = {
         ...MESSAGE,
-        attachments: [{ filename: 'report.pdf', path: '/tmp/report.pdf', extractedText: 'Q3 revenue grew 12%.' }]
+        attachments: [{ filename: 'photo.jpg', path: '/tmp/photo.jpg' }]
       }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await screen.findByRole('button', { name: /report\.pdf/ })
+      await screen.findByRole('button', { name: /photo\.jpg/ })
       expect(screen.queryByRole('button', { name: /Save to FileVine/ })).not.toBeInTheDocument()
     })
 
     it('AC1/AC2: picking an existing folder and saving creates a note with the attachment\'s content', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER, OTHER_FOLDER])
 
@@ -531,7 +539,7 @@ describe('ReadingPane', () => {
 
     it('AC3: saving never touches the original message or its attachment', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
 
@@ -548,7 +556,7 @@ describe('ReadingPane', () => {
 
     it('AC4: with no FileVine folders yet, offers an inline create-folder-and-save path instead of a dead end', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([])
       vi.mocked(window.api.data.fileVineFolders.create).mockResolvedValue({
@@ -578,7 +586,7 @@ describe('ReadingPane', () => {
 
     it('does not submit the create-folder form with a blank name', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([])
 
@@ -594,7 +602,7 @@ describe('ReadingPane', () => {
 
     it('Cancel closes the dialog without saving anything', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
 
@@ -610,7 +618,7 @@ describe('ReadingPane', () => {
 
     it('resets the save dialog when a different message is selected', async () => {
       const user = userEvent.setup()
-      const message: MailMessage = { ...MESSAGE, attachments: [GENERATED_ATTACHMENT] }
+      const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
       vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
 

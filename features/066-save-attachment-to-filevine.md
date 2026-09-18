@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save an attachment into FileVine
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -125,6 +125,26 @@ is already covered by its existing test suite and is unchanged by this
 feature (the note is created through the same `fileVineNotes.create` API
 `FileVineView.tsx` already uses for every other note). lint/typecheck/build
 all pass.
+
+### Addendum (2026-09-18, requested-changes fix)
+822 → 821 net (all passing; re-run 3x, stable) across the same 2 files —
+one obsolete test removed, one AC1 test rewritten, one new AC1 test added.
+`generatedAttachment.test.ts`: removed the now-obsolete "marks the
+attachment as generated" test (the field it checked no longer exists).
+`ReadingPane.test.tsx`'s "066" block renamed to "Save an attachment into
+FileVine" (no more "generated"); its AC1 test now covers two attachments
+on the same message — one with a real-attachment path/extractedText shape,
+one an LLM-generated-shaped one — asserting *both* get exactly one "Save
+to FileVine" button each (the point being neither is special-cased,
+replacing the old assertion that only the generated one got it); a new
+AC1 test confirms an attachment with no content (a plain mock/unsupported
+extraction) still gets none, since that's a structural "nothing to save"
+constraint, not a generated-vs-real one. The other 7 tests (AC1/AC2 save
+flow, AC3 non-destructive, AC4 create-folder path + blank-name guard,
+Cancel, cross-message reset) needed no behavioral changes, only the shared
+fixture's rename from `GENERATED_ATTACHMENT` to `ATTACHMENT_WITH_CONTENT`
+(and dropping its now-nonexistent `generated: true` field). lint/
+typecheck/build all pass.
 
 ## Validation Notes
 lint/typecheck/build pass; full suite (822/822) re-run 4x total across

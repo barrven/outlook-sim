@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 066 (Mail — save an attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
+  tested (requested changes): 822 → 821 net (all passing; re-run 3x,
+  stable) — removed the obsolete "marks the attachment as generated" unit
+  test; rewrote `ReadingPane.test.tsx`'s AC1 test to assert both a real
+  attachment and an LLM-generated-shaped one get the action (neither
+  special-cased), plus a new test confirming a content-less attachment
+  still gets none; the other 7 tests in that block needed only a fixture
+  rename. lint/typecheck/build all pass. Test Notes addendum filled in;
+  phase set to `validate`.
 - 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
   implemented (requested changes): removed the `generated` gate entirely —
   `MessageAttachment.generated` dropped from shared/data-types.ts, no
