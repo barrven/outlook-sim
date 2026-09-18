@@ -324,6 +324,49 @@ describe('PersonasSettings', () => {
     expect(screen.getAllByRole('button', { name: 'Cancel' })).toHaveLength(1)
   })
 
+  // 051 — the Client checkbox's row uses the same fixed, left-aligned
+  // layout pattern as the calendar event form's All-day checkbox
+
+  it('051 AC1/AC2: the Client row carries the fixed left-aligned checkbox layout class, mirroring the calendar form\'s pattern', async () => {
+    const user = userEvent.setup()
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: '+ New Persona' }))
+
+    const clientRow = screen.getByLabelText('Client').closest('.settings-field-row')
+    expect(clientRow).toHaveClass('settings-field-row', 'settings-field-row-checkbox')
+  })
+
+  it('051 AC3: no other persona editor field carries the checkbox layout class', async () => {
+    const user = userEvent.setup()
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: '+ New Persona' }))
+
+    const otherFieldLabels = ['Display Name', 'Email', 'Role', 'Reports To', 'Bio', 'Writing Style', 'Extra Prompt']
+    for (const label of otherFieldLabels) {
+      const row = screen.getByLabelText(label).closest('.settings-field-row')
+      expect(row).not.toHaveClass('settings-field-row-checkbox')
+    }
+  })
+
+  it('051 AC4: checking/unchecking Client still updates and persists form.isClient exactly as before', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    const checkbox = screen.getByLabelText('Client')
+    expect(checkbox).not.toBeChecked()
+
+    await user.click(checkbox)
+    expect(checkbox).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(window.api.data.personas.set).toHaveBeenCalledWith([{ ...PERSONA, isClient: true }]))
+  })
+
   // reloadKey (feature 030 — Settings live-refresh after a scenario pack load)
 
   it('030 AC1: refetches the persona list when reloadKey changes, without needing to unmount/remount', async () => {

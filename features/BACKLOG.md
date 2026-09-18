@@ -67,7 +67,7 @@
 | 066 | Mail — save an attachment into FileVine | done | medium | 066-save-attachment-to-filevine.md |
 | 067 | Mail — pop-out window for viewing attachments | done | medium | 067-attachment-popout-window.md |
 | 050 | Settings — Persona editor opens inline under the edited persona | done | low | 050-persona-editor-inline-placement.md |
-| 051 | Settings — Persona editor's Client checkbox left-aligned | testing | low | 051-persona-editor-checkbox-alignment.md |
+| 051 | Settings — Persona editor's Client checkbox left-aligned | validating | low | 051-persona-editor-checkbox-alignment.md |
 | 052 | Settings — spacing between Scenario Pack Load and Save sections | backlog | low | 052-scenario-pack-load-save-spacing.md |
 | 053 | Ribbon — Home tab: remove dead placeholder buttons | backlog | low | 053-remove-dead-home-tab-buttons.md |
 | 054 | Mail message list — flagged-row styling | backlog | low | 054-flagged-row-styling.md |

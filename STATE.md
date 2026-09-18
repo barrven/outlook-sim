@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 051 (Settings — Persona editor's Client checkbox left-aligned)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,14 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 051 (Settings — Persona editor's Client checkbox
+  left-aligned) tested: 838 → 841 net (+3, all passing; re-run 3x,
+  stable), all in `PersonasSettings.test.tsx`'s new "051" block. AC1/AC2
+  confirms the Client row carries both `settings-field-row` and the new
+  `settings-field-row-checkbox` class. AC3 confirms all 7 other fields'
+  rows do not. AC4 confirms toggling and Save persists `isClient: true`.
+  lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-18 — feature 051 (Settings — Persona editor's Client checkbox
   left-aligned) implemented: mirrors `.calendar-event-form-row-checkbox`'s
   existing pattern exactly. `PersonasSettings.tsx`'s Client row gained a

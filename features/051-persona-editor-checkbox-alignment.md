@@ -1,7 +1,7 @@
 ---
 id: 051
 title: Settings — Persona editor's Client checkbox left-aligned
-status: testing
+status: validating
 priority: low
 ---
 
@@ -69,7 +69,27 @@ jsdom doesn't load the stylesheet) — same non-blocking gap as every prior
 pure-CSS feature in this project.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+838 → 841 net (+3, all passing; re-run 3x, stable), all in the existing
+`PersonasSettings.test.tsx`'s new "051" block. Pre-existing 33 tests
+(unmodified) confirm no regression.
+
+New tests: AC1/AC2 — the Client row (found by walking up from the
+checkbox's own label to its `.settings-field-row` ancestor) carries both
+`settings-field-row` and the new `settings-field-row-checkbox` modifier
+class. AC3 — every other persona editor field's row (all 7: Display Name,
+Email, Role, Reports To, Bio, Writing Style, Extra Prompt) does *not*
+carry the modifier class, confirming the fix is scoped to Client alone.
+AC4 — checking the box, saving, and confirming `personas.set` is called
+with `isClient: true` in the persisted payload (the same
+Edit→toggle→Save flow the pre-existing "creates a persona marked as a
+client" and "Edit prefills..." tests already exercise from other angles,
+now asserted directly against the toggle-and-persist path specifically).
+
+Deliberately uncovered: the actual rendered visual alignment (no attached
+display, jsdom doesn't load the stylesheet — same non-blocking gap as
+every prior pure-CSS feature, including the calendar form's own All-day
+checkbox fix this one mirrors, which likewise has no dedicated test).
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
