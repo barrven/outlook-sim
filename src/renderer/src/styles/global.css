@@ -1048,6 +1048,14 @@ body {
   background: var(--hover-bg);
 }
 
+/* AC3: declared before .selected so, when a flagged row is also selected,
+   .selected's background wins by cascade order (equal specificity) — the
+   user's current selection stays the dominant signal, flagged is just the
+   row's resting-state highlight. */
+.message-list-item.flagged {
+  background: var(--flag-bg);
+}
+
 .message-list-item.selected {
   background: var(--selected-bg);
 }

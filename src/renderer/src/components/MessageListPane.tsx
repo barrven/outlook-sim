@@ -209,7 +209,7 @@ function MessageListPane({
             <li key={message.id} className="message-list-row">
               <button
                 type="button"
-                className={`message-list-item${
+                className={`message-list-item${message.isFlagged ? ' flagged' : ''}${
                   selectedMessageIds.includes(message.id) ? ' selected' : ''
                 }${message.isRead ? '' : ' unread'}`}
                 onClick={(event) => handleMessageClick(message.id, event)}

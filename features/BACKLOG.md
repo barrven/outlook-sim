@@ -70,7 +70,7 @@
 | 051 | Settings — Persona editor's Client checkbox left-aligned | done | low | 051-persona-editor-checkbox-alignment.md |
 | 052 | Settings — spacing between Scenario Pack Load and Save sections | done | low | 052-scenario-pack-load-save-spacing.md |
 | 053 | Ribbon — Home tab: remove dead placeholder buttons | done | low | 053-remove-dead-home-tab-buttons.md |
-| 054 | Mail message list — flagged-row styling | backlog | low | 054-flagged-row-styling.md |
+| 054 | Mail message list — flagged-row styling | testing | low | 054-flagged-row-styling.md |
 | 055 | Mail message list — show each message's timestamp | backlog | low | 055-message-list-timestamp.md |
 | 056 | Tasks panel — unflag and pop-out controls on Flagged Mail rows | backlog | low | 056-tasks-panel-flagged-mail-controls.md |
 | 057 | Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort) | backlog | low | 057-tasks-panel-redesign.md |

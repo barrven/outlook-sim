@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 054 (Mail message list — flagged-row styling)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
+  implemented: AC1 (larger flag icon) was already done by the user
+  directly, in the same manual commit as feature 053 (`3158af7`) —
+  confirmed via `git log -p` that `.message-list-flag-btn`'s font-size
+  went 14px → 20px. AC2-AC4 implemented here: `MessageListPane.tsx`'s row
+  gained a conditional `flagged` class; new CSS
+  `.message-list-item.flagged { background: var(--flag-bg); }`, declared
+  before `.selected` in source order so selection wins the cascade when a
+  row is both flagged and selected (AC3's precedence decision, documented
+  in Implementation Notes). AC4 needs no extra code — the class is a plain
+  derived value from `message.isFlagged`, updating live the same way
+  `unread`/`selected` already do. Verified live via a throwaway RTL script
+  (not committed): flagged-only vs flagged+selected rows carry the right
+  class combinations. lint/typecheck/build pass; full suite unchanged at
+  846/846 (no new feature-specific tests yet — that's `/test`'s job).
+  Phase set to `test`.
 - 2026-09-18 — feature 053 (Ribbon — Home tab: remove dead placeholder
   buttons) accepted: the user reported having already implemented this
   directly (not through `/implement`) and asked to verify and mark it
