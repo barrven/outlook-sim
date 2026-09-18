@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 066 (Mail — save a generated attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,24 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save a generated attachment into
+  FileVine) validated: lint/typecheck/build pass; full suite (822/822)
+  re-run 4x total, stable; `git diff --stat` (0e93b36..HEAD) confirms
+  `/implement`+`/test` touched only the expected files, no new dependency
+  added. All 4 ACs re-verified directly against current source: AC1 the
+  button is gated on `attachment.generated` (only 065's
+  `writeGeneratedAttachment` sets it), never a real attachment even one
+  with its own extractedText; AC2 the save call is the exact same
+  `fileVineNotes.create` API `FileVineView.tsx` already uses, confirmed
+  that component's unchanged render path handles the new note identically;
+  AC3 neither save function ever calls `messages.*`; AC4 the no-folders
+  state is an inline create-folder-and-save form, not a dead end. Also
+  confirmed `MessagePopoutWindow.tsx` gets the action for free (same
+  `ReadingPane`, no overrides). Not independently re-verified: rendered
+  dialog appearance (no attached display) and a live Electron IPC
+  click-through — same non-blocking category as this project's other
+  IPC-touching features. All checks pass, no blocking gaps. Phase set to
+  `accept`.
 - 2026-09-18 — feature 066 (Mail — save a generated attachment into
   FileVine) tested: 813 → 822 net (+9, all passing; re-run 3x, stable)
   across 2 files. `generatedAttachment.test.ts` (+1) locks in

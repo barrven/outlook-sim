@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save a generated attachment into FileVine
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -100,7 +100,56 @@ feature (the note is created through the same `fileVineNotes.create` API
 all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (822/822) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (0e93b36..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+was added (`package.json`/`package-lock.json` unchanged) — this feature
+reuses the existing FileVine folder/note IPC surface entirely.
+
+All 4 ACs re-verified directly against current source, not just by
+re-running the new tests:
+
+- **AC1** (action on a generated attachment, pick an existing folder):
+  `ReadingPane.tsx` gates the "Save to FileVine…" button on
+  `attachment.generated && attachment.extractedText !== undefined` — only
+  `writeGeneratedAttachment` (065) sets `generated: true`, so a real
+  trainee-picked attachment (062), even one with its own `extractedText`
+  from 063's extraction, never shows it. The dialog's `<select>` is
+  populated straight from a fresh `fileVineFolders.list()` call each time
+  it opens, so it can't go stale.
+- **AC2** (creates a note viewable in FileVine's existing UI): `handleSaveToFileVine`
+  calls `window.api.data.fileVineNotes.create({ folderId, name:
+  attachment.filename, content: attachment.extractedText })` — the exact
+  same API `FileVineView.tsx`'s own `submitCreateNote` uses for every other
+  note, and `attachment.extractedText` already holds the attachment's raw
+  Markdown source (065 sets both fields together), so `FileVineView.tsx`'s
+  unchanged `renderMarkdown(selectedNote.content)` path renders it
+  identically to any hand-written note — confirmed by reading that
+  component directly, not just the new code.
+- **AC3** (non-destructive): read both `handleSaveToFileVine` and
+  `handleCreateFileVineFolderAndSave` end to end — neither calls
+  `window.api.data.messages.*` at any point, only `fileVineFolders.create`/
+  `fileVineNotes.create`; the message and its attachment are never
+  reachable from either function.
+- **AC4** (no folders yet → a clear path, not a dead end): when
+  `fileVineFolders.length === 0`, the same dialog renders an inline
+  create-folder form (name input + submit) instead of any error state or
+  disabled button; submitting creates the folder then immediately the note
+  in it, one interaction, with a blank name rejected before either API
+  call fires.
+
+Also confirmed structurally: `MessagePopoutWindow.tsx` renders the same
+`ReadingPane` component with no attachment-specific overrides, so the
+action is available there too with no extra wiring, as the Implementation
+Notes claimed.
+
+Not independently re-verified: the dialog's rendered appearance/layout (no
+attached display — same non-blocking category as every prior CSS-touching
+change) and a live click-through of the OS-level interaction (Electron
+IPC round-trip) — both are the same category of manual/live gap this
+project's other IPC-touching features already carry, not new to this one.
+All checks pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
