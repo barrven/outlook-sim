@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
+  AppearanceConfig,
   ApplyScenarioPackResult,
   CalendarItemPatch,
   FileVineFolderPatch,
@@ -60,6 +61,16 @@ export function broadcastReminderFired(reminder: FiredReminder): void {
 export function broadcastCalendarItemsChanged(): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('data:calendar-items-changed')
+  }
+}
+
+// Feature 061 — same cross-window pattern as the broadcasts above: every
+// open window (main, Compose, pop-outs) is its own document with its own
+// `data-theme` attribute, so changing the scheme in Settings needs to reach
+// all of them, not just the window Settings happens to be open in (AC2).
+export function broadcastAppearanceChanged(colorScheme: AppearanceConfig['colorScheme']): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('config:appearance-changed', colorScheme)
   }
 }
 
@@ -132,6 +143,12 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
 
   ipcMain.handle('config:systemPrompt:get', () => config.getSystemPrompt())
   ipcMain.handle('config:systemPrompt:set', (_event, value: SystemPromptConfig) => config.setSystemPrompt(value))
+
+  ipcMain.handle('config:appearance:get', () => config.getAppearance())
+  ipcMain.handle('config:appearance:set', (_event, value: AppearanceConfig) => {
+    config.setAppearance(value)
+    broadcastAppearanceChanged(value.colorScheme)
+  })
 
   ipcMain.handle('config:identity:get', () => config.getIdentity())
   ipcMain.handle('config:identity:set', (_event, identity: TraineeIdentity) => config.setIdentity(identity))

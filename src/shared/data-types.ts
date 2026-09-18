@@ -234,6 +234,16 @@ export interface SystemPromptConfig {
   systemPrompt: string
 }
 
+// The four `:root[data-theme='...']` blocks defined in global.css (058,
+// 059, 060). Kept here as the single source of truth for what a valid
+// scheme id is, so Settings' picker and the config layer can't drift
+// from what the CSS actually defines.
+export type ColorScheme = 'default' | 'sage' | 'plum' | 'dark'
+
+export interface AppearanceConfig {
+  colorScheme: ColorScheme
+}
+
 export interface TraineeIdentity {
   displayName: string
   jobTitle: string

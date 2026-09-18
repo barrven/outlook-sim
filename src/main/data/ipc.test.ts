@@ -95,6 +95,8 @@ describe('registerDataIpcHandlers', () => {
         'config:settings:set',
         'config:systemPrompt:get',
         'config:systemPrompt:set',
+        'config:appearance:get',
+        'config:appearance:set',
         'config:identity:get',
         'config:identity:set',
         'config:personas:get',

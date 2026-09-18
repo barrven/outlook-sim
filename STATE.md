@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 061 (Settings — Appearance color scheme switcher)
 - **Last updated:** 2026-09-18
 
@@ -18,6 +18,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  implemented: new "Appearance" config category end to end (data-types,
+  ConfigStore's appearance.json, IPC get/set + a broadcastAppearanceChanged
+  cross-window sync), a Settings section with a scheme `<select>` that
+  applies immediately (no Save button, matching AC2's wording) and
+  persists, and main.tsx applying the persisted scheme with
+  `document.documentElement.dataset.theme` on every window's own
+  bootstrap plus live updates via the broadcast. Also updated the shared
+  mockApi.ts and the ipc.test.ts channel-list assertion, both required by
+  their own types/assertions to compile/pass against the new API surface
+  (not new feature-specific coverage — that's `/test`'s job). lint/
+  typecheck/build/full-suite (783/783, unchanged) all pass. Phase set to
+  `test`.
 - 2026-09-18 — feature 060 (Dark color scheme) accepted by user
   (selected "Accept (Recommended)" against the validation summary and
   AC-by-AC mapping, no changes requested — after an initial "Reject"

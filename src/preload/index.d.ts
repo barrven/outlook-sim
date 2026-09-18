@@ -1,8 +1,10 @@
 import type {
+  AppearanceConfig,
   ApplyScenarioPackResult,
   CalendarItem,
   CalendarItemPatch,
   ClockState,
+  ColorScheme,
   ComposeOpenOptions,
   FileVineFolder,
   FileVineFolderPatch,
@@ -87,6 +89,10 @@ export interface DataApi {
     get: () => Promise<SystemPromptConfig>
     set: (value: SystemPromptConfig) => Promise<void>
   }
+  appearance: {
+    get: () => Promise<AppearanceConfig>
+    set: (value: AppearanceConfig) => Promise<void>
+  }
   identity: {
     get: () => Promise<TraineeIdentity>
     set: (identity: TraineeIdentity) => Promise<void>
@@ -168,6 +174,7 @@ declare global {
       onPersonaReplyFailed: (callback: (sentMessageId: string, error: string) => void) => () => void
       onUnsolicitedMailFailed: (callback: (error: string) => void) => () => void
       onReminderFired: (callback: (reminder: FiredReminder) => void) => () => void
+      onAppearanceChanged: (callback: (colorScheme: ColorScheme) => void) => () => void
     }
   }
 }
