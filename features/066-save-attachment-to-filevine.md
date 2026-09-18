@@ -1,17 +1,24 @@
 ---
 id: 066
-title: Mail — save a generated attachment into FileVine
-status: accept
+title: Mail — save an attachment into FileVine
+status: implementing
 priority: medium
 ---
 
 ## Description
-Let the user save an LLM-generated (incoming) attachment (feature 065)
-into a FileVine folder as a note/file entry.
+Let the user save an attachment — real (feature 062, with content
+extracted per feature 063) or LLM-generated (feature 065) — into a
+FileVine folder as a note/file entry. Per 2026-09-18 accept-stage
+feedback, this is not scoped to generated attachments only: any
+attachment with content to save should get the same action, with no
+distinction drawn between the two in the UI.
 
 ## Acceptance Criteria
-- [ ] A generated attachment has a "Save to FileVine" action, letting the
-      user pick an existing FileVine folder to save it into
+- [ ] An attachment with content available to save (extracted text from a
+      real attachment, feature 063, or an LLM-generated attachment's
+      content, feature 065) has a "Save to FileVine" action, letting the
+      user pick an existing FileVine folder to save it into — with no
+      distinction made between a real and an LLM-generated attachment
 - [ ] Saving creates a FileVine note/file entry containing the
       attachment's content, viewable through FileVine's existing notes UI
       afterward
@@ -152,4 +159,33 @@ project's other IPC-touching features already carry, not new to this one.
 All checks pass, no blocking gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user selected "Request changes" against the validation
+summary and AC-by-AC mapping. Asked what specifically, the user said:
+"you don't need to differentiate between LLM generated attachments. any
+attachment should be able to be saved into filvine." Decision: changes
+requested — see the addendum in Implementation Notes for what needs to
+change; `/implement` re-entered to address it, chaining back through
+test/validate.
+
+### Implement addendum (2026-09-18, addressing the above)
+Removed the `generated` gate entirely — the "Save to FileVine" action now
+shows for *any* attachment that has content to save
+(`attachment.extractedText !== undefined`), regardless of whether it came
+from a real trainee-picked file (062/063's extraction) or an LLM-generated
+one (065). Concretely: dropped `MessageAttachment.generated` from
+`shared/data-types.ts` and the `generated: true` `writeGeneratedAttachment`
+was setting (no longer needed — there's nothing left that reads it);
+`ReadingPane.tsx`'s button condition simplified from
+`attachment.generated && attachment.extractedText !== undefined` to just
+`attachment.extractedText !== undefined`. A true mock/placeholder
+attachment (no `path`, pre-062 data) or a real attachment with an
+unsupported/failed extraction still correctly gets no action — not because
+of what *kind* of attachment it is, but because there's genuinely no
+content to put in the note, which is a structural constraint AC1's own
+wording captures ("content available to save"), not a
+generated-vs-real distinction. Updated `generatedAttachment.test.ts`
+(removed the now-obsolete "marks the attachment as generated" test) and
+`ReadingPane.test.tsx`'s AC1 test (now asserts a real attachment *with*
+extracted content shows the action too, and only a content-less attachment
+doesn't). lint/typecheck/build pass; full suite re-run — see Test/
+Validation Notes below for the updated numbers.

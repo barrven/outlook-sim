@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 066 (Mail — save a generated attachment into FileVine)
+- **Phase:** implement
+- **Active feature:** 066 (Mail — save an attachment into FileVine)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save an attachment into FileVine, title
+  updated from "...a generated attachment...") sent back from `/accept`
+  with "Request changes": the user said "you don't need to differentiate
+  between LLM generated attachments. any attachment should be able to be
+  saved into filvine." Description/AC1 revised to drop the
+  generated-only scoping; the requested code change (drop the `generated`
+  gate, show the action for any attachment with content) is written into
+  the feature file's Implementation Notes addendum. Phase set back to
+  `implement`.
 - 2026-09-18 — feature 066 (Mail — save a generated attachment into
   FileVine) validated: lint/typecheck/build pass; full suite (822/822)
   re-run 4x total, stable; `git diff --stat` (0e93b36..HEAD) confirms
