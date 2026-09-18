@@ -16,6 +16,7 @@
 | B002 | Sent items are marked unread | open | | | #b002-sent-items-are-marked-unread |
 | B003 | Persona replies don't include the email chain | open | | | #b003-persona-replies-dont-include-the-email-chain |
 | B004 | Sent emails don't show attachments in Sent Items | open | | | #b004-sent-emails-dont-show-attachments-in-sent-items |
+| B005 | Form fields and dropdown menus don't recolor in dark mode | open | features/060-dark-color-scheme.md | | #b005-form-fields-and-dropdowns-unreadable-in-dark-mode |
 
 <!-- Status values: open | fixed | wontfix -->
 
@@ -78,3 +79,18 @@ Items copy) or in `ReadingPane.tsx`'s attachment display for sent mail.
 
 **Files:** `src/renderer/src/ComposeWindow.tsx`, `src/main/data/db.ts`,
 `src/renderer/src/components/ReadingPane.tsx`
+
+## B005 — Form fields and dropdown menus don't recolor in dark mode
+
+**Reported:** 2026-09-18
+**Status:** open
+
+Throughout the app, `<input>`, `<textarea>`, and `<select>` elements
+(form fields and dropdown menus) don't pick up the dark color scheme —
+they keep their light-mode background/text colors when a dark scheme is
+active (feature 060), making them unreadable against the rest of the
+now-dark UI. Likely these elements aren't using the `--*` color tokens
+defined per-scheme in `global.css` (or are relying on unstyled browser
+defaults), so they don't shift when the scheme variable set changes.
+
+**Files:** `src/renderer/src/styles/global.css`
