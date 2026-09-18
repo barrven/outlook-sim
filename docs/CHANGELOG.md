@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Mail — pop-out window for viewing attachments (features/067-attachment-popout-window.md)
+Clicking an attachment now opens it in its own window instead of handing
+off to another app. A document a persona generated shows its actual
+formatted content right there; a real file you attached shows its
+extracted text if it has any, or a button to open it with your default
+application if it doesn't.
+
 ## 2026-09-18 — Mail — save an attachment into FileVine (features/066-save-attachment-to-filevine.md)
 Any attachment with real content — one you sent yourself or one a persona
 generated — can now be saved as a note into a FileVine folder, via a new
