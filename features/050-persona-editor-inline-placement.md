@@ -1,7 +1,7 @@
 ---
 id: 050
 title: Settings — Persona editor opens inline under the edited persona
-status: validating
+status: accept
 priority: low
 ---
 
@@ -100,7 +100,42 @@ non-blocking category as every prior CSS-touching feature). lint/
 typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (838/838) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (5922271..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files (`PersonasSettings.tsx`
++ its test, one small `global.css` addition, plus the usual doc/state
+files) — no new dependency added.
+
+All 4 ACs re-verified directly against current source, not just by
+re-running the new tests:
+
+- **AC1** (editor renders immediately below the edited persona's own row):
+  the `personas.map()` loop's `<Fragment key={persona.id}>` places
+  `{editingId === persona.id && <li className="persona-editor-row">
+  {editorForm}</li>}` directly after that persona's own `<li>`, inside the
+  same `<ul>` — confirmed by reading the JSX structure directly (not just
+  the DOM-order test).
+- **AC2** (only one editor open at a time, opening another replaces it):
+  `editingId` remains a single `string | null` value (unchanged state
+  shape from before this feature) — `openEdit` always sets it to exactly
+  one persona's id, so there is structurally never more than one match in
+  the map, and switching targets is a plain reassignment, not additive.
+- **AC3** (creating a new persona is unaffected): `creating`'s render path
+  (`{creating ? editorForm : ...}`) is untouched in position — it still
+  renders in the same "below the whole list" slot as before this feature,
+  confirmed by reading the JSX (the `editorForm` variable it references is
+  the identical markup, just factored out, not altered).
+- **AC4** (Save/Cancel/Delete unchanged): `handleSubmit`, `closeEditor`,
+  and `handleDelete` are byte-for-byte unchanged from before this feature
+  — `git diff` on `PersonasSettings.tsx` shows no edits inside those three
+  functions, only the JSX return statement and the `editorForm` extraction
+  changed.
+
+Not independently re-verified: the actual rendered visual spacing/border
+appearance around the inline editor row (no attached display — same
+non-blocking category as every prior CSS-touching feature). All checks
+pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

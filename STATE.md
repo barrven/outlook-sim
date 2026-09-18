@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 050 (Settings — Persona editor opens inline under the edited persona)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 050 (Settings — Persona editor opens inline under
+  the edited persona) validated: lint/typecheck/build pass; full suite
+  (838/838) re-run 4x total, stable; `git diff --stat` (5922271..HEAD)
+  confirms `/implement`+`/test` touched only the expected files, no new
+  dependency. All 4 ACs re-verified directly against current source: AC1
+  the editor `<li>` sits directly after the matching persona's own `<li>`
+  inside the same `<ul>`; AC2 `editingId` remains a single value,
+  structurally never more than one match; AC3 the `creating` render path
+  is untouched in position, same "below the list" slot; AC4 `git diff`
+  confirms `handleSubmit`/`closeEditor`/`handleDelete` are byte-for-byte
+  unchanged — only the JSX return statement and the new `editorForm`
+  extraction changed. Not independently re-verified: rendered visual
+  spacing (no attached display). All checks pass, no blocking gaps. Phase
+  set to `accept`.
 - 2026-09-18 — feature 050 (Settings — Persona editor opens inline under
   the edited persona) tested: 833 → 838 net (+5, all passing; re-run 3x,
   stable), all in `PersonasSettings.test.tsx`'s new "050" block. AC1
