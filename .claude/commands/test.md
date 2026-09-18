@@ -1,8 +1,19 @@
 ---
-description: "Dev-loop inner stage 2: write and run tests for the active feature"
+description: "Dev-loop inner stage 2: write and run tests for the active feature, then continue into validate"
 ---
 
 You are running the **test** stage of the dev loop's inner cycle.
+
+After this stage's own work, continue into validate in the same turn — do
+not wait for the user to type `/validate`. Stop only when validate has set
+**Phase** to `accept`, or at a stopping condition in `validate.md` /
+`implement.md`. Never auto-run `/accept`.
+
+If `STATE.md` **Phase** is already `validate`, skip this stage and start
+there. If **Phase** is `implement`, you were likely invoked standalone;
+do this stage's work anyway (don't re-implement), then continue into
+validate. If **Phase** is `accept`, tell the user `/accept` is next and
+stop.
 
 1. Read `STATE.md` for the active feature and its feature file.
 2. Write or extend tests that exercise the feature's Acceptance Criteria —
@@ -24,4 +35,6 @@ You are running the **test** stage of the dev loop's inner cycle.
      rather than inventing an identity.
    - If `origin` exists, `git push origin master`. If the push fails, report
      it and continue — don't force-push or rewrite history to work around it.
-7. Tell the user tests pass and `/validate` is next.
+7. Do not stop here and do not ask the user to run `/validate`. Read
+   `.claude/commands/validate.md` and follow it exactly. Narrate that you
+   are entering the validate stage.

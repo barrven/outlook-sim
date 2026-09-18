@@ -104,9 +104,9 @@ loop(
 |---|---|
 | `/spec` | write or revise the product spec |
 | `/features` | decompose the spec into a feature backlog |
-| `/implement` | build the active feature |
-| `/test` | write/run tests for it |
-| `/validate` | lint/typecheck/build/test + check against acceptance criteria |
-| `/accept` | human sign-off gate |
+| `/implement` | build the active feature, then run test and validate, then stop for `/accept` |
+| `/test` | write/run tests, then continue into validate |
+| `/validate` | lint/typecheck/build/test + check against acceptance criteria; on pass, stop for `/accept` |
+| `/accept` | human sign-off gate — the only inner-loop human input. After accept, wait for the next `/implement` |
 | `/retro` | close an iteration, feed learnings back into the spec |
-| `/dev-loop` | run the stages above automatically, stopping only at `/accept`, an open question, retro concluding the project's done, or repeated failure |
+| `/dev-loop` | run the stages above automatically. Inner loop: implement → test → validate, then stop at `/accept`. After accept, wait for the next `/implement`. Also stops on an open question, retro concluding the project's done, or repeated failure |

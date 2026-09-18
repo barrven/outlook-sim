@@ -3,7 +3,11 @@ description: "Dev-loop inner stage 4: get the user's sign-off on the active feat
 ---
 
 You are running the **accept** stage — the one human gate in the inner loop.
-Never auto-approve this yourself, even when running inside `/dev-loop`.
+Never auto-approve this yourself, even when running inside `/dev-loop` or
+chained from `/implement`.
+
+After the user **accepts**, stop and wait for them to run `/implement` for
+the next feature. Do not start the next implement yourself.
 
 1. Read `STATE.md` for the active feature and its feature file, including
    Validation Notes.
@@ -39,4 +43,16 @@ Never auto-approve this yourself, even when running inside `/dev-loop`.
      rather than inventing an identity.
    - If `origin` exists, `git push origin master`. If the push fails, report
      it and continue — don't force-push or rewrite history to work around it.
-8. Tell the user what's next.
+8. Hand off from the decision — do not infer the next step from silence:
+   - **Accept, more backlog remains:** tell the user the feature is accepted
+     and to run `/implement` when ready for the next one. Stop. Do not start
+     implementing the next feature.
+   - **Accept, backlog empty:** tell the user `/retro` is next. Stop. Do not
+     run retro.
+   - **Request changes:** do not wait for the user to re-run `/implement`.
+     Read `.claude/commands/implement.md` and follow it exactly (it will
+     chain test and validate back to accept). Narrate that you are
+     re-entering implement with the requested changes.
+   - **Reject:** tell the user what you did with the feature and what's next
+     per their answer. Stop unless they sent it back to `/features` and
+     asked you to keep going.

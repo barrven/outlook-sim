@@ -1,10 +1,15 @@
 ---
-description: "Dev-loop inner stage 3: validate the active feature against its acceptance criteria"
+description: "Dev-loop inner stage 3: validate the active feature, then stop for accept"
 ---
 
 You are running the **validate** stage of the dev loop's inner cycle. This is
 a check, not more building — you're confirming, skeptically, that stage 1-2
 actually delivered.
+
+On success, stop for `/accept` — that is the only inner-loop human gate.
+Never auto-run accept. On failure, send the feature back through implement
+→ test → validate yourself rather than asking the user to re-run those
+commands, unless the retry cap below is hit.
 
 1. Read `STATE.md` for the active feature and its feature file.
 2. Run whatever the project has: lint, typecheck, build, full test suite (not
@@ -31,4 +36,12 @@ actually delivered.
      rather than inventing an identity.
    - If `origin` exists, `git push origin master`. If the push fails, report
      it and continue — don't force-push or rewrite history to work around it.
-8. Tell the user the outcome and what's next.
+8. Continue from the outcome — do not wait for the user to type the next
+   command:
+   - **All checks pass:** tell the user validation passed and `/accept` is
+     next. Stop. Never auto-run accept.
+   - **Something fails:** if `STATE.md` History shows this same feature has
+     already been sent back from `validate` to `implement` more than twice
+     this inner-loop pass, stop and ask rather than looping. Otherwise read
+     `.claude/commands/implement.md` and follow it exactly (it will chain
+     test and validate again). Narrate that you are re-entering implement.

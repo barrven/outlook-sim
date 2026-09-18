@@ -12,6 +12,10 @@ lifecycle. Every stage command reads it first and updates it last.
 
 `spec -> features -> [implement -> test -> validate -> accept]* -> retro -> (back to spec)`
 
+The inner cycle (`implement` → `test` → `validate`) runs as one pass when
+`/implement` is invoked; `/accept` is the only inner-loop human gate. After
+a feature is accepted, wait for `/implement` before starting the next one.
+
 Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 `accept`, `retro`.
 
