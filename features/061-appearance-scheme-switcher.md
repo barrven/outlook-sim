@@ -1,7 +1,7 @@
 ---
 id: 061
 title: Settings — Appearance color scheme switcher
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -12,13 +12,13 @@ additional light schemes, and feature 060's dark scheme). The choice
 persists like any other setting.
 
 ## Acceptance Criteria
-- [ ] A new "Appearance" control in Settings lists all 4 available color
+- [x] A new "Appearance" control in Settings lists all 4 available color
       schemes and lets the user pick one
-- [ ] Selecting a scheme applies it immediately across the whole app, no
+- [x] Selecting a scheme applies it immediately across the whole app, no
       restart required
-- [ ] The selected scheme persists across app restarts, stored the same
+- [x] The selected scheme persists across app restarts, stored the same
       way other settings are (JSON config)
-- [ ] On launch, the app applies the persisted scheme; a fresh install
+- [x] On launch, the app applies the persisted scheme; a fresh install
       defaults to the revised default scheme from feature 058
 
 ## Implementation Notes
@@ -104,7 +104,46 @@ Electron process, and visual/pixel rendering of the applied scheme
 not a rendered page).
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build all pass clean. Full suite 793/793, re-run 3x,
+stable. `git diff --stat` (9a455ba..HEAD) confirms `/implement`+`/test`
+touched only expected files (data-types, config/ipc/preload plumbing,
+main.tsx, SettingsView + its test, mockApi.ts, ipc.test.ts, and the
+feature/BACKLOG/STATE bookkeeping) — no unrelated component touched.
+
+All 4 ACs re-verified independently (not just re-running the vitest
+files):
+
+- **AC1** (lists all 4 schemes): a Node script parsed global.css's
+  `:root[data-theme='...']` blocks directly and cross-checked them
+  against `ColorScheme`'s union members and `SettingsView`'s
+  `COLOR_SCHEMES` picker list — all three are the identical 4-element
+  set (`default`/`sage`/`plum`/`dark`), so the picker can't drift from
+  what the CSS actually defines.
+- **AC2** (applies immediately, no restart): direct source inspection of
+  `handleChangeColorScheme` in SettingsView.tsx confirms
+  `document.documentElement.dataset.theme` is set synchronously,
+  *before* the `await window.api.data.appearance.set(...)` call — so the
+  current window updates independent of IPC round-trip latency, backed
+  by the AC2 test. The IPC layer's `broadcastAppearanceChanged` call
+  (verified by its own ipc.test.ts assertion) carries the change to
+  every other open window, the same pattern already used for messages/
+  calendar-items.
+- **AC3** (persists like other settings): direct source inspection
+  confirms `appearancePath = join(configDir, 'appearance.json')` — the
+  exact same `configDir` as `settings.json`/`system-prompt.json`/etc,
+  not a separate location. config.test.ts's close/reopen-cycle test
+  exercises the real `ConfigStore` class against a real temp directory
+  (genuine disk I/O, not a mock).
+- **AC4** (launch applies persisted scheme, fresh install defaults to
+  058's default): source inspection confirms `DEFAULT_APPEARANCE = {
+  colorScheme: 'default' }` literally, and `main.tsx` fetches
+  `appearance.get()` and applies `dataset.theme` unconditionally on
+  every window's own bootstrap — not gated behind Settings being open.
+
+All checks pass, no gaps found. (Noted in Test Notes: main.tsx's own
+bootstrap has no direct automated test — verified here by source
+inspection instead, since its two behaviors are independently covered
+by config.test.ts/ipc.test.ts.)
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

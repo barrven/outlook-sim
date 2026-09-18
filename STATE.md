@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 061 (Settings — Appearance color scheme switcher)
 - **Last updated:** 2026-09-18
 
@@ -18,6 +18,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  validated: lint/typecheck/build pass; full suite (793/793) re-run 3x,
+  stable; `git diff --stat` (9a455ba..HEAD) confirms `/implement`+`/test`
+  touched only expected files. All 4 ACs re-verified independently (not
+  just re-running the test files): AC1 a Node script cross-checked
+  global.css's 4 theme blocks against `ColorScheme`'s union and
+  SettingsView's picker list — identical sets; AC2 source inspection
+  confirms `dataset.theme` is set synchronously before the IPC `set`
+  call, plus the broadcast reaches every other open window; AC3 source
+  inspection confirms `appearance.json` lives in the same `configDir` as
+  every other settings file, backed by a real-filesystem round-trip
+  test; AC4 source inspection confirms the literal default and that
+  main.tsx applies the persisted scheme unconditionally on every
+  window's own launch. All checks pass, no gaps found. Phase set to
+  `accept`.
 - 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
   tested: 783 → 793 net (+10, all passing; re-run twice, stable) across
   config.test.ts (+3, persistence/default), ipc.test.ts (+2, IPC
