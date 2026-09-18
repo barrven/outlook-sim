@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
+  directly to the LLM) validated: lint/typecheck/build pass; full suite
+  (813/813) re-run 4x total, stable; `git diff --stat` (c2052c2..HEAD)
+  confirms `/implement`+`/test` touched only the expected files, no new
+  dependency added (part of AC3's evidence). All 3 ACs re-verified directly
+  against current source: AC1 `readImageAttachment` covers PNG/JPG/JPEG,
+  `personaReply.ts` collects images from every attachment with a `path`
+  across the whole thread, `client.ts` attaches them as each provider's
+  real multimodal content-block shape (OpenAI/xAI `image_url`, Anthropic
+  base64 `image` source, Gemini `inline_data`); AC2 the original send is
+  structurally independent of the LLM call (already persisted before the
+  fire-and-forget reply call starts), and `generateText` retries once
+  without images on a failed first attempt so an unsupported provider/model
+  still yields a normal reply — a disclosed response-driven design choice
+  since this app has no per-model capability list; AC3 `readImageAttachment`
+  does only `readFileSync` + base64-encode (no parsing library), and
+  `attachmentExtraction.ts` still has no image extensions, confirmed
+  unchanged. Not independently re-verified: a live multimodal-provider call
+  actually referencing image content, and a live non-multimodal model's
+  real rejection shape — both inherently manual, same category as this
+  project's other live-LLM ACs. All checks pass, no blocking gaps. Phase
+  set to `accept`.
 - 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
   directly to the LLM) tested: 793 → 813 net (+20, all passing; re-run 3x,
   stable) across 3 files. New `imageAttachment.test.ts` (+9) covers

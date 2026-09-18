@@ -1,7 +1,7 @@
 ---
 id: 064
 title: Mail — multimodal image attachments sent directly to the LLM
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -94,7 +94,64 @@ property rather than something worth mocking one specific vendor's error
 text for).
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (813/813) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (c2052c2..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files (2 new: `imageAttachment.ts`
++ its test; 8 modified: `client.ts`/`personaReply.ts`/`data-types.ts` plus
+their tests, the feature file, BACKLOG, STATE). No new dependency was added
+(`package.json`/`package-lock.json` unchanged), which is itself part of
+AC3's evidence — no OCR/vision library was pulled in.
+
+All 3 ACs re-verified directly against current source, not just by
+re-running the new tests:
+
+- **AC1** (image sent as a content block, PNG/JPEG minimum):
+  `imageAttachment.ts`'s `IMAGE_MIME_TYPES` covers `.png`/`.jpg`/`.jpeg`
+  exactly (AC's literal "at minimum"). `personaReply.ts`'s
+  `collectImageAttachments()` reads every attachment with a `path` across
+  the whole thread through `readImageAttachment`, then passes the result as
+  `images` into `generateText`. `client.ts`'s `buildRequest` attaches those
+  images as each provider's actual multimodal content-block shape whenever
+  `images.length > 0`: OpenAI/xAI `image_url` data-URL blocks, Anthropic
+  base64 `image` source blocks, Gemini `inline_data` parts — confirmed by
+  reading the switch statement directly, and cross-checked against each
+  provider's real API request shape.
+- **AC2** (graceful omission for a non-multimodal provider/model, no crash,
+  no failed send, filename still shows): confirmed structurally that the
+  original message send (`ComposeWindow.tsx`'s `persist()`) writes the
+  message — filename included, independent of any LLM call — before the
+  fire-and-forget `llm.personaReply` IPC call even starts, so the send
+  itself can never fail because of this feature. For the reply-generation
+  call itself, `client.ts`'s `generateText` tries the request with images
+  first and, only if that attempt's response is non-ok, retries once with
+  `images: undefined` and returns that result — so a provider/model that
+  rejects the image content block still produces a normal reply instead of
+  a failed generation, and the `Attachments: <filename>` text line
+  (unchanged from feature 063) is present in both the with-image and
+  retried prompt either way. This app has no per-model capability list
+  (`model` is free-text), so this response-driven retry is the only way to
+  discover non-support — a disclosed design choice, not a gap, since it
+  still meets the AC's literal requirement (no crash, no failed send,
+  filename intact) regardless of which specific model is configured.
+- **AC3** (no local OCR/text extraction on image content): `readImageAttachment`
+  does exactly one thing to the file — `readFileSync` + base64-encode, no
+  parsing library involved — confirmed by reading the function body, and by
+  `imageAttachment.test.ts`'s exact-byte-round-trip test (decoding the
+  base64 result reproduces the original `Buffer` precisely, not some
+  derived/summarized text). `attachmentExtraction.ts` (feature 063) still
+  has no image extensions in either `PLAIN_TEXT_EXTENSIONS` or
+  `OFFICE_EXTENSIONS`, so `extractAttachmentText` continues to resolve
+  `undefined` for an image and never contributes an `extractedText` field
+  for one — confirmed by reading the source (unchanged by this feature).
+
+Not independently re-verified: a live call against a real multimodal-capable
+provider (e.g. `gpt-4o` or a Claude vision model) actually referencing an
+attached image's content in its generated reply, and a live call against a
+genuinely non-multimodal model's real rejection response shape — both are
+inherently manual/live-API checks, the same category as this project's other
+live-LLM ACs (e.g. 063's AC2, 065's AC1). All checks pass, no blocking gaps
+found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
