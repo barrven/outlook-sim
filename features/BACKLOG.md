@@ -63,7 +63,7 @@
 | 042 | View tab — Reading Pane Right/Off toggle | done | low | 042-reading-pane-toggle.md |
 | 044 | Double-click calendar item opens a pop-out window | done | low | 044-calendar-popout-window.md |
 | 045 | Simulated clock — black text and dropdown mini-calendar | done | low | 045-clock-minicalendar.md |
-| 064 | Mail — multimodal image attachments sent directly to the LLM | testing | medium | 064-multimodal-image-attachments.md |
+| 064 | Mail — multimodal image attachments sent directly to the LLM | validating | medium | 064-multimodal-image-attachments.md |
 | 066 | Mail — save a generated attachment into FileVine | backlog | medium | 066-save-attachment-to-filevine.md |
 | 067 | Mail — pop-out window for viewing attachments | backlog | medium | 067-attachment-popout-window.md |
 | 050 | Settings — Persona editor opens inline under the edited persona | backlog | low | 050-persona-editor-inline-placement.md |

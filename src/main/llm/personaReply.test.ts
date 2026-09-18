@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -236,6 +236,95 @@ describe('generatePersonaReply', () => {
     const userMessage = body.messages.find((m: { role: string }) => m.role === 'user').content
     expect(userMessage).toContain('Attachments: report.pdf')
     expect(userMessage).not.toContain('--- Content of')
+  })
+
+  it('064 AC1: sends a real image attachment as an image content block, not text-extracted', async () => {
+    const imageBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const imagePath = join(baseDir, 'whiteboard.png')
+    writeFileSync(imagePath, imageBytes)
+    const message = sendMessage({ attachments: [{ filename: 'whiteboard.png', path: imagePath }] })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Nice diagram!'))
+
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user')
+    // Filename still shows in the transcript's plain-text line...
+    expect(userMessage.content[0]).toEqual({ type: 'text', text: expect.stringContaining('Attachments: whiteboard.png') })
+    // ...and the image itself rides along as a real content block, with the
+    // exact original bytes (never OCR'd/summarized — AC3).
+    const imageBlock = userMessage.content.find((block: { type: string }) => block.type === 'image_url')
+    expect(imageBlock.image_url.url).toBe(`data:image/png;base64,${imageBytes.toString('base64')}`)
+  })
+
+  it('064 AC1: collects images from every message in the thread, not just the triggering one', async () => {
+    const earlierImagePath = join(baseDir, 'earlier.jpg')
+    const laterImagePath = join(baseDir, 'later.png')
+    writeFileSync(earlierImagePath, Buffer.from([0xff, 0xd8, 0xff]))
+    writeFileSync(laterImagePath, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    sendMessage({
+      subject: 'Lunch plans',
+      timestamp: 500,
+      attachments: [{ filename: 'earlier.jpg', path: earlierImagePath }]
+    })
+    const message = sendMessage({
+      subject: 'Re: Lunch plans',
+      timestamp: 1000,
+      attachments: [{ filename: 'later.png', path: laterImagePath }]
+    })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Got both!'))
+
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user')
+    const imageBlocks = userMessage.content.filter((block: { type: string }) => block.type === 'image_url')
+    expect(imageBlocks).toHaveLength(2)
+  })
+
+  it('064 AC3: a non-image attachment never becomes an image content block', async () => {
+    const message = sendMessage({ attachments: [{ filename: 'report.pdf', path: '/tmp/report.pdf' }] })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Thanks!'))
+
+    await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    const [, init] = fetchSpy.mock.calls[0]
+    const body = JSON.parse(init?.body as string)
+    const userMessage = body.messages.find((m: { role: string }) => m.role === 'user')
+    // No image attachment at all: content stays a plain string, same shape
+    // as before this feature.
+    expect(typeof userMessage.content).toBe('string')
+  })
+
+  it('064 AC2: a provider/model that rejects the image still produces a normal reply, filename intact', async () => {
+    const imagePath = join(baseDir, 'chart.jpeg')
+    writeFileSync(imagePath, Buffer.from([0xff, 0xd8, 0xff]))
+    const message = sendMessage({ attachments: [{ filename: 'chart.jpeg', path: imagePath }] })
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({ error: { message: 'image content not supported by this model' } })
+      } as Response)
+      .mockResolvedValueOnce(chatResponse('Thanks for the chart!'))
+
+    const result = await generatePersonaReply(db, config, clock, message.id, baseDir)
+
+    expect(result.ok).toBe(true)
+    if (result.ok && result.replied) {
+      expect(result.message.body.startsWith('Thanks for the chart!')).toBe(true)
+    } else {
+      expect.fail('expected a reply')
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    const secondBody = JSON.parse(fetchSpy.mock.calls[1][1]?.body as string)
+    const secondUserMessage = secondBody.messages.find((m: { role: string }) => m.role === 'user')
+    expect(typeof secondUserMessage.content).toBe('string')
+    expect(secondUserMessage.content).toContain('Attachments: chart.jpeg')
   })
 
   it('065 AC1/AC2: a reply that includes an attachment block produces a real generated attachment', async () => {

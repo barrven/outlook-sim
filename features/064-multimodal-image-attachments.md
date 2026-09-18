@@ -1,7 +1,7 @@
 ---
 id: 064
 title: Mail — multimodal image attachments sent directly to the LLM
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -55,7 +55,43 @@ attempt is made to fail. lint/typecheck/build pass; full suite unchanged at
 793/793 (no new tests yet — that's `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+793 → 813 net (+20, all passing; re-run 3x, stable) across 3 files. New
+`imageAttachment.test.ts` (+9) covers `readImageAttachment` directly: PNG/
+JPG/JPEG (AC1) each produce the correct mime type and an exact base64
+round-trip of the raw bytes (AC3 — no derived/extracted content, verified by
+decoding the result back to the original `Buffer`), case-insensitive
+extension matching, and graceful `undefined` for an unsupported extension
+(`.gif`), a non-image extension, and a nonexistent file.
+
+`client.test.ts` (+8, new "multimodal image attachments (feature 064)"
+block) covers AC1's exact content-block shape for all 4 providers (OpenAI/
+xAI `image_url` data URL, Anthropic base64 `image` source, Gemini
+`inline_data` part) alongside the unchanged text, confirms plain-string
+content when `images` is empty (no regression to every pre-existing
+non-image request), and covers AC2's graceful-degradation retry: a failed
+first (with-image) attempt is retried once with `images` stripped and
+returns the clean second result; if that retry also fails, the failure
+surfaces normally (not swallowed); and no retry happens at all when there
+were no images to begin with (an unrelated failure isn't retried twice).
+
+`personaReply.test.ts` (+4) covers the end-to-end wiring: a real image
+attachment (from a message in the thread, not just the triggering one)
+becomes an image content block with the exact original file bytes, while
+the "Attachments: <filename>" text line is preserved unchanged (AC1); a
+non-image attachment (`report.pdf`) never becomes an image block, content
+stays a plain string (AC3); images are collected across every message in
+the thread, not just the one that triggered the reply; and AC2 end-to-end —
+a provider rejecting the image on the first call still produces a normal
+reply on retry, with the filename intact in the retried prompt.
+
+Deliberately uncovered: a live call against a real multimodal-capable
+provider actually referencing image content in its reply (inherently
+manual, same category as this project's other live-LLM ACs) and the exact
+wording/behavior a specific real non-multimodal model returns when it
+rejects an image block (client.ts's retry only depends on the response
+being non-ok, not on any particular error message, so this is a design
+property rather than something worth mocking one specific vendor's error
+text for).
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

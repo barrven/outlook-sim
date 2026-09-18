@@ -136,6 +136,113 @@ describe('generateText', () => {
     expect(result).toEqual({ ok: false, error: 'The provider returned no text.' })
   })
 
+  describe('multimodal image attachments (feature 064)', () => {
+    const IMAGE = { mimeType: 'image/png', base64Data: 'ZmFrZS1wbmctYnl0ZXM=' }
+
+    it('AC1: sends an image as an OpenAI-style image_url content block alongside the text', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: 'reply' } }] }))
+
+      await generateText(baseSettings('openai'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)
+      expect(body.messages[0]).toEqual({
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Hi' },
+          { type: 'image_url', image_url: { url: `data:${IMAGE.mimeType};base64,${IMAGE.base64Data}` } }
+        ]
+      })
+    })
+
+    it('AC1: sends an image as an xAI (Grok) image_url content block, OpenAI-compatible', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: 'reply' } }] }))
+
+      await generateText(baseSettings('xai'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)
+      expect(body.messages[0].content).toContainEqual({
+        type: 'image_url',
+        image_url: { url: `data:${IMAGE.mimeType};base64,${IMAGE.base64Data}` }
+      })
+    })
+
+    it('AC1: sends an image as an Anthropic base64 image source block alongside the text', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(jsonResponse(200, { content: [{ type: 'text', text: 'reply' }] }))
+
+      await generateText(baseSettings('anthropic'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)
+      expect(body.messages[0]).toEqual({
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: IMAGE.mimeType, data: IMAGE.base64Data } },
+          { type: 'text', text: 'Hi' }
+        ]
+      })
+    })
+
+    it('AC1: sends an image as a Gemini inline_data part alongside the text', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse(200, { candidates: [{ content: { parts: [{ text: 'reply' }] } }] })
+      )
+
+      await generateText(baseSettings('gemini'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)
+      expect(body.contents[0].parts).toEqual([
+        { text: 'Hi' },
+        { inline_data: { mime_type: IMAGE.mimeType, data: IMAGE.base64Data } }
+      ])
+    })
+
+    it('sends plain string content (no array) when there are no images, unchanged from before this feature', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: 'reply' } }] }))
+
+      await generateText(baseSettings('openai'), { userPrompt: 'Hi', images: [] })
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)
+      expect(body.messages[0].content).toBe('Hi')
+    })
+
+    it('AC2: retries once without images when the first (with-image) attempt fails, returning a clean success', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(jsonResponse(400, { error: { message: 'image content not supported by this model' } }))
+        .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: 'clean reply, no image' } }] }))
+
+      const result = await generateText(baseSettings('openai'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      expect(result).toEqual({ ok: true, text: 'clean reply, no image' })
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
+      const secondBody = JSON.parse(fetchSpy.mock.calls[1][1]?.body as string)
+      expect(secondBody.messages[0].content).toBe('Hi')
+    })
+
+    it('AC2: if the image-less retry also fails, surfaces that failure rather than throwing', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(401, { error: { message: 'bad key' } }))
+
+      const result = await generateText(baseSettings('openai'), { userPrompt: 'Hi', images: [IMAGE] })
+
+      expect(result).toEqual({ ok: false, error: 'openai API error (401): bad key' })
+    })
+
+    it('does not retry when there are no images to begin with (an unrelated failure stays a single attempt)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(500, { error: 'boom' }))
+
+      await generateText(baseSettings('openai'), { userPrompt: 'Hi' })
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('exposes one identical call shape and result shape across all four providers', async () => {
     // Same (settings, input) -> Promise<{ok,text}|{ok,error}> call regardless of provider: this is
     // the whole of what a caller (e.g. the persona-reply feature) needs to know.

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
+  directly to the LLM) tested: 793 → 813 net (+20, all passing; re-run 3x,
+  stable) across 3 files. New `imageAttachment.test.ts` (+9) covers
+  `readImageAttachment` directly (mime types, exact byte round-trip proving
+  no OCR/extraction per AC3, graceful `undefined` cases). `client.test.ts`
+  (+8) covers AC1's exact content-block shape for all 4 providers plus
+  AC2's graceful retry-without-images behavior on a failed first attempt.
+  `personaReply.test.ts` (+4) covers the end-to-end wiring: a real image
+  attachment becomes an image block with the exact original bytes and the
+  filename line intact, images collected across the whole thread, a
+  non-image attachment never becomes one, and AC2 end-to-end via a failed
+  first call. Deliberately uncovered: a live call against a real
+  multimodal provider actually referencing image content (manual, same
+  category as other live-LLM ACs). lint/typecheck/build all pass. Test
+  Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
   directly to the LLM) implemented: new `src/main/llm/imageAttachment.ts`
   reads a real PNG/JPEG attachment's bytes off disk and base64-encodes them
