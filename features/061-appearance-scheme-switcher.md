@@ -1,7 +1,7 @@
 ---
 id: 061
 title: Settings — Appearance color scheme switcher
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -69,7 +69,39 @@ from that refresh.
 ever the pre-JS fallback; `main.tsx` overwrites it on every load.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+783 → 793 net (+10, all passing; re-run twice, stable), spread across
+three files:
+
+- `main/data/config.test.ts` (+3): AC4 a fresh `ConfigStore` writes
+  `appearance.json` and defaults to `{ colorScheme: 'default' }`; AC3
+  `setAppearance`/`getAppearance` round-trip, and the value survives a
+  close/reopen cycle (real JSON on disk, not just in-memory), same
+  pattern as every other config store test in this file.
+- `main/data/ipc.test.ts` (+2): AC3 `config:appearance:get`/`:set`
+  round-trip through the IPC layer; AC2 `:set` broadcasts
+  `config:appearance-changed` with the new scheme to every open window,
+  same pattern as the existing messages/calendar-items broadcast tests.
+- `components/SettingsView.test.tsx` (+5, new "Appearance (061)" block):
+  AC1 the picker lists all 4 schemes with their labels; prefill from
+  `appearance.get()`; AC2 selecting a scheme applies
+  `document.documentElement.dataset.theme` to the current window
+  synchronously with no Save button present; AC3 the selection is sent
+  through `appearance.set` (the config API), not just held in local
+  state; AC4 confirms `appearance.get()` is called on mount so launch
+  reflects whatever was persisted, not always the default.
+
+Deliberately not covered: `main.tsx`'s own bootstrap (applying the
+persisted theme and subscribing to the live broadcast on every window's
+launch, independent of whether Settings is even open). It has no
+existing test of any kind in this codebase — it's a module-level
+side-effecting entry script keyed off `window.location.search`, and
+there's no established pattern here for testing that shape of file.
+The two things it does are already covered independently: persistence
++ the default (config.test.ts), and the broadcast payload (ipc.test.ts).
+Also not covered: real cross-window behavior in a live multi-window
+Electron process, and visual/pixel rendering of the applied scheme
+(consistent with 058/059/060, which only ever check CSS/token source,
+not a rendered page).
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

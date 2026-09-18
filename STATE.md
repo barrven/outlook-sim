@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 061 (Settings — Appearance color scheme switcher)
 - **Last updated:** 2026-09-18
 
@@ -18,6 +18,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  tested: 783 → 793 net (+10, all passing; re-run twice, stable) across
+  config.test.ts (+3, persistence/default), ipc.test.ts (+2, IPC
+  round-trip + broadcast), and a new "Appearance (061)" block in
+  SettingsView.test.tsx (+5, AC1-AC4 at the UI level). main.tsx's own
+  bootstrap application of the theme is deliberately not covered — no
+  existing test of any kind covers that module-level entry script, and
+  its two behaviors (persistence, broadcast payload) are already
+  covered independently. Phase set to `validate`.
 - 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
   implemented: new "Appearance" config category end to end (data-types,
   ConfigStore's appearance.json, IPC get/set + a broadcastAppearanceChanged

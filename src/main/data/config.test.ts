@@ -279,4 +279,26 @@ describe('ConfigStore', () => {
     const reopened = new ConfigStore(baseDir)
     expect(reopened.getLlmFailureLog()).toEqual([{ timestamp: 1000, source: 'personaReply', error: 'boom' }])
   })
+
+  // Appearance / color scheme (feature 061)
+
+  it('061 AC4: a fresh install defaults to the revised default scheme from feature 058', () => {
+    expect(existsSync(join(baseDir, 'config', 'appearance.json'))).toBe(true)
+    expect(config.getAppearance()).toEqual({ colorScheme: 'default' })
+  })
+
+  it('061 AC3: round-trips the selected color scheme', () => {
+    config.setAppearance({ colorScheme: 'dark' })
+    expect(config.getAppearance()).toEqual({ colorScheme: 'dark' })
+  })
+
+  it('061 AC3: the selected color scheme survives a close/reopen cycle, stored as real JSON on disk', () => {
+    config.setAppearance({ colorScheme: 'sage' })
+
+    const raw = readFileSync(join(baseDir, 'config', 'appearance.json'), 'utf-8')
+    expect(JSON.parse(raw)).toEqual({ colorScheme: 'sage' })
+
+    const reopened = new ConfigStore(baseDir)
+    expect(reopened.getAppearance()).toEqual({ colorScheme: 'sage' })
+  })
 })
