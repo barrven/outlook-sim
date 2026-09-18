@@ -1,8 +1,9 @@
-import type { MailMessage, Persona, PersonaReplyResult, TraineeIdentity } from '../../shared/data-types'
+import type { MailMessage, MessageAttachment, Persona, PersonaReplyResult, TraineeIdentity } from '../../shared/data-types'
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
 import { buildFileVineContextPrompt } from './fileVineContext'
 import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
+import { readImageAttachment, type ImageAttachmentData } from './imageAttachment'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
 import type { MailDb } from '../data/db'
@@ -87,6 +88,17 @@ function buildThreadTranscript(thread: MailMessage[]): string {
     .join('\n\n---\n\n')
 }
 
+// Real image attachments (feature 064) are read fresh at generation time,
+// not stored as `extractedText` — they ride along as multimodal content
+// blocks (see `client.ts`), never OCR'd or text-extracted.
+function collectImageAttachments(thread: MailMessage[]): ImageAttachmentData[] {
+  return thread
+    .flatMap((message) => message.attachments)
+    .filter((attachment): attachment is MessageAttachment & { path: string } => Boolean(attachment.path))
+    .map((attachment) => readImageAttachment(attachment.path))
+    .filter((image): image is ImageAttachmentData => image !== undefined)
+}
+
 /**
  * Called after the trainee sends/replies to a message. If the recipient is a
  * configured persona, assembles the system prompt + persona details + thread
@@ -120,7 +132,8 @@ export async function generatePersonaReply(
 
   const result = await generateText(config.getSettings(), {
     systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, fileVineContext),
-    userPrompt: buildThreadTranscript(thread)
+    userPrompt: buildThreadTranscript(thread),
+    images: collectImageAttachments(thread)
   })
 
   if (!result.ok) {

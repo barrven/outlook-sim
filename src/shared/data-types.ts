@@ -198,6 +198,12 @@ export interface Settings {
 export interface LlmGenerateInput {
   systemPrompt?: string
   userPrompt: string
+  // Real image attachments (feature 064) sent as multimodal content blocks
+  // alongside the text prompt — never OCR'd, per the spec's Non-goals. A
+  // provider/model that rejects them degrades gracefully (see `client.ts`),
+  // so callers never need to know in advance whether the target supports
+  // multimodal input.
+  images?: Array<{ mimeType: string; base64Data: string }>
 }
 
 export type LlmGenerateResult = { ok: true; text: string } | { ok: false; error: string }

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,25 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
+  directly to the LLM) implemented: new `src/main/llm/imageAttachment.ts`
+  reads a real PNG/JPEG attachment's bytes off disk and base64-encodes them
+  (never OCR'd, per AC3), returning `undefined` for anything else, a missing
+  file, or a read error. `LlmGenerateInput` gained an optional `images`
+  array; `personaReply.ts` collects image attachments fresh from the thread
+  at generation time and passes them to `generateText`. `client.ts`'s
+  `buildRequest` attaches images as each provider's native multimodal
+  content block (OpenAI/xAI `image_url`, Anthropic `image` base64 source,
+  Gemini `inline_data`) — plain-string content unchanged when there are no
+  images (AC1). AC2's graceful degradation: since `model` is free-text with
+  no capability list, `generateText` tries the request with images first
+  and retries once without them only if that attempt fails, so an
+  unsupported provider/model still produces a normal reply instead of a
+  failed generation. Verified via a throwaway vitest script (not committed):
+  confirmed the exact content-block shape for all 4 providers and that the
+  retry-without-images path returns a clean success. lint/typecheck/build
+  pass; full suite unchanged at 793/793 (no new feature-specific tests yet —
+  that's `/test`'s job). Phase set to `test`.
 - 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
   accepted by user (selected "Accept (Recommended)" against the
   validation summary and AC-by-AC mapping, no changes requested); logged

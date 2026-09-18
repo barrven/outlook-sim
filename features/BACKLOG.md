@@ -54,9 +54,6 @@
 | 059 | Two additional light color schemes | done | medium | 059-additional-light-schemes.md |
 | 060 | Dark color scheme | done | medium | 060-dark-color-scheme.md |
 | 061 | Settings — Appearance color scheme switcher | done | medium | 061-appearance-scheme-switcher.md |
-| 064 | Mail — multimodal image attachments sent directly to the LLM | backlog | medium | 064-multimodal-image-attachments.md |
-| 066 | Mail — save a generated attachment into FileVine | backlog | medium | 066-save-attachment-to-filevine.md |
-| 067 | Mail — pop-out window for viewing attachments | backlog | medium | 067-attachment-popout-window.md |
 | 033 | Ribbon — hide Send/Receive and Folder tabs | done | low | 033-hide-unused-ribbon-tabs.md |
 | 034 | Move Settings into the File menu | done | low | 034-settings-in-file-menu.md |
 | 035 | File menu — About section | done | low | 035-file-menu-about.md |
@@ -66,6 +63,9 @@
 | 042 | View tab — Reading Pane Right/Off toggle | done | low | 042-reading-pane-toggle.md |
 | 044 | Double-click calendar item opens a pop-out window | done | low | 044-calendar-popout-window.md |
 | 045 | Simulated clock — black text and dropdown mini-calendar | done | low | 045-clock-minicalendar.md |
+| 064 | Mail — multimodal image attachments sent directly to the LLM | testing | medium | 064-multimodal-image-attachments.md |
+| 066 | Mail — save a generated attachment into FileVine | backlog | medium | 066-save-attachment-to-filevine.md |
+| 067 | Mail — pop-out window for viewing attachments | backlog | medium | 067-attachment-popout-window.md |
 | 050 | Settings — Persona editor opens inline under the edited persona | backlog | low | 050-persona-editor-inline-placement.md |
 | 051 | Settings — Persona editor's Client checkbox left-aligned | backlog | low | 051-persona-editor-checkbox-alignment.md |
 | 052 | Settings — spacing between Scenario Pack Load and Save sections | backlog | low | 052-scenario-pack-load-save-spacing.md |

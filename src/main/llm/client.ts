@@ -7,6 +7,7 @@ interface ProviderRequest {
 }
 
 function buildRequest(provider: LlmProvider, model: string, apiKey: string, input: LlmGenerateInput): ProviderRequest {
+  const images = input.images ?? []
   switch (provider) {
     case 'openai':
     case 'xai':
@@ -17,7 +18,18 @@ function buildRequest(provider: LlmProvider, model: string, apiKey: string, inpu
           model,
           messages: [
             ...(input.systemPrompt ? [{ role: 'system', content: input.systemPrompt }] : []),
-            { role: 'user', content: input.userPrompt }
+            {
+              role: 'user',
+              content: images.length
+                ? [
+                    { type: 'text', text: input.userPrompt },
+                    ...images.map((image) => ({
+                      type: 'image_url',
+                      image_url: { url: `data:${image.mimeType};base64,${image.base64Data}` }
+                    }))
+                  ]
+                : input.userPrompt
+            }
           ]
         }
       }
@@ -33,7 +45,20 @@ function buildRequest(provider: LlmProvider, model: string, apiKey: string, inpu
           model,
           max_tokens: 1024,
           ...(input.systemPrompt ? { system: input.systemPrompt } : {}),
-          messages: [{ role: 'user', content: input.userPrompt }]
+          messages: [
+            {
+              role: 'user',
+              content: images.length
+                ? [
+                    ...images.map((image) => ({
+                      type: 'image',
+                      source: { type: 'base64', media_type: image.mimeType, data: image.base64Data }
+                    })),
+                    { type: 'text', text: input.userPrompt }
+                  ]
+                : input.userPrompt
+            }
+          ]
         }
       }
     case 'gemini':
@@ -41,7 +66,15 @@ function buildRequest(provider: LlmProvider, model: string, apiKey: string, inpu
         url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
         headers: { 'Content-Type': 'application/json' },
         body: {
-          contents: [{ role: 'user', parts: [{ text: input.userPrompt }] }],
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: input.userPrompt },
+                ...images.map((image) => ({ inline_data: { mime_type: image.mimeType, data: image.base64Data } }))
+              ]
+            }
+          ],
           ...(input.systemPrompt
             ? { systemInstruction: { parts: [{ text: input.systemPrompt }] } }
             : {})
@@ -78,20 +111,7 @@ function extractErrorMessage(data: unknown, fallback: string): string {
   return fallback
 }
 
-/**
- * Provider-agnostic entry point: calling code passes a prompt and gets back
- * generated text or a human-readable error, never a provider-specific
- * response shape or a thrown exception.
- */
-export async function generateText(settings: Settings, input: LlmGenerateInput): Promise<LlmGenerateResult> {
-  const apiKey = settings.apiKeys[settings.provider]
-  if (!apiKey) {
-    return { ok: false, error: `No API key configured for ${settings.provider}.` }
-  }
-  if (!settings.model) {
-    return { ok: false, error: 'No model configured.' }
-  }
-
+async function attempt(settings: Settings, apiKey: string, input: LlmGenerateInput): Promise<LlmGenerateResult> {
   const request = buildRequest(settings.provider, settings.model, apiKey, input)
 
   let response: Response
@@ -122,4 +142,32 @@ export async function generateText(settings: Settings, input: LlmGenerateInput):
     return { ok: false, error: 'The provider returned no text.' }
   }
   return { ok: true, text }
+}
+
+/**
+ * Provider-agnostic entry point: calling code passes a prompt and gets back
+ * generated text or a human-readable error, never a provider-specific
+ * response shape or a thrown exception.
+ */
+export async function generateText(settings: Settings, input: LlmGenerateInput): Promise<LlmGenerateResult> {
+  const apiKey = settings.apiKeys[settings.provider]
+  if (!apiKey) {
+    return { ok: false, error: `No API key configured for ${settings.provider}.` }
+  }
+  if (!settings.model) {
+    return { ok: false, error: 'No model configured.' }
+  }
+
+  const result = await attempt(settings, apiKey, input)
+  if (!result.ok && input.images?.length) {
+    // Graceful multimodal degradation (feature 064, AC2): this app has no
+    // per-model capability list (the model is free-text), so a
+    // provider/model that doesn't support the image content block is only
+    // discoverable by the request itself failing. Retry once with the
+    // images stripped rather than surfacing that as a failed generation —
+    // the image is simply omitted from context, same as an unsupported
+    // attachment type already degrades in `extractAttachmentText`.
+    return attempt(settings, apiKey, { ...input, images: undefined })
+  }
+  return result
 }
