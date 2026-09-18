@@ -126,6 +126,10 @@ export interface CalendarPopoutApi {
   open: (seriesId: string, originalStartTime: number) => Promise<void>
 }
 
+export interface AttachmentPopoutApi {
+  open: (messageId: string, attachmentIndex: number) => Promise<void>
+}
+
 export interface SessionApi {
   startFreePlay: (confirmed?: boolean) => Promise<StartFreePlayResult>
 }
@@ -164,6 +168,7 @@ declare global {
       compose: ComposeApi
       messagePopout: MessagePopoutApi
       calendarPopout: CalendarPopoutApi
+      attachmentPopout: AttachmentPopoutApi
       session: SessionApi
       scenario: ScenarioApi
       personasFile: PersonasFileApi

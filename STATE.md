@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 067 (Mail — pop-out window for viewing attachments)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,26 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
+  implemented: new `AttachmentPopoutWindow.tsx` mirrors the existing
+  message/calendar pop-out pattern (own `BrowserWindow`, opened via
+  `window:openAttachmentPopout` + `attachmentPopout.open(messageId,
+  attachmentIndex)`, parented to whichever window triggered it).
+  `ReadingPane.tsx`'s attachment click now opens this pop-out (AC1)
+  instead of handing off to the OS; that OS handoff moves inside the
+  pop-out as an AC3 fallback button. Content resolved from existing
+  fields only (no new provenance flag, per 066's feedback): `.html` +
+  `extractedText` → Markdown-rendered generated document (AC2);
+  `extractedText` alone → verbatim real-attachment text (AC3); neither →
+  fallback with "open with default app" (AC3). AC4 (closing is isolated)
+  falls out of being a genuinely separate window, same as the existing
+  pop-outs. Verified live via a throwaway RTL script (not committed): all
+  3 content paths render correctly, the window self-closes on a missing
+  message/attachment, and `ReadingPane`'s click now calls the new API
+  instead of the old one. lint/typecheck/build pass; full suite 820/821 —
+  one pre-existing 065 test now fails because it asserts the exact old
+  click behavior this feature replaces, left for `/test` to rewrite per
+  this repo's established convention. Phase set to `test`.
 - 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
   accepted by user (selected "Accept (Recommended)" against the revised
   validation summary and AC-by-AC mapping after the requested-changes fix,

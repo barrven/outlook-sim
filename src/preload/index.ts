@@ -115,6 +115,10 @@ const api = {
     open: (seriesId: string, originalStartTime: number) =>
       ipcRenderer.invoke('window:openCalendarPopout', seriesId, originalStartTime)
   },
+  attachmentPopout: {
+    open: (messageId: string, attachmentIndex: number) =>
+      ipcRenderer.invoke('window:openAttachmentPopout', messageId, attachmentIndex)
+  },
   session: {
     startFreePlay: (confirmed?: boolean): Promise<StartFreePlayResult> =>
       ipcRenderer.invoke('session:startFreePlay', confirmed)

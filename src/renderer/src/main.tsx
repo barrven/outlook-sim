@@ -4,6 +4,7 @@ import App from './App'
 import ComposeWindow from './ComposeWindow'
 import MessagePopoutWindow from './MessagePopoutWindow'
 import CalendarPopoutWindow from './CalendarPopoutWindow'
+import AttachmentPopoutWindow from './AttachmentPopoutWindow'
 import type { ComposeIntent } from '../../shared/data-types'
 import './styles/global.css'
 
@@ -18,6 +19,10 @@ const isCalendarPopout = params.get('calendarPopout') === '1'
 const seriesId = params.get('seriesId') ?? undefined
 const originalStartTimeParam = params.get('originalStartTime')
 const originalStartTime = originalStartTimeParam !== null ? Number(originalStartTimeParam) : undefined
+const isAttachmentPopout = params.get('attachmentPopout') === '1'
+const attachmentMessageId = params.get('messageId') ?? undefined
+const attachmentIndexParam = params.get('attachmentIndex')
+const attachmentIndex = attachmentIndexParam !== null ? Number(attachmentIndexParam) : undefined
 
 // Feature 061 — every window (main, Compose, pop-outs) is its own document
 // with its own `data-theme` attribute (058), so each one applies the
@@ -38,6 +43,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <MessagePopoutWindow messageId={messageId} />
     ) : isCalendarPopout && seriesId && originalStartTime !== undefined ? (
       <CalendarPopoutWindow seriesId={seriesId} originalStartTime={originalStartTime} />
+    ) : isAttachmentPopout && attachmentMessageId && attachmentIndex !== undefined ? (
+      <AttachmentPopoutWindow messageId={attachmentMessageId} attachmentIndex={attachmentIndex} />
     ) : (
       <App />
     )}

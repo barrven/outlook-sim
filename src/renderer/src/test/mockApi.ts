@@ -119,6 +119,9 @@ export function createMockApi(): Window['api'] {
     calendarPopout: {
       open: vi.fn().mockResolvedValue(undefined)
     },
+    attachmentPopout: {
+      open: vi.fn().mockResolvedValue(undefined)
+    },
     session: {
       startFreePlay: vi.fn().mockResolvedValue({ ok: true })
     },

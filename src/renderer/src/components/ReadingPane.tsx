@@ -122,14 +122,15 @@ function ReadingPane({
   }
 
   // A real attachment (a trainee-picked file, feature 062, or an
-  // LLM-generated document, feature 065) hands off to the OS's own default
-  // handler for that file type — this app has no in-app viewer yet
-  // (feature 067). A true mock attachment (no `path`, pre-062 data) falls
-  // back to the old placeholder-note toggle, since there's no real file
-  // behind it to open.
+  // LLM-generated document, feature 065) opens in its own dedicated
+  // pop-out window (feature 067) — the "open with your default
+  // application" affordance now lives inside that window as a fallback,
+  // not the primary click action. A true mock attachment (no `path`,
+  // pre-062 data) falls back to the old placeholder-note toggle, since
+  // there's no real file behind it to view.
   function handleAttachmentClick(attachment: MessageAttachment, index: number): void {
     if (attachment.path) {
-      void window.api.attachments.open(attachment.path)
+      void window.api.attachmentPopout.open(currentMessage.id, index)
       return
     }
     setOpenAttachmentIndex((current) => (current === index ? null : index))

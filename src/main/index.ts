@@ -23,7 +23,13 @@ import { ScenarioMailScheduler } from './data/scenarioMailScheduler'
 import { buildScenarioPack, validateScenarioPack } from './data/scenarioPack'
 import { extractAttachmentText } from './llm/attachmentExtraction'
 import { UnsolicitedMailScheduler } from './llm/scheduler'
-import { createCalendarPopoutWindow, createComposeWindow, createMainWindow, createMessagePopoutWindow } from './windows'
+import {
+  createAttachmentPopoutWindow,
+  createCalendarPopoutWindow,
+  createComposeWindow,
+  createMainWindow,
+  createMessagePopoutWindow
+} from './windows'
 
 app.whenReady().then(() => {
   const userDataDir = app.getPath('userData')
@@ -71,6 +77,15 @@ app.whenReady().then(() => {
       originalStartTime,
       series ? series.title || '(no title)' : 'Calendar Item'
     )
+  })
+
+  ipcMain.handle('window:openAttachmentPopout', (event, messageId: string, attachmentIndex: number) => {
+    // Reachable from the main window's Reading Pane or a message pop-out
+    // window (feature 041) alike — parent to whichever one actually
+    // triggered it, same convention as `attachments:pick` below.
+    const parentWindow = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const attachment = mailDb.getMessage(messageId)?.attachments[attachmentIndex]
+    createAttachmentPopoutWindow(parentWindow, messageId, attachmentIndex, attachment?.filename ?? 'Attachment')
   })
 
   ipcMain.handle('scenario:pickPack', async (): Promise<PickScenarioPackResult> => {
@@ -127,10 +142,11 @@ app.whenReady().then(() => {
     extractAttachmentText(filePath)
   )
 
-  // Hands off to the OS's own default handler for the file's type (feature
-  // 065 AC3) — this app has no in-app document viewer of its own yet
-  // (feature 067). Returns Electron's own result: '' on success, otherwise
-  // a human-readable error (e.g. the file no longer exists on disk).
+  // Hands off to the OS's own default handler for the file's type — used as
+  // the "open with your default application" fallback affordance inside
+  // the attachment pop-out (feature 067), not the primary click action
+  // anymore. Returns Electron's own result: '' on success, otherwise a
+  // human-readable error (e.g. the file no longer exists on disk).
   ipcMain.handle('attachments:open', (_event, filePath: string): Promise<string> => shell.openPath(filePath))
 
   ipcMain.handle('scenario:savePack', async (): Promise<SaveScenarioPackResult> => {
