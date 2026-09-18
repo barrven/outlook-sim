@@ -434,7 +434,7 @@ describe('ReadingPane', () => {
     expect(window.api.attachments.open).not.toHaveBeenCalled()
   })
 
-  it('065 AC3: clicking a real attachment (with a path) opens it via the OS instead of toggling a placeholder', async () => {
+  it('067 AC1: clicking a real attachment (with a path) opens the attachment pop-out instead of toggling a placeholder', async () => {
     const user = userEvent.setup()
     const messageWithRealAttachment: MailMessage = {
       ...MESSAGE,
@@ -447,8 +447,29 @@ describe('ReadingPane', () => {
     const attachmentButton = await screen.findByRole('button', { name: /settlement-offer\.html/ })
     await user.click(attachmentButton)
 
-    expect(window.api.attachments.open).toHaveBeenCalledWith('/home/trainee/settlement-offer.html')
+    expect(window.api.attachmentPopout.open).toHaveBeenCalledWith('msg-1', 0)
+    // 067 replaces the old direct-to-OS handoff (065) as the click action —
+    // that affordance now lives inside the pop-out itself as a fallback.
+    expect(window.api.attachments.open).not.toHaveBeenCalled()
     expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
+  })
+
+  it('067 AC1: opens the pop-out with the clicked attachment\'s own index, for a message with several attachments', async () => {
+    const user = userEvent.setup()
+    const message: MailMessage = {
+      ...MESSAGE,
+      attachments: [
+        { filename: 'first.pdf', path: '/tmp/first.pdf' },
+        { filename: 'second.pdf', path: '/tmp/second.pdf' }
+      ]
+    }
+    vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
+
+    render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: /second\.pdf/ }))
+
+    expect(window.api.attachmentPopout.open).toHaveBeenCalledWith('msg-1', 1)
   })
 
   it('resets the open attachment note when a different message is selected', async () => {

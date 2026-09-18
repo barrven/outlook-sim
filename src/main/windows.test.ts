@@ -28,8 +28,13 @@ vi.mock('electron', () => ({
 
 vi.mock('@electron-toolkit/utils', () => ({ is: { dev: false } }))
 
-const { createMainWindow, createComposeWindow, createMessagePopoutWindow, createCalendarPopoutWindow } =
-  await import('./windows')
+const {
+  createMainWindow,
+  createComposeWindow,
+  createMessagePopoutWindow,
+  createCalendarPopoutWindow,
+  createAttachmentPopoutWindow
+} = await import('./windows')
 
 function asMock(win: ElectronBrowserWindow): MockBrowserWindow {
   return win as unknown as MockBrowserWindow
@@ -66,5 +71,40 @@ describe('window icon (036)', () => {
     )
 
     expect(popout.options.icon).toBe(main.options.icon)
+  })
+
+  it('067: gives the attachment pop-out window the same icon as the main window', () => {
+    const main = asMock(createMainWindow())
+    const popout = asMock(
+      createAttachmentPopoutWindow(main as unknown as ElectronBrowserWindow, 'msg-1', 0, 'report.pdf')
+    )
+
+    expect(popout.options.icon).toBe(main.options.icon)
+  })
+})
+
+describe('067: createAttachmentPopoutWindow', () => {
+  it('sets the window title to the given attachment filename', () => {
+    const main = asMock(createMainWindow())
+    const popout = asMock(
+      createAttachmentPopoutWindow(main as unknown as ElectronBrowserWindow, 'msg-1', 2, 'settlement-offer.html')
+    )
+
+    expect(popout.options.title).toBe('settlement-offer.html')
+  })
+
+  it('passes messageId and attachmentIndex through as loadRenderer query params', () => {
+    const main = asMock(createMainWindow())
+    const popout = asMock(
+      createAttachmentPopoutWindow(main as unknown as ElectronBrowserWindow, 'msg-42', 3, 'report.pdf')
+    )
+
+    // loadFile is called by loadRenderer in production mode (is.dev: false
+    // in this test's mocked @electron-toolkit/utils) with the query object
+    // as its second argument — this is how the renderer (main.tsx) learns
+    // which message/attachment to fetch.
+    expect(popout.loadFile).toHaveBeenCalledWith(expect.any(String), {
+      query: { attachmentPopout: '1', messageId: 'msg-42', attachmentIndex: '3' }
+    })
   })
 })

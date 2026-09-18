@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 067 (Mail — pop-out window for viewing attachments)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
+  tested: 821 → 833 net (+12, all passing; re-run 3x, stable) across 3
+  files. New `AttachmentPopoutWindow.test.tsx` (+8) covers AC2 (Markdown-
+  rendered generated document, real DOM elements not literal text), AC3
+  (verbatim real-attachment text, the `.html`-without-extractedText edge
+  case correctly falling back, and the full fallback+open-with-default-app
+  path), and AC4 (no cross-window state, closes itself on a missing
+  message or attachment). `windows.test.ts` (+3) covers
+  `createAttachmentPopoutWindow`'s icon/title/query-param wiring.
+  `ReadingPane.test.tsx` rewrote the one test 067 broke into AC1's actual
+  behavior, plus a new multi-attachment-index test. lint/typecheck/build
+  all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
   implemented: new `AttachmentPopoutWindow.tsx` mirrors the existing
   message/calendar pop-out pattern (own `BrowserWindow`, opened via

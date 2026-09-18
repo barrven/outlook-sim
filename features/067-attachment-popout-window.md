@@ -1,7 +1,7 @@
 ---
 id: 067
 title: Mail — pop-out window for viewing attachments
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -93,7 +93,45 @@ attachment tests failing the same way). Full suite otherwise unchanged at
 820/821.
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+821 → 833 net (+12, all passing; re-run 3x, stable) across 3 files.
+
+New `AttachmentPopoutWindow.test.tsx` (+8) covers: fetching the right
+message and reading out the right attachment by index; AC2 — a `.html` +
+`extractedText` attachment renders as real DOM elements (`<h1>`/`<strong>`)
+via Markdown, not the literal source text; AC3 — a real attachment's
+extracted text renders verbatim (a leading `#` stays plain text, no
+`<heading>` role produced) and, separately, a `.html` attachment *without*
+`extractedText` (not the generated-document shape) correctly falls back
+rather than being misrendered as HTML; the full fallback path (no
+preview + "Open with your default application" calling
+`attachments.open` with the exact path); AC4 — no cross-window
+subscription or shared state (only the one scoped fetch), and the window
+closes itself both when the message is gone and when the attachment index
+no longer exists on it.
+
+`windows.test.ts` (+3) covers `createAttachmentPopoutWindow`: same icon as
+the main window (existing per-window-type pattern), the window title is
+set to the attachment's filename, and `messageId`/`attachmentIndex` are
+passed through to `loadRenderer` as the exact query params `main.tsx`
+reads.
+
+`ReadingPane.test.tsx`: rewrote the one test 067 broke (065's "clicking a
+real attachment opens it via the OS") into 067 AC1's actual behavior —
+asserts `attachmentPopout.open('msg-1', 0)` is called and
+`attachments.open` is *not* (+1 net after replacing an existing test), and
+a new test confirms the clicked attachment's own index is passed correctly
+when a message has several attachments (not always `0`).
+
+Deliberately uncovered: the actual `window:openAttachmentPopout` IPC
+handler in `main/index.ts` and its `BrowserWindow.fromWebContents`
+parenting choice — `main/index.ts` itself has no direct test coverage
+anywhere in this repo (same as `window:openMessagePopout`/
+`window:openCalendarPopout`, `attachments:pick`, etc. — the established
+convention is to test the window-creation function in `windows.ts` and the
+renderer's own API call, not the thin IPC wiring itself); and the rendered
+appearance of the pop-out's CSS (no attached display, same non-blocking
+category as every prior CSS-touching feature). lint/typecheck/build all
+pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
