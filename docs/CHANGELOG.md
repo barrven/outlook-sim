@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Settings — Persona editor opens inline under the edited persona (features/050-persona-editor-inline-placement.md)
+Clicking "Edit" on a persona in Settings now opens the edit form right
+under that persona's own row, instead of in a shared editor below the
+whole list — no more scrolling down to find it. Creating a new persona
+still works the same way as before.
+
 ## 2026-09-18 — Mail — pop-out window for viewing attachments (features/067-attachment-popout-window.md)
 Clicking an attachment now opens it in its own window instead of handing
 off to another app. A document a persona generated shows its actual
