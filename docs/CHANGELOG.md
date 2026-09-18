@@ -7,6 +7,14 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Mail — multimodal image attachments sent directly to the LLM (features/064-multimodal-image-attachments.md)
+When you attach a real image (PNG/JPEG) to a message a persona is replying
+to, it's now sent straight to the configured LLM provider as an actual
+image — not OCR'd, not summarized as text — for providers/models that
+support it. If the configured provider/model doesn't support images, the
+reply still generates normally without it; the attachment's filename
+continues to show either way.
+
 ## 2026-09-18 — Settings — Appearance color scheme switcher (features/061-appearance-scheme-switcher.md)
 A new "Appearance" section in Settings lets you pick between all 4 color
 schemes (default, sage, plum, dark). Choosing one applies it instantly

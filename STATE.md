@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
+- **Phase:** implement
+- **Active feature:** 066 (Mail — save a generated attachment into FileVine)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
+  directly to the LLM) accepted by user (selected "Accept (Recommended)"
+  against the validation summary and AC-by-AC mapping, no changes
+  requested); logged to CHANGELOG. Active feature set to 066 (Mail — save a
+  generated attachment into FileVine, next in BACKLOG.md table order),
+  phase set to `implement`.
 - 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
   directly to the LLM) validated: lint/typecheck/build pass; full suite
   (813/813) re-run 4x total, stable; `git diff --stat` (c2052c2..HEAD)

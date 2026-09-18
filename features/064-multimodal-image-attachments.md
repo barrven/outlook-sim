@@ -1,7 +1,7 @@
 ---
 id: 064
 title: Mail — multimodal image attachments sent directly to the LLM
-status: accept
+status: done
 priority: medium
 ---
 
@@ -154,4 +154,5 @@ live-LLM ACs (e.g. 063's AC2, 065's AC1). All checks pass, no blocking gaps
 found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user selected "Accept (Recommended)" against the validation
+summary and AC-by-AC mapping, no changes requested. Decision: accepted.
