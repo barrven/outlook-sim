@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Dark color scheme (features/060-dark-color-scheme.md)
+A dark color scheme joins the default and the two light schemes (sage,
+plum) — dark backgrounds throughout, including the message/reading pane
+which the light schemes deliberately kept white, with text, accent and
+status colors adjusted for legibility against the darker surfaces.
+(A Settings switcher to actually pick between schemes is coming next.)
+
 ## 2026-09-17 — Two additional light color schemes (features/059-additional-light-schemes.md)
 Two more selectable light color schemes — a green-accented "sage" and a
 purple-accented "plum" — join the revised default, each with its own

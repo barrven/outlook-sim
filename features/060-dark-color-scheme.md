@@ -1,7 +1,7 @@
 ---
 id: 060
 title: Dark color scheme
-status: accept
+status: done
 priority: medium
 ---
 
@@ -103,4 +103,7 @@ re-running the vitest file):
 All checks pass, no gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user accepted, against the validation summary and AC-by-AC
+mapping, no changes requested. (Initially selected "Reject" in the
+acceptance prompt, then clarified: "i rejected by accident. please
+accept the feature" — treated as an accept, not a reject.)

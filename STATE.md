@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 060 (Dark color scheme)
-- **Last updated:** 2026-09-17
+- **Phase:** implement
+- **Active feature:** 061 (Settings — Appearance color scheme switcher)
+- **Last updated:** 2026-09-18
 
 ## Phases
 
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 060 (Dark color scheme) accepted by user
+  (selected "Accept (Recommended)" against the validation summary and
+  AC-by-AC mapping, no changes requested — after an initial "Reject"
+  click was clarified by the user as accidental); logged to CHANGELOG.
+  Active feature set to 061 (Settings — Appearance color scheme
+  switcher, next in BACKLOG.md table order), phase set to `implement`.
 - 2026-09-17 — feature 060 (Dark color scheme) validated: lint/
   typecheck/build pass; full suite (783/783) re-run 3x, stable;
   `git diff --stat` (56c893d..HEAD) confirms `/implement`+`/test` touched
