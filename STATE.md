@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 067 (Mail — pop-out window for viewing attachments)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,23 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
+  validated: lint/typecheck/build pass; full suite (833/833) re-run 4x
+  total, stable; `git diff --stat` (100df33..HEAD) confirms
+  `/implement`+`/test` touched only the expected files, no new
+  dependency. Cleaned up an unnecessary type cast in
+  `AttachmentPopoutWindow.tsx` (code-quality only). All 4 ACs re-verified
+  directly against current source: AC1 both entry points (Reading Pane +
+  message pop-out) share the exact same `handleAttachmentClick`, confirmed
+  by re-reading `MessagePopoutWindow.tsx`; AC2 the generated-document
+  detection can only match a `writeGeneratedAttachment`-produced
+  attachment, confirmed against `attachmentExtraction.ts`'s unchanged
+  extension lists; AC3 both branches read existing fields with no new IPC;
+  AC4 no cross-window subscription anywhere in the new component, genuine
+  separate `BrowserWindow`. Not independently re-verified: rendered
+  appearance and a live click-through (no attached display — same
+  established manual-gap category as other `shell`/window-creation
+  features). All checks pass, no blocking gaps. Phase set to `accept`.
 - 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
   tested: 821 → 833 net (+12, all passing; re-run 3x, stable) across 3
   files. New `AttachmentPopoutWindow.test.tsx` (+8) covers AC2 (Markdown-

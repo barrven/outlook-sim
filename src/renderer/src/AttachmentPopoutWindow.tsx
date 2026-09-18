@@ -48,7 +48,8 @@ function AttachmentPopoutWindow({ messageId, attachmentIndex }: AttachmentPopout
   // only be a generated document, no separate flag needed. Rendered via the
   // same `renderMarkdown` FileVine's note view (and 066's "Save to
   // FileVine") already use, so it looks identical wherever it's viewed.
-  const isGeneratedDocument = attachment.filename.toLowerCase().endsWith('.html') && attachment.extractedText !== undefined
+  const { extractedText } = attachment
+  const isGeneratedDocument = attachment.filename.toLowerCase().endsWith('.html') && extractedText !== undefined
 
   function handleOpenWithDefaultApp(): void {
     if (attachment?.path) void window.api.attachments.open(attachment.path)
@@ -57,16 +58,13 @@ function AttachmentPopoutWindow({ messageId, attachmentIndex }: AttachmentPopout
   return (
     <div className="attachment-popout-window">
       <div className="attachment-popout-header">{attachment.filename}</div>
-      {isGeneratedDocument ? (
-        <div
-          className="attachment-popout-rendered"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(attachment.extractedText as string) }}
-        />
-      ) : attachment.extractedText !== undefined ? (
+      {isGeneratedDocument && extractedText !== undefined ? (
+        <div className="attachment-popout-rendered" dangerouslySetInnerHTML={{ __html: renderMarkdown(extractedText) }} />
+      ) : extractedText !== undefined ? (
         // AC3: a real attachment's extracted content (063) is plain text,
         // not Markdown source — shown verbatim, not run through a Markdown
         // renderer that could misinterpret incidental special characters.
-        <div className="attachment-popout-text">{attachment.extractedText}</div>
+        <div className="attachment-popout-text">{extractedText}</div>
       ) : (
         <div className="attachment-popout-fallback">
           <p>No preview is available for this file.</p>

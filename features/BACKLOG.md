@@ -65,7 +65,7 @@
 | 045 | Simulated clock — black text and dropdown mini-calendar | done | low | 045-clock-minicalendar.md |
 | 064 | Mail — multimodal image attachments sent directly to the LLM | done | medium | 064-multimodal-image-attachments.md |
 | 066 | Mail — save an attachment into FileVine | done | medium | 066-save-attachment-to-filevine.md |
-| 067 | Mail — pop-out window for viewing attachments | validating | medium | 067-attachment-popout-window.md |
+| 067 | Mail — pop-out window for viewing attachments | accept | medium | 067-attachment-popout-window.md |
 | 050 | Settings — Persona editor opens inline under the edited persona | backlog | low | 050-persona-editor-inline-placement.md |
 | 051 | Settings — Persona editor's Client checkbox left-aligned | backlog | low | 051-persona-editor-checkbox-alignment.md |
 | 052 | Settings — spacing between Scenario Pack Load and Save sections | backlog | low | 052-scenario-pack-load-save-spacing.md |

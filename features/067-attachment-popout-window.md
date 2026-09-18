@@ -1,7 +1,7 @@
 ---
 id: 067
 title: Mail — pop-out window for viewing attachments
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -134,7 +134,57 @@ category as every prior CSS-touching feature). lint/typecheck/build all
 pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (833/833) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (100df33..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+was added (`package.json`/`package-lock.json` unchanged) — this feature
+reuses the existing message/calendar pop-out window pattern and the
+existing `renderMarkdown`/`attachments.open` helpers entirely.
+
+During this pass, cleaned up an unnecessary `as string` type cast in
+`AttachmentPopoutWindow.tsx` (destructured `extractedText` once and
+narrowed on the local binding instead) — a code-quality fix, not a
+behavior change; re-ran that file's tests to confirm.
+
+All 4 ACs re-verified directly against current source, not just by
+re-running the new tests:
+
+- **AC1** (opens in a dedicated pop-out, from either entry point):
+  `ReadingPane.tsx`'s `handleAttachmentClick` calls
+  `window.api.attachmentPopout.open(currentMessage.id, index)` for any
+  attachment with a `path`; since `MessagePopoutWindow.tsx` renders this
+  exact same `ReadingPane` component with no attachment-specific
+  overrides (confirmed by reading it directly), both the main window's
+  Reading Pane and a message pop-out get the new behavior identically,
+  with no separate wiring.
+- **AC2** (generated HTML attachment renders its actual content): the
+  `isGeneratedDocument` check (`.html` filename + `extractedText` present)
+  can only match a `writeGeneratedAttachment`-produced attachment (065
+  always sets both together; 063's real-attachment extraction never
+  supports `.html`, confirmed by re-reading `attachmentExtraction.ts`'s
+  extension lists, unchanged) — rendered via the same `renderMarkdown`
+  helper `FileVineView.tsx` and 066's saved note already use.
+- **AC3** (real attachment: extracted text or a fallback with an
+  open-with-default-app affordance): confirmed both branches read
+  directly off `attachment.extractedText`/`attachment.path` with no new
+  IPC read, and the fallback button calls the pre-existing
+  `attachments:open` handler unchanged.
+- **AC4** (closing doesn't affect the main window/message): the pop-out
+  is a genuinely separate `BrowserWindow` (confirmed in `windows.ts`) with
+  no cross-window broadcast subscription anywhere in
+  `AttachmentPopoutWindow.tsx` (grepped — no `onMessagesChanged` or
+  similar), and its only two possible side effects (`shell.openPath` via
+  the fallback button, and closing itself) never touch message/attachment
+  data.
+
+Not independently re-verified: the pop-out's rendered appearance/layout
+(no attached display — same non-blocking category as every prior
+CSS-touching change) and a live Electron click-through opening a real
+generated `.html` file's actual on-disk content end to end (this repo's
+established manual-gap category for anything `dialog`/`shell`/window-
+creation-adjacent, same as 062/065's own non-blocking gaps). All checks
+pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
