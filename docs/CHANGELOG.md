@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Ribbon — Home tab: remove dead placeholder buttons (features/053-remove-dead-home-tab-buttons.md)
+The Home tab's ribbon no longer shows "New Items", "Reply", "Reply All",
+or "Forward" as permanently-disabled buttons that never did anything —
+only "New Email" and "Delete" remain. Those actions are still available
+from the Reading Pane.
+
 ## 2026-09-18 — Settings — spacing between Scenario Pack Load and Save sections (features/052-scenario-pack-load-save-spacing.md)
 The Load and Save subsections of Settings' Scenario Pack section now have
 a clear divider between them, so the two distinct actions no longer read

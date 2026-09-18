@@ -285,7 +285,7 @@ describe('RibbonBar', () => {
     expect(deleteButton).not.toHaveClass('ribbon-action-danger')
   })
 
-  it('058: the ribbon\'s Mail action set is only New Email and Delete — Reply/Reply All/Forward/New Items were removed as permanently-disabled placeholders never wired to anything (those actions live in the Reading Pane instead)', () => {
+  it('053 AC1/AC2: the ribbon\'s Mail action set is only New Email and Delete — Reply/Reply All/Forward/New Items were removed as permanently-disabled placeholders never wired to anything (those actions live in the Reading Pane instead)', () => {
     render(<RibbonBar activeModule="mail" {...tabProps()} onNewEmail={vi.fn()} onDelete={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'New Email' })).toBeInTheDocument()

@@ -5,7 +5,7 @@ lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
 - **Phase:** implement
-- **Active feature:** 053 (Ribbon — Home tab: remove dead placeholder buttons)
+- **Active feature:** 054 (Mail message list — flagged-row styling)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 053 (Ribbon — Home tab: remove dead placeholder
+  buttons) accepted: the user reported having already implemented this
+  directly (not through `/implement`) and asked to verify and mark it
+  done. Confirmed via source inspection and `git log -p` that the work
+  was already on `master` (commit `3158af7`, 2026-09-17, predating this
+  feature being picked up) and satisfies all 3 ACs; full suite green
+  (846/846, stable across 3 runs). Fixed one stale comment and relabeled
+  one stale test name found along the way (no behavior/assertion
+  changes). No separate implement/test/validate cycle was run — this was
+  a verification + housekeeping pass over existing work, per the user's
+  explicit instruction. Logged to CHANGELOG. Active feature set to 054
+  (Mail message list — flagged-row styling, next in BACKLOG.md table
+  order), phase set to `implement`.
 - 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
   and Save sections) accepted by user (selected "Accept (Recommended)"
   against the validation summary and AC-by-AC mapping, no changes

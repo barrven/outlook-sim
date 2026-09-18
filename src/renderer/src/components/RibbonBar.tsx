@@ -12,11 +12,13 @@ const TABS = ['Home', 'FileVine', 'View']
 // (feature 033).
 type ClickableTab = 'Home' | 'FileVine' | 'View'
 
+// Reply/Reply All/Forward/New Items were also here originally but, like
+// Send/Receive and Folder above, were permanently-disabled placeholders
+// never wired to anything — removed entirely (feature 053) rather than
+// shown disabled forever. Those actions live in the Reading Pane instead.
 const MAIL_ACTIONS = ['New Email', 'Delete']
 // Semantic action coloring (058) — only for actions with a real handler in
-// actionHandlers below (New Email, Delete); Reply/Reply All/Forward/New
-// Items have none yet and stay neutral rather than looking colored/active
-// for something that doesn't do anything.
+// actionHandlers below (New Email, Delete).
 const ACTION_COLOR_CLASS: Partial<Record<string, string>> = {
   'New Email': 'ribbon-action-primary',
   Delete: 'ribbon-action-danger'
