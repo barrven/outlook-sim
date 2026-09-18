@@ -237,6 +237,93 @@ describe('PersonasSettings', () => {
     expect(screen.getByText('Sam Lee')).toBeInTheDocument()
   })
 
+  // 050 — the edit form renders inline under the edited persona's own row
+
+  it('050 AC1: the edit form renders immediately after the clicked persona\'s row, not below the whole list', async () => {
+    const user = userEvent.setup()
+    const otherPersona: Persona = { ...PERSONA, id: 'p2', displayName: 'Sam Lee', email: 'sam@example.com' }
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA, otherPersona])
+
+    render(<PersonasSettings />)
+
+    const editButtons = await screen.findAllByRole('button', { name: 'Edit' })
+    await user.click(editButtons[0])
+
+    const list = screen.getByLabelText('Display Name').closest('ul') as HTMLElement
+    const rows = Array.from(list.children)
+    const morganIndex = rows.findIndex((row) => row.textContent?.includes('Morgan Rivera'))
+    const editorIndex = rows.findIndex((row) => row.querySelector('#persona-display-name'))
+    const samIndex = rows.findIndex((row) => row.textContent?.includes('Sam Lee'))
+
+    // The editor sits directly under Morgan's own row (the one that was
+    // clicked) and strictly before Sam's row — not appended after the
+    // whole list.
+    expect(editorIndex).toBe(morganIndex + 1)
+    expect(editorIndex).toBeLessThan(samIndex)
+  })
+
+  it('050 AC1: editing the second persona in the list places the form under that row, not the first', async () => {
+    const user = userEvent.setup()
+    const otherPersona: Persona = { ...PERSONA, id: 'p2', displayName: 'Sam Lee', email: 'sam@example.com' }
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA, otherPersona])
+
+    render(<PersonasSettings />)
+
+    const editButtons = await screen.findAllByRole('button', { name: 'Edit' })
+    await user.click(editButtons[1]) // Sam Lee
+
+    const list = screen.getByLabelText('Display Name').closest('ul') as HTMLElement
+    const rows = Array.from(list.children)
+    const samIndex = rows.findIndex((row) => row.textContent?.includes('Sam Lee'))
+    const editorIndex = rows.findIndex((row) => row.querySelector('#persona-display-name'))
+
+    expect(editorIndex).toBe(samIndex + 1)
+    expect(screen.getByLabelText('Display Name')).toHaveValue('Sam Lee')
+  })
+
+  it('050 AC2: opening a different persona\'s edit form closes/replaces the previously open one', async () => {
+    const user = userEvent.setup()
+    const otherPersona: Persona = { ...PERSONA, id: 'p2', displayName: 'Sam Lee', email: 'sam@example.com' }
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA, otherPersona])
+
+    render(<PersonasSettings />)
+
+    const editButtons = await screen.findAllByRole('button', { name: 'Edit' })
+    await user.click(editButtons[0])
+    expect(screen.getByLabelText('Display Name')).toHaveValue('Morgan Rivera')
+
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+
+    // Exactly one editor open, now showing the second persona's data.
+    expect(screen.getAllByLabelText('Display Name')).toHaveLength(1)
+    expect(screen.getByLabelText('Display Name')).toHaveValue('Sam Lee')
+  })
+
+  it('050 AC3: "+ New Persona" still opens its form below the whole list, outside the persona list itself', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    render(<PersonasSettings />)
+    await screen.findByText('Morgan Rivera')
+
+    await user.click(screen.getByRole('button', { name: '+ New Persona' }))
+
+    const list = document.querySelector('.persona-list') as HTMLElement
+    expect(list.querySelector('#persona-display-name')).toBeNull()
+    expect(document.getElementById('persona-display-name')).not.toBeNull()
+  })
+
+  it('050: the create form is hidden while an inline edit is open, and vice versa (still only one editor at a time)', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.personas.get).mockResolvedValue([PERSONA])
+
+    render(<PersonasSettings />)
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    expect(screen.queryByRole('button', { name: '+ New Persona' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Cancel' })).toHaveLength(1)
+  })
+
   // reloadKey (feature 030 — Settings live-refresh after a scenario pack load)
 
   it('030 AC1: refetches the persona list when reloadKey changes, without needing to unmount/remount', async () => {

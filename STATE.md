@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 050 (Settings — Persona editor opens inline under the edited persona)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 050 (Settings — Persona editor opens inline under
+  the edited persona) tested: 833 → 838 net (+5, all passing; re-run 3x,
+  stable), all in `PersonasSettings.test.tsx`'s new "050" block. AC1
+  asserts the editor's actual DOM position (immediately after the clicked
+  persona's row, strictly before the next one), including a second-persona
+  case to guard against an always-first-position bug. AC2 confirms
+  exactly one editor open when switching between personas. AC3 confirms
+  "+ New Persona" still renders outside `.persona-list`. A supporting test
+  locks in create/edit mutual exclusion. AC4 unaffected — the pre-existing
+  Edit/Cancel/Delete tests (28, unmodified) already cover it and pass
+  against the new placement. lint/typecheck/build all pass. Test Notes
+  filled in; phase set to `validate`.
 - 2026-09-18 — feature 050 (Settings — Persona editor opens inline under
   the edited persona) implemented: scoped entirely to
   `PersonasSettings.tsx` + a small CSS addition. Pulled the editor form
