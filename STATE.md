@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 054 (Mail message list — flagged-row styling)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
+  tested: 846 → 852 net (+6, all passing; re-run 3x, stable) across 2
+  files. New "flagged-row styling (054)" block in
+  `globalCssStyling.test.ts` (+3) — matching that file's established
+  CSS-source-assertion convention rather than a renderer test — locks in
+  the flag icon's `font-size: 20px` (AC1 regression guard), the
+  `.flagged` rule's `background: var(--flag-bg)` (AC2), and that
+  `.flagged` is declared before `.selected` in source order (AC3's
+  mechanism). `MessageListPane.test.tsx` (+3) covers AC2 (class presence/
+  absence), AC3 (both classes coexist on a flagged+selected row), and
+  AC4 (re-rendering with a newly-flagged message immediately adds the
+  class, mirroring the broadcast-refetch pattern). lint/typecheck/build
+  all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
   implemented: AC1 (larger flag icon) was already done by the user
   directly, in the same manual commit as feature 053 (`3158af7`) —

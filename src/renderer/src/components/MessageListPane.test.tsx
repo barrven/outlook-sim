@@ -148,6 +148,86 @@ describe('MessageListPane', () => {
     expect(onSelectMessage).not.toHaveBeenCalled()
   })
 
+  // 054 — flagged-row background highlight
+
+  it('054 AC2: a flagged row carries the highlight class; an unflagged row does not', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Not flagged', isFlagged: false }),
+      makeMessage({ id: 'b', subject: 'Flagged one', isFlagged: true })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    await screen.findByText('Not flagged')
+    expect(screen.getByText('Not flagged').closest('.message-list-item')).not.toHaveClass('flagged')
+    expect(screen.getByText('Flagged one').closest('.message-list-item')).toHaveClass('flagged')
+  })
+
+  it('054 AC3: a row that is both flagged and selected carries both classes (selected wins visually via CSS cascade order)', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Flagged and selected', isFlagged: true })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={['a']}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    const item = (await screen.findByText('Flagged and selected')).closest('.message-list-item')
+    expect(item).toHaveClass('flagged')
+    expect(item).toHaveClass('selected')
+  })
+
+  it('054 AC4: flagging a message immediately adds the row highlight class on the next render', async () => {
+    const message = makeMessage({ id: 'a', subject: 'Toggle me', isFlagged: false })
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([message])
+
+    const { rerender } = render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    await screen.findByText('Toggle me')
+    expect(screen.getByText('Toggle me').closest('.message-list-item')).not.toHaveClass('flagged')
+
+    // Simulate the broadcast-driven refetch (messagesVersion bump) this
+    // component already relies on for isRead/category live updates.
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([{ ...message, isFlagged: true }])
+    rerender(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={1}
+        {...defaultProps}
+      />
+    )
+
+    await waitFor(() => expect(screen.getByText('Toggle me').closest('.message-list-item')).toHaveClass('flagged'))
+  })
+
   // Multi-select (feature 039)
 
   const ABCD = [

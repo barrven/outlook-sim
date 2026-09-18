@@ -1,7 +1,7 @@
 ---
 id: 054
 title: Mail message list — flagged-row styling
-status: testing
+status: validating
 priority: low
 ---
 
@@ -73,7 +73,34 @@ unchanged at 846/846 (no new feature-specific tests yet — that's
 `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+846 → 852 net (+6, all passing; re-run 3x, stable) across 2 files.
+
+New `describe('flagged-row styling (054)')` block in `src/main/
+globalCssStyling.test.ts` (+3, matching this file's established
+CSS-source-assertion convention rather than a renderer test, since
+`fs`/`path`/`__dirname` aren't available under the renderer's
+`tsconfig.web.json`): AC1 locks in the flag button's `font-size: 20px`
+as a regression guard on the user's own manual change; AC2 confirms
+`.message-list-item.flagged` uses `background: var(--flag-bg)`; AC3
+confirms `.flagged` is declared before `.selected` in source order —
+the actual mechanism the precedence decision in Implementation Notes
+relies on.
+
+`MessageListPane.test.tsx` (+3, new "054" block): AC2 — a flagged row
+carries the class, an unflagged one doesn't. AC3 — a row that's both
+flagged and selected carries both classes simultaneously (confirms the
+DOM state; the cascade test above confirms which one visually wins).
+AC4 — starting unflagged, then re-rendering with the same message now
+flagged (simulating the broadcast-driven refetch this component already
+uses for `isRead`/categories) immediately adds the `flagged` class, no
+extra plumbing needed.
+
+Deliberately uncovered: the actual rendered visual appearance/contrast of
+`--flag-bg` as a full-row background across all 4 color schemes (no
+attached display — same non-blocking gap as every prior CSS-touching
+feature; existing WCAG-contrast tests already cover `--flag-border`
+specifically as flagged-icon text, not this new row-background use).
+lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

@@ -383,3 +383,26 @@ describe('office clock (045)', () => {
     expect(rule![0]).toMatch(/color:\s*var\(--text\);/)
   })
 })
+
+describe('flagged-row styling (054)', () => {
+  it('AC1: the flag icon button is visibly larger than its original 14px size', () => {
+    const rule = css.match(/\.message-list-flag-btn\s*{[^}]*}/)
+    expect(rule).not.toBeNull()
+    expect(rule![0]).toMatch(/font-size:\s*20px;/)
+  })
+
+  it('AC2: a flagged row gets a distinct background, using the semantic --flag-bg token', () => {
+    const rule = css.match(/\.message-list-item\.flagged\s*{[^}]*}/)
+    expect(rule).not.toBeNull()
+    expect(rule![0]).toMatch(/background:\s*var\(--flag-bg\);/)
+  })
+
+  it('AC3: .flagged is declared before .selected in source order, so .selected wins the cascade when a row is both', () => {
+    const flaggedIndex = css.indexOf('.message-list-item.flagged')
+    const selectedIndex = css.indexOf('.message-list-item.selected')
+
+    expect(flaggedIndex).toBeGreaterThan(-1)
+    expect(selectedIndex).toBeGreaterThan(-1)
+    expect(flaggedIndex).toBeLessThan(selectedIndex)
+  })
+})
