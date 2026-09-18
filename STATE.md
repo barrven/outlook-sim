@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 061 (Settings — Appearance color scheme switcher)
+- **Phase:** implement
+- **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -18,6 +18,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  accepted by user (selected "Accept (Recommended)" against the
+  validation summary and AC-by-AC mapping, no changes requested); logged
+  to CHANGELOG. Active feature set to 064 (Mail — multimodal image
+  attachments sent directly to the LLM, next in BACKLOG.md table order),
+  phase set to `implement`.
 - 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
   validated: lint/typecheck/build pass; full suite (793/793) re-run 3x,
   stable; `git diff --stat` (9a455ba..HEAD) confirms `/implement`+`/test`

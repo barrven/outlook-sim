@@ -1,7 +1,7 @@
 ---
 id: 061
 title: Settings — Appearance color scheme switcher
-status: accept
+status: done
 priority: medium
 ---
 
@@ -146,4 +146,5 @@ inspection instead, since its two behaviors are independently covered
 by config.test.ts/ipc.test.ts.)
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user accepted (selected "Accept (Recommended)" against the
+validation summary and AC-by-AC mapping), no changes requested.

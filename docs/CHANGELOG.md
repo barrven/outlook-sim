@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Settings — Appearance color scheme switcher (features/061-appearance-scheme-switcher.md)
+A new "Appearance" section in Settings lets you pick between all 4 color
+schemes (default, sage, plum, dark). Choosing one applies it instantly
+across every open window — the main window, Compose, and any pop-outs —
+with no restart needed, and the choice is remembered the next time you
+launch the app.
+
 ## 2026-09-18 — Dark color scheme (features/060-dark-color-scheme.md)
 A dark color scheme joins the default and the two light schemes (sage,
 plum) — dark backgrounds throughout, including the message/reading pane
