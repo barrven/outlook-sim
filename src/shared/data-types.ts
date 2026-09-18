@@ -30,13 +30,6 @@ export interface MessageAttachment {
   // type, or a failed extraction — never blocks sending either way, just
   // means no content is contributed to LLM context for that attachment.
   extractedText?: string
-  // True only for an LLM-generated (incoming) attachment written by
-  // `writeGeneratedAttachment` (feature 065); undefined for a real,
-  // trainee-picked attachment (feature 062). Distinguishes the two so the
-  // UI can offer "Save to FileVine" (feature 066) only where it makes
-  // sense — a real attachment is already a file the trainee has on their
-  // own filesystem, nothing simulation-generated to preserve.
-  generated?: boolean
 }
 
 export interface MessageRecipient {

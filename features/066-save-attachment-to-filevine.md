@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save an attachment into FileVine
-status: implementing
+status: testing
 priority: medium
 ---
 
@@ -69,6 +69,26 @@ folder then the note in one interaction; a real (non-generated) attachment
 never shows the button at all. lint/typecheck/build pass; full suite
 unchanged at 813/813 (no new feature-specific tests yet — that's
 `/test`'s job).
+
+### Addendum (2026-09-18, addressing accept-stage "Request changes")
+The user's feedback at `/accept`: "you don't need to differentiate between
+LLM generated attachments. any attachment should be able to be saved into
+filvine." Removed the `generated` gate entirely — the action now shows for
+*any* attachment with content to save
+(`attachment.extractedText !== undefined`), regardless of whether it came
+from a real trainee-picked file (062/063's extraction) or an LLM-generated
+one (065). Dropped `MessageAttachment.generated` from
+`shared/data-types.ts` and the `generated: true` `writeGeneratedAttachment`
+was setting — nothing reads it anymore. `ReadingPane.tsx`'s button
+condition simplified from
+`attachment.generated && attachment.extractedText !== undefined` to just
+`attachment.extractedText !== undefined`. A true mock/placeholder
+attachment (no `path`, pre-062 data) or a real attachment with an
+unsupported/failed extraction still correctly gets no action — not because
+of what *kind* of attachment it is, but because there's genuinely no
+content to put in the note, the structural constraint AC1's revised
+wording now captures ("content available to save"), not a
+generated-vs-real distinction. lint/typecheck/build pass.
 
 ## Test Notes
 813 → 822 net (+9, all passing; re-run 3x, stable) across 2 files.
@@ -163,29 +183,6 @@ All checks pass, no blocking gaps found.
 summary and AC-by-AC mapping. Asked what specifically, the user said:
 "you don't need to differentiate between LLM generated attachments. any
 attachment should be able to be saved into filvine." Decision: changes
-requested — see the addendum in Implementation Notes for what needs to
-change; `/implement` re-entered to address it, chaining back through
-test/validate.
-
-### Implement addendum (2026-09-18, addressing the above)
-Removed the `generated` gate entirely — the "Save to FileVine" action now
-shows for *any* attachment that has content to save
-(`attachment.extractedText !== undefined`), regardless of whether it came
-from a real trainee-picked file (062/063's extraction) or an LLM-generated
-one (065). Concretely: dropped `MessageAttachment.generated` from
-`shared/data-types.ts` and the `generated: true` `writeGeneratedAttachment`
-was setting (no longer needed — there's nothing left that reads it);
-`ReadingPane.tsx`'s button condition simplified from
-`attachment.generated && attachment.extractedText !== undefined` to just
-`attachment.extractedText !== undefined`. A true mock/placeholder
-attachment (no `path`, pre-062 data) or a real attachment with an
-unsupported/failed extraction still correctly gets no action — not because
-of what *kind* of attachment it is, but because there's genuinely no
-content to put in the note, which is a structural constraint AC1's own
-wording captures ("content available to save"), not a
-generated-vs-real distinction. Updated `generatedAttachment.test.ts`
-(removed the now-obsolete "marks the attachment as generated" test) and
-`ReadingPane.test.tsx`'s AC1 test (now asserts a real attachment *with*
-extracted content shows the action too, and only a content-less attachment
-doesn't). lint/typecheck/build pass; full suite re-run — see Test/
-Validation Notes below for the updated numbers.
+requested — Description/AC1 revised and the fix written up as a dated
+addendum in Implementation Notes; `/implement` re-entered to address it,
+chaining back through test/validate.

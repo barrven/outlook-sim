@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 066 (Mail — save an attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,13 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
+  implemented (requested changes): removed the `generated` gate entirely —
+  `MessageAttachment.generated` dropped from shared/data-types.ts, no
+  longer set by `writeGeneratedAttachment`; `ReadingPane.tsx`'s "Save to
+  FileVine" button now shows for any attachment with
+  `extractedText !== undefined`, real or LLM-generated, no distinction.
+  lint/typecheck/build pass. Phase set to `test`.
 - 2026-09-18 — feature 066 (Mail — save an attachment into FileVine, title
   updated from "...a generated attachment...") sent back from `/accept`
   with "Request changes": the user said "you don't need to differentiate

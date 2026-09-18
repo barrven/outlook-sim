@@ -135,8 +135,9 @@ function ReadingPane({
     setOpenAttachmentIndex((current) => (current === index ? null : index))
   }
 
-  // Opens the "Save to FileVine" dialog for a generated attachment (feature
-  // 066), fetching the current folder list fresh each time so a folder
+  // Opens the "Save to FileVine" dialog for an attachment with content to
+  // save (feature 066 — real or LLM-generated, no distinction made),
+  // fetching the current folder list fresh each time so a folder
   // created/renamed/deleted elsewhere is never stale here.
   async function handleOpenSaveToFileVine(index: number): Promise<void> {
     setSaveToFileVineIndex(index)
@@ -294,7 +295,7 @@ function ReadingPane({
                 {!attachment.path && openAttachmentIndex === index && (
                   <span className="attachment-placeholder-note">Mock attachment — no file content.</span>
                 )}
-                {attachment.generated && attachment.extractedText !== undefined && (
+                {attachment.extractedText !== undefined && (
                   <button
                     type="button"
                     className="attachment-save-filevine-btn"
