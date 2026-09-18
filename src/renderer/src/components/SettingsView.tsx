@@ -444,21 +444,23 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
                 {scenarioError}
               </p>
             )}
-            <p className="settings-view-note">
-              Save the current mailbox, calendar, and personas out to a JSON scenario pack file for
-              reuse or sharing. API keys and other Settings are never included.
-            </p>
-            <div className="settings-view-actions">
-              <button type="button" onClick={handleSaveScenarioPack}>
-                Save Scenario Pack…
-              </button>
-              {savePackStatus && <span className="settings-view-saved">{savePackStatus}</span>}
-            </div>
-            {savePackError && (
-              <p className="settings-test-result-error" role="alert">
-                {savePackError}
+            <div className="scenario-pack-save-section">
+              <p className="settings-view-note">
+                Save the current mailbox, calendar, and personas out to a JSON scenario pack file for
+                reuse or sharing. API keys and other Settings are never included.
               </p>
-            )}
+              <div className="settings-view-actions">
+                <button type="button" onClick={handleSaveScenarioPack}>
+                  Save Scenario Pack…
+                </button>
+                {savePackStatus && <span className="settings-view-saved">{savePackStatus}</span>}
+              </div>
+              {savePackError && (
+                <p className="settings-test-result-error" role="alert">
+                  {savePackError}
+                </p>
+              )}
+            </div>
           </div>
         </section>
       </div>

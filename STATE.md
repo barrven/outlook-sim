@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 052 (Settings — spacing between Scenario Pack Load and Save sections)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 052 (Settings — spacing between Scenario Pack Load
+  and Save sections) implemented: `SettingsView.tsx`'s Save subsection
+  (note + actions + error) wrapped in a new
+  `<div className="scenario-pack-save-section">`; new CSS gives it a
+  16px top margin/padding plus a 1px border-top divider, mirroring
+  `.persona-editor`'s existing divider convention. Load subsection's own
+  markup untouched, only wrapped-around; `handleLoadScenarioPack`/
+  `handleSaveScenarioPack` and their state unchanged — markup/CSS-only.
+  Verified live via a throwaway RTL script (not committed): Save's note
+  is inside the new wrapper, Load's note is not, and exactly one such
+  wrapper exists app-wide. lint/typecheck/build pass; full suite
+  unchanged at 841/841 (existing 48-test `SettingsView.test.tsx` suite
+  passes unmodified). Phase set to `test`.
 - 2026-09-18 — feature 051 (Settings — Persona editor's Client checkbox
   left-aligned) accepted by user (selected "Accept (Recommended)" against
   the validation summary and AC-by-AC mapping, no changes requested);
