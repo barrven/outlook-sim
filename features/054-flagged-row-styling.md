@@ -1,7 +1,7 @@
 ---
 id: 054
 title: Mail message list — flagged-row styling
-status: validating
+status: accept
 priority: low
 ---
 
@@ -103,7 +103,39 @@ specifically as flagged-icon text, not this new row-background use).
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (852/852) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (1ba8223..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files (the AC1 flag-icon
+size change itself predates this range — it was already on `master` from
+the user's earlier manual commit, `3158af7`, confirmed and credited
+directly in Implementation Notes). No new dependency added.
+
+All 4 ACs re-verified directly against current source:
+
+- **AC1** (visibly larger flag icon): `.message-list-flag-btn`'s
+  `font-size: 20px` (was `14px`), confirmed via direct source read and
+  locked in by a dedicated regression-guard test.
+- **AC2** (distinct background when not selected):
+  `.message-list-item.flagged { background: var(--flag-bg); }` — a real
+  rule, confirmed by grep against the actual stylesheet.
+- **AC3** (selection precedence, documented): `.message-list-item.flagged`
+  is declared at line 1055, `.message-list-item.selected` at line 1059 —
+  confirmed directly by reading the file, not just by test assertion.
+  Both are equal-specificity two-class selectors, so per CSS cascade
+  rules the later declaration (`.selected`) wins whenever both classes
+  apply — the exact mechanism Implementation Notes documents as the
+  deliberate precedence choice.
+- **AC4** (live update on flag/unflag): the `flagged` class is a plain
+  derived value from `message.isFlagged`, computed fresh on every render
+  — no caching, no separate state to fall out of sync — confirmed by
+  reading `MessageListPane.tsx`'s className template literal directly.
+
+Not independently re-verified: the actual rendered visual appearance of
+`--flag-bg` as a full-row background across all 4 color schemes, and
+whether it reads well against `--hover-bg`/`--selected-bg` in each theme
+(no attached display — same non-blocking gap as every prior CSS-touching
+feature in this project). All checks pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

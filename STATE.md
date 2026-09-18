@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 054 (Mail message list — flagged-row styling)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
+  validated: lint/typecheck/build pass; full suite (852/852) re-run 4x
+  total, stable; `git diff --stat` (1ba8223..HEAD) confirms
+  `/implement`+`/test` touched only the expected files (AC1's flag-icon
+  size predates this range, already credited to the user's earlier
+  manual commit). All 4 ACs re-verified directly against current source:
+  AC1 font-size 20px confirmed by direct read; AC2 the `.flagged` rule
+  uses `--flag-bg`; AC3 `.flagged` (line 1055) precedes `.selected` (line
+  1059) in source, confirmed directly, giving `.selected` the cascade
+  win; AC4 the class is a plain derived value with no caching. Not
+  independently re-verified: rendered visual appearance across all 4
+  color schemes (no attached display). All checks pass, no blocking
+  gaps. Phase set to `accept`.
 - 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
   tested: 846 → 852 net (+6, all passing; re-run 3x, stable) across 2
   files. New "flagged-row styling (054)" block in
