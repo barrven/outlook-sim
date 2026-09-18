@@ -1,7 +1,7 @@
 ---
 id: 052
 title: Settings — spacing between Scenario Pack Load and Save sections
-status: validating
+status: accept
 priority: low
 ---
 
@@ -74,7 +74,33 @@ appearance (no attached display — same non-blocking gap as every prior
 CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (846/846) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (2e33bfe..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+added.
+
+All 3 ACs re-verified directly against current source:
+
+- **AC1** (visible spacing/separation): `.scenario-pack-save-section`
+  gives the Save subsection a 16px top margin/padding plus a 1px
+  `border-top` divider, mirroring `.persona-editor`'s existing divider
+  convention elsewhere in the same stylesheet.
+- **AC2** (Load/Save behavior unchanged): `git diff` on
+  `SettingsView.tsx` shows the entire change is a wrap — the Save
+  subsection's three existing elements (note, actions, error) moved
+  inside a new `<div>`, with zero lines touched inside
+  `handleLoadScenarioPack`/`handleSaveScenarioPack` or any state variable
+  they use.
+- **AC3** (no other section's spacing changes): grepped for
+  `scenario-pack-save-section` across both `SettingsView.tsx` and
+  `global.css` — exactly one JSX usage and one CSS rule, both scoped to
+  this subsection; every other `.settings-field-row`/`.settings-view-*`
+  rule is untouched.
+
+Not independently re-verified: the actual rendered visual spacing/divider
+appearance (no attached display — same non-blocking gap as every prior
+CSS-touching feature). All checks pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
