@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 066 (Mail — save a generated attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save a generated attachment into
+  FileVine) implemented: `MessageAttachment` gained an optional
+  `generated?: boolean`, set by `writeGeneratedAttachment` (065) so the UI
+  can tell a generated (incoming) attachment apart from a real,
+  trainee-picked one. `ReadingPane.tsx` (shared by the main window and the
+  message pop-out, feature 041) gained a "Save to FileVine…" action on a
+  generated attachment, opening an inline dialog: a folder `<select>` +
+  Save when folders exist (calling the existing `fileVineNotes.create` API
+  with the attachment's `extractedText` — already the raw Markdown — as
+  content), or an inline create-folder-then-save form when none exist
+  (AC4). Saving never touches the message/attachment (AC3, structurally).
+  Verified live via a throwaway RTL script (not committed): both paths
+  call the right APIs with the right args, and a real (non-generated)
+  attachment never shows the action. lint/typecheck/build pass; full suite
+  unchanged at 813/813 (no new feature-specific tests yet — that's
+  `/test`'s job). Phase set to `test`.
 - 2026-09-18 — feature 064 (Mail — multimodal image attachments sent
   directly to the LLM) accepted by user (selected "Accept (Recommended)"
   against the validation summary and AC-by-AC mapping, no changes

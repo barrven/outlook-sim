@@ -116,5 +116,5 @@ export function writeGeneratedAttachment(userDataDir: string, filename: string, 
   const bodyHtml = sanitizeHtml(rawBodyHtml)
   const html = `<!doctype html>\n<html>\n<head><meta charset="utf-8"><title>${escapeHtml(htmlFilename)}</title></head>\n<body>\n${bodyHtml}\n</body>\n</html>\n`
   writeFileSync(path, html, 'utf-8')
-  return { filename: htmlFilename, path, extractedText: markdown }
+  return { filename: htmlFilename, path, extractedText: markdown, generated: true }
 }

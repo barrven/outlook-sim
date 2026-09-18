@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
-import type { MailMessage, MessageAttachment } from '../../../shared/data-types'
+import type { FileVineFolder, MailMessage, MessageAttachment } from '../../../shared/data-types'
 
 interface ReadingPaneProps {
   selectedMessageId: string | null
@@ -39,10 +39,18 @@ function ReadingPane({
   // Which attachment (if any) is showing its "no real file behind this"
   // placeholder note, reset alongside categoryDraft below.
   const [openAttachmentIndex, setOpenAttachmentIndex] = useState<number | null>(null)
+  // Which generated attachment (if any) has its "Save to FileVine" dialog
+  // open (feature 066), plus that dialog's own transient state — all reset
+  // alongside categoryDraft/openAttachmentIndex when the selection changes.
+  const [saveToFileVineIndex, setSaveToFileVineIndex] = useState<number | null>(null)
+  const [fileVineFolders, setFileVineFolders] = useState<FileVineFolder[]>([])
+  const [selectedFileVineFolderId, setSelectedFileVineFolderId] = useState('')
+  const [newFileVineFolderName, setNewFileVineFolderName] = useState('')
   if (selectedMessageId !== categoryDraftMessageId) {
     setCategoryDraftMessageId(selectedMessageId)
     setCategoryDraft('')
     setOpenAttachmentIndex(null)
+    setSaveToFileVineIndex(null)
   }
 
   // Tracks which message id we've already run the open/auto-mark-read check
@@ -125,6 +133,45 @@ function ReadingPane({
       return
     }
     setOpenAttachmentIndex((current) => (current === index ? null : index))
+  }
+
+  // Opens the "Save to FileVine" dialog for a generated attachment (feature
+  // 066), fetching the current folder list fresh each time so a folder
+  // created/renamed/deleted elsewhere is never stale here.
+  async function handleOpenSaveToFileVine(index: number): Promise<void> {
+    setSaveToFileVineIndex(index)
+    setNewFileVineFolderName('')
+    const folders = await window.api.data.fileVineFolders.list()
+    setFileVineFolders(folders)
+    setSelectedFileVineFolderId(folders[0]?.id ?? '')
+  }
+
+  function closeSaveToFileVine(): void {
+    setSaveToFileVineIndex(null)
+  }
+
+  async function handleSaveToFileVine(attachment: MessageAttachment): Promise<void> {
+    if (!selectedFileVineFolderId || attachment.extractedText === undefined) return
+    await window.api.data.fileVineNotes.create({
+      folderId: selectedFileVineFolderId,
+      name: attachment.filename,
+      content: attachment.extractedText
+    })
+    closeSaveToFileVine()
+  }
+
+  // AC4: no FileVine folders exist yet — rather than a dead end, the dialog
+  // itself lets the user create one and save into it in the same step.
+  async function handleCreateFileVineFolderAndSave(attachment: MessageAttachment): Promise<void> {
+    const name = newFileVineFolderName.trim()
+    if (!name || attachment.extractedText === undefined) return
+    const folder = await window.api.data.fileVineFolders.create({ name })
+    await window.api.data.fileVineNotes.create({
+      folderId: folder.id,
+      name: attachment.filename,
+      content: attachment.extractedText
+    })
+    closeSaveToFileVine()
   }
 
   const readToggleLabel = displayedMessage.isRead ? 'Mark as unread' : 'Mark as read'
@@ -246,6 +293,72 @@ function ReadingPane({
                 </button>
                 {!attachment.path && openAttachmentIndex === index && (
                   <span className="attachment-placeholder-note">Mock attachment — no file content.</span>
+                )}
+                {attachment.generated && attachment.extractedText !== undefined && (
+                  <button
+                    type="button"
+                    className="attachment-save-filevine-btn"
+                    onClick={() => handleOpenSaveToFileVine(index)}
+                  >
+                    Save to FileVine…
+                  </button>
+                )}
+                {saveToFileVineIndex === index && (
+                  <div
+                    className="attachment-save-filevine-dialog"
+                    role="dialog"
+                    aria-label={`Save ${attachment.filename} to FileVine`}
+                  >
+                    {fileVineFolders.length > 0 ? (
+                      <>
+                        <label htmlFor="attachment-filevine-folder-select">Folder</label>
+                        <select
+                          id="attachment-filevine-folder-select"
+                          value={selectedFileVineFolderId}
+                          onChange={(event) => setSelectedFileVineFolderId(event.target.value)}
+                        >
+                          {fileVineFolders.map((folder) => (
+                            <option key={folder.id} value={folder.id}>
+                              {folder.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="attachment-save-filevine-actions">
+                          <button type="button" onClick={() => handleSaveToFileVine(attachment)}>
+                            Save
+                          </button>
+                          <button type="button" onClick={closeSaveToFileVine}>
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <form
+                        className="attachment-save-filevine-create-form"
+                        onSubmit={(event: FormEvent) => {
+                          event.preventDefault()
+                          handleCreateFileVineFolderAndSave(attachment)
+                        }}
+                      >
+                        <p className="attachment-save-filevine-empty-note">
+                          No FileVine folders yet — create one to save into.
+                        </p>
+                        <input
+                          autoFocus
+                          aria-label="New FileVine folder name"
+                          placeholder="Folder name"
+                          value={newFileVineFolderName}
+                          onChange={(event) => setNewFileVineFolderName(event.target.value)}
+                        />
+                        <div className="attachment-save-filevine-actions">
+                          <button type="submit">Create folder &amp; save</button>
+                          <button type="button" onClick={closeSaveToFileVine}>
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
