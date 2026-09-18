@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  AppearanceConfig,
   ApplyScenarioPackResult,
   CalendarItemPatch,
+  ColorScheme,
   ComposeOpenOptions,
   FileVineFolderPatch,
   FileVineNotePatch,
@@ -83,6 +85,10 @@ const api = {
       get: () => ipcRenderer.invoke('config:systemPrompt:get'),
       set: (value: SystemPromptConfig) => ipcRenderer.invoke('config:systemPrompt:set', value)
     },
+    appearance: {
+      get: (): Promise<AppearanceConfig> => ipcRenderer.invoke('config:appearance:get'),
+      set: (value: AppearanceConfig) => ipcRenderer.invoke('config:appearance:set', value)
+    },
     identity: {
       get: () => ipcRenderer.invoke('config:identity:get'),
       set: (identity: TraineeIdentity) => ipcRenderer.invoke('config:identity:set', identity)
@@ -160,6 +166,11 @@ const api = {
     const listener = (_event: unknown, reminder: FiredReminder): void => callback(reminder)
     ipcRenderer.on('calendar:reminder-fired', listener)
     return () => ipcRenderer.removeListener('calendar:reminder-fired', listener)
+  },
+  onAppearanceChanged: (callback: (colorScheme: ColorScheme) => void) => {
+    const listener = (_event: unknown, colorScheme: ColorScheme): void => callback(colorScheme)
+    ipcRenderer.on('config:appearance-changed', listener)
+    return () => ipcRenderer.removeListener('config:appearance-changed', listener)
   }
 }
 

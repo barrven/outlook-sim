@@ -14,9 +14,9 @@
    switcher, feature 061) selects which set of color tokens below
    applies — swapping the whole app's palette is always just this one
    attribute changing, never touching layout/chrome (Core Requirement 2).
-   Only "default" exists so far; features 059/060 add two more light
-   schemes and a dark one as further `:root[data-theme='...']` blocks
-   exactly like this one, each swapping colors only. */
+   "default", "sage", "plum" (059) and "dark" (060) exist so far, each a
+   further `:root[data-theme='...']` block exactly like this one, each
+   swapping colors only. */
 :root[data-theme='default'] {
   /* Revised default palette (058) — less flat gray than the original
      (037) neutrals, replaced with a soft blue tint that reads as
@@ -123,6 +123,58 @@
   --primary: #fff;
   --primary-bg: #6a2fa3;
   --primary-border: #6a2fa3;
+
+  --flag: #a15c00;
+  --flag-bg: #fdedd3;
+  --flag-border: #e2a33d;
+}
+
+/* Dark color scheme (060), same mechanism/structure as the light schemes
+   above — a full value for every token, selected purely by swapping
+   `data-theme`. Unlike the light schemes, --pane-bg goes dark here too:
+   the whole point of this scheme is dark backgrounds everywhere,
+   including the message/reading content area 058/059 kept pure white
+   on purpose. Most semantic status colors (danger-bg/danger, warning/
+   warning-bg/warning-border, flag/flag-bg/flag-border) are left
+   identical to every other scheme — each is only ever used as a
+   self-contained (text, background) pair (e.g. the reminder/error
+   banners), so their existing contrast against each other is unaffected
+   by the surrounding scheme being dark. --danger-border and --success
+   are the exception: both are also used as plain text with no
+   background of their own, directly against --pane-bg/--nav-rail-bg
+   (.settings-test-result-error, .calendar-event-form-error,
+   .settings-test-result-ok) — the light schemes' values for those
+   (a mid red, a dark green) read fine on white but fail WCAG AA against
+   a near-black background, so this scheme uses brighter red/green
+   here instead. --flag-border needed no change: standalone against
+   --pane-bg it already clears 8:1. Contrast checked by hand against
+   WCAG's relative-luminance formula (AC3): text/text-muted/accent on
+   --pane-bg run 7.4-14.9:1, white-on-primary-bg 5.2:1, the standalone
+   --danger-border/--success/--flag-border on --pane-bg or
+   --nav-rail-bg run 6.0-9.3:1 — all clear the 4.5:1 AA threshold for
+   normal text with room to spare. */
+:root[data-theme='dark'] {
+  --border: #3a4149;
+  --ribbon-bg: #20242b;
+  --pane-bg: #14171c;
+  --nav-rail-bg: #1b1f26;
+  --selected-bg: #24384f;
+  --selected-border: #5b9bd5;
+  --text: #e8eaed;
+  --text-muted: #9aa7b8;
+  --accent: #6cb6f2;
+  --hover-bg: #262b33;
+
+  --danger: #ffff;
+  --danger-bg: #dc3545;
+  --danger-border: #ff6b6b;
+  --warning: #4a3f00;
+  --warning-bg: #fff4ce;
+  --warning-border: #c19c00;
+  --success: #4caf50;
+  --primary: #fff;
+  --primary-bg: #2f6fb2;
+  --primary-border: #2f6fb2;
 
   --flag: #a15c00;
   --flag-bg: #fdedd3;

@@ -5,8 +5,8 @@ lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
 - **Phase:** implement
-- **Active feature:** 060 (Dark color scheme)
-- **Last updated:** 2026-09-17
+- **Active feature:** 064 (Mail — multimodal image attachments sent directly to the LLM)
+- **Last updated:** 2026-09-18
 
 ## Phases
 
@@ -22,6 +22,88 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  accepted by user (selected "Accept (Recommended)" against the
+  validation summary and AC-by-AC mapping, no changes requested); logged
+  to CHANGELOG. Active feature set to 064 (Mail — multimodal image
+  attachments sent directly to the LLM, next in BACKLOG.md table order),
+  phase set to `implement`.
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  validated: lint/typecheck/build pass; full suite (793/793) re-run 3x,
+  stable; `git diff --stat` (9a455ba..HEAD) confirms `/implement`+`/test`
+  touched only expected files. All 4 ACs re-verified independently (not
+  just re-running the test files): AC1 a Node script cross-checked
+  global.css's 4 theme blocks against `ColorScheme`'s union and
+  SettingsView's picker list — identical sets; AC2 source inspection
+  confirms `dataset.theme` is set synchronously before the IPC `set`
+  call, plus the broadcast reaches every other open window; AC3 source
+  inspection confirms `appearance.json` lives in the same `configDir` as
+  every other settings file, backed by a real-filesystem round-trip
+  test; AC4 source inspection confirms the literal default and that
+  main.tsx applies the persisted scheme unconditionally on every
+  window's own launch. All checks pass, no gaps found. Phase set to
+  `accept`.
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  tested: 783 → 793 net (+10, all passing; re-run twice, stable) across
+  config.test.ts (+3, persistence/default), ipc.test.ts (+2, IPC
+  round-trip + broadcast), and a new "Appearance (061)" block in
+  SettingsView.test.tsx (+5, AC1-AC4 at the UI level). main.tsx's own
+  bootstrap application of the theme is deliberately not covered — no
+  existing test of any kind covers that module-level entry script, and
+  its two behaviors (persistence, broadcast payload) are already
+  covered independently. Phase set to `validate`.
+- 2026-09-18 — feature 061 (Settings — Appearance color scheme switcher)
+  implemented: new "Appearance" config category end to end (data-types,
+  ConfigStore's appearance.json, IPC get/set + a broadcastAppearanceChanged
+  cross-window sync), a Settings section with a scheme `<select>` that
+  applies immediately (no Save button, matching AC2's wording) and
+  persists, and main.tsx applying the persisted scheme with
+  `document.documentElement.dataset.theme` on every window's own
+  bootstrap plus live updates via the broadcast. Also updated the shared
+  mockApi.ts and the ipc.test.ts channel-list assertion, both required by
+  their own types/assertions to compile/pass against the new API surface
+  (not new feature-specific coverage — that's `/test`'s job). lint/
+  typecheck/build/full-suite (783/783, unchanged) all pass. Phase set to
+  `test`.
+- 2026-09-18 — feature 060 (Dark color scheme) accepted by user
+  (selected "Accept (Recommended)" against the validation summary and
+  AC-by-AC mapping, no changes requested — after an initial "Reject"
+  click was clarified by the user as accidental); logged to CHANGELOG.
+  Active feature set to 061 (Settings — Appearance color scheme
+  switcher, next in BACKLOG.md table order), phase set to `implement`.
+- 2026-09-17 — feature 060 (Dark color scheme) validated: lint/
+  typecheck/build pass; full suite (783/783) re-run 3x, stable;
+  `git diff --stat` (56c893d..HEAD) confirms `/implement`+`/test` touched
+  only expected files. All 4 ACs re-verified with independent Python
+  scripts (not just re-running the test file): AC1 dark block has all
+  23 tokens, pane/ribbon/nav-rail luminance 0.0085/0.0174/0.0135
+  (genuinely dark); AC2 dark's token-name set is identical to
+  default/sage/plum's; AC3 an independent WCAG contrast implementation
+  confirms text/text-muted/accent on --pane-bg (7.35-14.9:1), white on
+  --primary-bg (5.2:1), and the standalone-text tokens --danger-border/
+  --success/--flag-border against the backgrounds they actually render
+  on (5.96-8.16:1) all clear 4.5:1; AC4 no layout property anywhere in
+  the dark block, no disclosed exceptions needed. All checks pass, no
+  gaps found. Phase set to `accept`.
+- 2026-09-17 — feature 060 (Dark color scheme) tested: 776 → 783 net
+  (+7, all passing; re-run twice, stable), all in
+  `globalCssStyling.test.ts`'s new "dark color scheme (060)" block. AC1
+  checks the full 23-token set plus that pane/ribbon/nav-rail
+  backgrounds are genuinely dark (relative luminance < 0.1). AC2 checks
+  the exact token-name set matches every other scheme. AC3 checks WCAG
+  contrast (>=4.5:1) for text/text-muted/accent on --pane-bg, white on
+  this scheme's --primary-bg, and the standalone-text tokens
+  (--danger-border/--success/--flag-border) against the actual
+  background they render on in the app. AC4 no layout property in the
+  dark block. Phase set to `validate`.
+- 2026-09-17 — feature 060 (Dark color scheme) implemented: added a
+  `:root[data-theme='dark']` block to global.css with the same 23-token
+  set as the other schemes, dark backgrounds throughout (including
+  --pane-bg, unlike 059's light schemes). Most status tokens kept
+  identical to other schemes (self-contained pairs); --danger-border and
+  --success brightened since both are also used as standalone text on
+  dark backgrounds and the light-tuned values fail WCAG AA there.
+  Phase set to `test`.
 - 2026-09-17 — feature 059 (Two additional light color schemes) accepted
   by user (selected "Accept (Recommended)" against the validation
   summary and AC-by-AC mapping, no changes requested); logged to

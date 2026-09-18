@@ -90,6 +90,10 @@ export function createMockApi(): Window['api'] {
         get: vi.fn().mockResolvedValue({ systemPrompt: '' }),
         set: vi.fn().mockResolvedValue(undefined)
       },
+      appearance: {
+        get: vi.fn().mockResolvedValue({ colorScheme: 'default' }),
+        set: vi.fn().mockResolvedValue(undefined)
+      },
       identity: {
         get: vi.fn().mockResolvedValue({ displayName: '', jobTitle: '', fromEmail: '', reportsTo: '', department: '' }),
         set: vi.fn().mockResolvedValue(undefined)
@@ -142,6 +146,7 @@ export function createMockApi(): Window['api'] {
     onCalendarItemsChanged: vi.fn().mockReturnValue(() => {}),
     onPersonaReplyFailed: vi.fn().mockReturnValue(() => {}),
     onUnsolicitedMailFailed: vi.fn().mockReturnValue(() => {}),
-    onReminderFired: vi.fn().mockReturnValue(() => {})
+    onReminderFired: vi.fn().mockReturnValue(() => {}),
+    onAppearanceChanged: vi.fn().mockReturnValue(() => {})
   }
 }

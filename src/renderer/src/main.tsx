@@ -19,6 +19,17 @@ const seriesId = params.get('seriesId') ?? undefined
 const originalStartTimeParam = params.get('originalStartTime')
 const originalStartTime = originalStartTimeParam !== null ? Number(originalStartTimeParam) : undefined
 
+// Feature 061 — every window (main, Compose, pop-outs) is its own document
+// with its own `data-theme` attribute (058), so each one applies the
+// persisted scheme on its own launch here, and stays in sync afterward via
+// the same cross-window broadcast the rest of the app uses for live data.
+window.api.data.appearance.get().then(({ colorScheme }) => {
+  document.documentElement.dataset.theme = colorScheme
+})
+window.api.onAppearanceChanged((colorScheme) => {
+  document.documentElement.dataset.theme = colorScheme
+})
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     {isCompose ? (

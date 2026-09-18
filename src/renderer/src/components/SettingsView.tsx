@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react'
-import type { LlmGenerateResult, LlmProvider, Settings, TraineeIdentity } from '../../../shared/data-types'
+import type { ColorScheme, LlmGenerateResult, LlmProvider, Settings, TraineeIdentity } from '../../../shared/data-types'
 import PersonasSettings from './PersonasSettings'
 
 const PROVIDERS: { id: LlmProvider; label: string }[] = [
@@ -7,6 +7,13 @@ const PROVIDERS: { id: LlmProvider; label: string }[] = [
   { id: 'anthropic', label: 'Anthropic' },
   { id: 'gemini', label: 'Gemini' },
   { id: 'xai', label: 'Grok (xAI)' }
+]
+
+const COLOR_SCHEMES: { id: ColorScheme; label: string }[] = [
+  { id: 'default', label: 'Default (light)' },
+  { id: 'sage', label: 'Sage (light)' },
+  { id: 'plum', label: 'Plum (light)' },
+  { id: 'dark', label: 'Dark' }
 ]
 
 const EMPTY_API_KEYS: Record<LlmProvider, string> = {
@@ -40,6 +47,8 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   const [systemPrompt, setSystemPrompt] = useState('')
   const [systemPromptJustSaved, setSystemPromptJustSaved] = useState(false)
 
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('default')
+
   const [freePlayStatus, setFreePlayStatus] = useState<string | null>(null)
 
   const [scenarioStatus, setScenarioStatus] = useState<string | null>(null)
@@ -60,8 +69,9 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
     Promise.all([
       window.api.data.settings.get(),
       window.api.data.identity.get(),
-      window.api.data.systemPrompt.get()
-    ]).then(([settings, identity, systemPromptConfig]) => {
+      window.api.data.systemPrompt.get(),
+      window.api.data.appearance.get()
+    ]).then(([settings, identity, systemPromptConfig, appearance]) => {
       if (cancelled) return
       setProvider(settings.provider)
       setModel(settings.model)
@@ -73,6 +83,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
       setReportsTo(identity.reportsTo ?? '')
       setDepartment(identity.department ?? '')
       setSystemPrompt(systemPromptConfig.systemPrompt)
+      setColorScheme(appearance.colorScheme)
       setLoaded(true)
     })
     return () => {
@@ -103,6 +114,16 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   async function handleSaveSystemPrompt(): Promise<void> {
     await window.api.data.systemPrompt.set({ systemPrompt })
     setSystemPromptJustSaved(true)
+  }
+
+  // Unlike the other sections, Appearance has no Save button — selecting a
+  // scheme applies it immediately (AC2), so it also applies it directly to
+  // this window rather than waiting on the main-process broadcast this same
+  // `set` call triggers for every other open window.
+  async function handleChangeColorScheme(scheme: ColorScheme): Promise<void> {
+    setColorScheme(scheme)
+    document.documentElement.dataset.theme = scheme
+    await window.api.data.appearance.set({ colorScheme: scheme })
   }
 
   async function handleStartFreePlay(): Promise<void> {
@@ -361,6 +382,26 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
                 Save
               </button>
               {systemPromptJustSaved && <span className="settings-view-saved">Saved</span>}
+            </div>
+          </div>
+        </section>
+
+        <section className="settings-section" aria-label="Appearance">
+          <h2 className="settings-section-header">Appearance</h2>
+          <div className="settings-section-body">
+            <div className="settings-field-row">
+              <label htmlFor="settings-color-scheme">Color scheme</label>
+              <select
+                id="settings-color-scheme"
+                value={colorScheme}
+                onChange={(event) => handleChangeColorScheme(event.target.value as ColorScheme)}
+              >
+                {COLOR_SCHEMES.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </section>

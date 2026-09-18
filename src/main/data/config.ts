@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type {
+  AppearanceConfig,
   LlmFailureLogEntry,
   LlmProvider,
   Persona,
@@ -27,6 +28,12 @@ const DEFAULT_SETTINGS: Settings = {
 
 const DEFAULT_SYSTEM_PROMPT: SystemPromptConfig = {
   systemPrompt: ''
+}
+
+// A fresh install applies the revised default scheme from feature 058
+// (AC4), not any of the later 059/060 additions.
+const DEFAULT_APPEARANCE: AppearanceConfig = {
+  colorScheme: 'default'
 }
 
 const DEFAULT_IDENTITY: TraineeIdentity = {
@@ -64,6 +71,7 @@ function writeJsonFile<T>(path: string, value: T): void {
 export class ConfigStore {
   private settingsPath: string
   private systemPromptPath: string
+  private appearancePath: string
   private identityPath: string
   private personasPath: string
   private schedulerPath: string
@@ -75,6 +83,7 @@ export class ConfigStore {
     mkdirSync(configDir, { recursive: true })
     this.settingsPath = join(configDir, 'settings.json')
     this.systemPromptPath = join(configDir, 'system-prompt.json')
+    this.appearancePath = join(configDir, 'appearance.json')
     this.identityPath = join(configDir, 'identity.json')
     this.personasPath = join(configDir, 'personas.json')
     this.schedulerPath = join(configDir, 'scheduler.json')
@@ -84,6 +93,7 @@ export class ConfigStore {
     // Ensure every config file exists on first run.
     readJsonFile(this.settingsPath, DEFAULT_SETTINGS)
     readJsonFile(this.systemPromptPath, DEFAULT_SYSTEM_PROMPT)
+    readJsonFile(this.appearancePath, DEFAULT_APPEARANCE)
     readJsonFile(this.identityPath, DEFAULT_IDENTITY)
     readJsonFile(this.personasPath, DEFAULT_PERSONAS)
     readJsonFile(this.schedulerPath, DEFAULT_SCHEDULER_STATE)
@@ -105,6 +115,14 @@ export class ConfigStore {
 
   setSystemPrompt(config: SystemPromptConfig): void {
     writeJsonFile(this.systemPromptPath, config)
+  }
+
+  getAppearance(): AppearanceConfig {
+    return readJsonFile(this.appearancePath, DEFAULT_APPEARANCE)
+  }
+
+  setAppearance(config: AppearanceConfig): void {
+    writeJsonFile(this.appearancePath, config)
   }
 
   // Merges over `DEFAULT_IDENTITY` rather than returning the parsed file

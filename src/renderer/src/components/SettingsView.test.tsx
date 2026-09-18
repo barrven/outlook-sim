@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SettingsView from './SettingsView'
@@ -52,6 +52,10 @@ function identitySection(): ReturnType<typeof within> {
 
 function systemPromptSection(): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name: 'System Prompt' }))
+}
+
+function appearanceSection(): ReturnType<typeof within> {
+  return within(screen.getByRole('region', { name: 'Appearance' }))
 }
 
 function sessionSection(): ReturnType<typeof within> {
@@ -792,6 +796,64 @@ describe('SettingsView', () => {
 
       await waitFor(() => expect(scenarioPackSection().queryByRole('alert')).not.toBeInTheDocument())
       expect(await scenarioPackSection().findByText(/my-pack\.json/)).toBeInTheDocument()
+    })
+  })
+
+  describe('Appearance (061)', () => {
+    afterEach(() => {
+      delete document.documentElement.dataset.theme
+    })
+
+    it('AC1: lists all 4 available color schemes', async () => {
+      render(<SettingsView />)
+
+      const select = await screen.findByLabelText('Color scheme')
+      const options = within(select).getAllByRole('option').map((option) => option.textContent)
+      expect(options).toEqual(['Default (light)', 'Sage (light)', 'Plum (light)', 'Dark'])
+    })
+
+    it('prefills the picker from the persisted color scheme', async () => {
+      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'plum' })
+
+      render(<SettingsView />)
+
+      expect(await screen.findByLabelText('Color scheme')).toHaveValue('plum')
+    })
+
+    it('AC2: selecting a scheme applies it to this window immediately, with no Save step', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'default' })
+
+      render(<SettingsView />)
+
+      const select = await screen.findByLabelText('Color scheme')
+      expect(appearanceSection().queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+
+      await user.selectOptions(select, 'dark')
+
+      expect(document.documentElement.dataset.theme).toBe('dark')
+      expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'dark' })
+    })
+
+    it('AC3: persists the selection the same way other settings are — through the config API, not just local state', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'default' })
+
+      render(<SettingsView />)
+
+      const select = await screen.findByLabelText('Color scheme')
+      await user.selectOptions(select, 'sage')
+
+      await waitFor(() => expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'sage' }))
+    })
+
+    it('AC4: on launch, applies whatever scheme was persisted — not always the default', async () => {
+      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'dark' })
+
+      render(<SettingsView />)
+
+      await screen.findByLabelText('Color scheme')
+      expect(window.api.data.appearance.get).toHaveBeenCalled()
     })
   })
 })

@@ -95,6 +95,8 @@ describe('registerDataIpcHandlers', () => {
         'config:settings:set',
         'config:systemPrompt:get',
         'config:systemPrompt:set',
+        'config:appearance:get',
+        'config:appearance:set',
         'config:identity:get',
         'config:identity:set',
         'config:personas:get',
@@ -287,6 +289,22 @@ describe('registerDataIpcHandlers', () => {
     const settings = handlers.get('config:settings:get')!(fakeEvent) as Settings
     expect(settings.provider).toBe('anthropic')
     expect(settings.apiKeys.anthropic).toBe('k')
+  })
+
+  it('061 AC3: round-trips appearance through the config channels', () => {
+    expect(handlers.get('config:appearance:get')!(fakeEvent)).toEqual({ colorScheme: 'default' })
+
+    handlers.get('config:appearance:set')!(fakeEvent, { colorScheme: 'dark' })
+    expect(handlers.get('config:appearance:get')!(fakeEvent)).toEqual({ colorScheme: 'dark' })
+  })
+
+  it('061 AC2: broadcasts config:appearance-changed with the new scheme to every open window on set', () => {
+    const fakeWindow: FakeWindow = { webContents: { send: vi.fn() } }
+    getAllWindowsMock.mockReturnValue([fakeWindow])
+
+    handlers.get('config:appearance:set')!(fakeEvent, { colorScheme: 'plum' })
+
+    expect(fakeWindow.webContents.send).toHaveBeenCalledWith('config:appearance-changed', 'plum')
   })
 
   it('drives the simulated clock through the IPC channels', () => {

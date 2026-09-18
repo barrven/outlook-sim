@@ -52,8 +52,8 @@
 | 049 | FileVine content feeds persona LLM context | done | medium | 049-filevine-llm-context.md |
 | 058 | Color scheme infrastructure + revised default palette | done | medium | 058-color-scheme-infrastructure.md |
 | 059 | Two additional light color schemes | done | medium | 059-additional-light-schemes.md |
-| 060 | Dark color scheme | backlog | medium | 060-dark-color-scheme.md |
-| 061 | Settings — Appearance color scheme switcher | backlog | medium | 061-appearance-scheme-switcher.md |
+| 060 | Dark color scheme | done | medium | 060-dark-color-scheme.md |
+| 061 | Settings — Appearance color scheme switcher | done | medium | 061-appearance-scheme-switcher.md |
 | 064 | Mail — multimodal image attachments sent directly to the LLM | backlog | medium | 064-multimodal-image-attachments.md |
 | 066 | Mail — save a generated attachment into FileVine | backlog | medium | 066-save-attachment-to-filevine.md |
 | 067 | Mail — pop-out window for viewing attachments | backlog | medium | 067-attachment-popout-window.md |
