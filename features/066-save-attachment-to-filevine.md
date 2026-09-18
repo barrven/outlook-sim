@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save an attachment into FileVine
-status: validating
+status: accept
 priority: medium
 ---
 
@@ -197,6 +197,29 @@ change) and a live click-through of the OS-level interaction (Electron
 IPC round-trip) — both are the same category of manual/live gap this
 project's other IPC-touching features already carry, not new to this one.
 All checks pass, no blocking gaps found.
+
+### Addendum (2026-09-18, requested-changes fix)
+lint/typecheck/build pass; full suite (821/821) re-run 4x total across
+this round's `/test` and `/validate`, stable. `git diff --stat`
+(1c9a5d6..HEAD, from the "Request changes" documentation commit to now)
+touched only the expected files — no new dependency added.
+
+Re-verified the revised AC1 directly against current source: grepped for
+`generated` across `shared/data-types.ts`, `generatedAttachment.ts`, and
+`ReadingPane.tsx` — the only remaining hits are unrelated (the
+`generated-attachments` directory name, an unrelated comment about
+LLM-generated documents); the field and every reference to it are gone.
+`ReadingPane.tsx`'s button condition is exactly
+`attachment.extractedText !== undefined`, with no `generated` check
+anywhere in the file — confirming the action is available for any
+attachment with content, real or LLM-generated, with no distinction. Also
+fixed one stale comment (still said "generated attachment" for the
+now-generic `saveToFileVineIndex` state) caught during this pass. AC2/AC3/
+AC4 are untouched by this fix (same `handleSaveToFileVine`/
+`handleCreateFileVineFolderAndSave` bodies as the first validation pass)
+and were not re-derived from scratch, but their governing functions were
+re-read end to end to confirm nothing in this diff touched them. All
+checks pass, no blocking gaps found.
 
 ## Acceptance Log
 2026-09-18 — user selected "Request changes" against the validation

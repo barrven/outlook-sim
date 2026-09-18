@@ -39,8 +39,8 @@ function ReadingPane({
   // Which attachment (if any) is showing its "no real file behind this"
   // placeholder note, reset alongside categoryDraft below.
   const [openAttachmentIndex, setOpenAttachmentIndex] = useState<number | null>(null)
-  // Which generated attachment (if any) has its "Save to FileVine" dialog
-  // open (feature 066), plus that dialog's own transient state — all reset
+  // Which attachment (if any) has its "Save to FileVine" dialog open
+  // (feature 066), plus that dialog's own transient state — all reset
   // alongside categoryDraft/openAttachmentIndex when the selection changes.
   const [saveToFileVineIndex, setSaveToFileVineIndex] = useState<number | null>(null)
   const [fileVineFolders, setFileVineFolders] = useState<FileVineFolder[]>([])

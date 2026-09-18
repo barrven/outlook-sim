@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 066 (Mail — save an attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
+  validated (requested changes): lint/typecheck/build pass; full suite
+  (821/821) re-run 4x total, stable; `git diff --stat` (1c9a5d6..HEAD)
+  confirms only expected files touched, no new dependency. Confirmed via
+  grep that `generated` is fully gone from `data-types.ts`/
+  `generatedAttachment.ts`/`ReadingPane.tsx` (only unrelated hits remain),
+  and `ReadingPane.tsx`'s button condition is exactly
+  `attachment.extractedText !== undefined` — the revised AC1 holds. Fixed
+  one stale comment caught during this pass. AC2/AC3/AC4 unaffected by
+  this fix, re-read to confirm. All checks pass, no blocking gaps. Phase
+  set to `accept`.
 - 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
   tested (requested changes): 822 → 821 net (all passing; re-run 3x,
   stable) — removed the obsolete "marks the attachment as generated" unit
