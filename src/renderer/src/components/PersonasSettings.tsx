@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { Fragment, useEffect, useState, type ReactElement } from 'react'
 import type { Persona, PersonasFilePersona } from '../../../shared/data-types'
 
 interface PersonaForm {
@@ -166,6 +166,104 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
 
   const isEditorOpen = creating || editingId !== null
 
+  // Shared between the two placements the editor can appear in — inline
+  // under the persona being edited (feature 050), or below the whole list
+  // when creating (AC3, unaffected by this feature). A plain JSX value
+  // rather than a nested component function, so its `<form>`/inputs keep
+  // their normal DOM identity wherever it's rendered.
+  const editorForm = (
+    <form
+      className="persona-editor"
+      onSubmit={(event) => {
+        event.preventDefault()
+        handleSubmit()
+      }}
+    >
+      <div className="settings-field-row">
+        <label htmlFor="persona-display-name">Display Name</label>
+        <input
+          id="persona-display-name"
+          type="text"
+          value={form.displayName}
+          onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-email">Email</label>
+        <input
+          id="persona-email"
+          type="email"
+          value={form.email}
+          onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-role">Role</label>
+        <input
+          id="persona-role"
+          type="text"
+          value={form.role}
+          onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-reports-to">Reports To</label>
+        <input
+          id="persona-reports-to"
+          type="text"
+          placeholder="Optional — may be outside the configured cast"
+          value={form.reportsTo}
+          onChange={(event) => setForm((prev) => ({ ...prev, reportsTo: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-is-client">Client</label>
+        <input
+          id="persona-is-client"
+          type="checkbox"
+          checked={form.isClient}
+          onChange={(event) => setForm((prev) => ({ ...prev, isClient: event.target.checked }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-bio">Bio</label>
+        <textarea
+          id="persona-bio"
+          className="persona-textarea"
+          value={form.bio}
+          onChange={(event) => setForm((prev) => ({ ...prev, bio: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-writing-style">Writing Style</label>
+        <textarea
+          id="persona-writing-style"
+          className="persona-textarea"
+          value={form.writingStyleNotes}
+          onChange={(event) => setForm((prev) => ({ ...prev, writingStyleNotes: event.target.value }))}
+        />
+      </div>
+      <div className="settings-field-row">
+        <label htmlFor="persona-extra-prompt">Extra Prompt</label>
+        <textarea
+          id="persona-extra-prompt"
+          className="persona-textarea"
+          placeholder="Optional"
+          value={form.extraPrompt}
+          onChange={(event) => setForm((prev) => ({ ...prev, extraPrompt: event.target.value }))}
+        />
+      </div>
+      <div className="settings-view-actions">
+        <button type="submit" disabled={!form.displayName.trim() || !form.email.trim()}>
+          {editingId ? 'Save' : 'Add Persona'}
+        </button>
+        <button type="button" onClick={closeEditor}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+
   return (
     <section className="settings-section" aria-label="Personas">
       <h2 className="settings-section-header">Personas</h2>
@@ -175,126 +273,40 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
             {personas.length > 0 ? (
               <ul className="persona-list">
                 {personas.map((persona) => (
-                  <li key={persona.id} className="persona-list-item">
-                    <div className="persona-list-item-info">
-                      <span className="persona-list-item-name">{persona.displayName || '(unnamed)'}</span>
-                      <span className="persona-list-item-meta">
-                        {persona.email}
-                        {persona.role ? ` · ${persona.role}` : ''}
-                        {persona.isClient ? ' · Client' : ''}
+                  <Fragment key={persona.id}>
+                    <li className="persona-list-item">
+                      <div className="persona-list-item-info">
+                        <span className="persona-list-item-name">{persona.displayName || '(unnamed)'}</span>
+                        <span className="persona-list-item-meta">
+                          {persona.email}
+                          {persona.role ? ` · ${persona.role}` : ''}
+                          {persona.isClient ? ' · Client' : ''}
+                        </span>
+                      </div>
+                      <span className="persona-list-item-actions">
+                        <button type="button" onClick={() => openEdit(persona)}>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(persona.id)}
+                          aria-label={`Delete ${persona.displayName || persona.email}`}
+                        >
+                          Delete
+                        </button>
                       </span>
-                    </div>
-                    <span className="persona-list-item-actions">
-                      <button type="button" onClick={() => openEdit(persona)}>
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(persona.id)}
-                        aria-label={`Delete ${persona.displayName || persona.email}`}
-                      >
-                        Delete
-                      </button>
-                    </span>
-                  </li>
+                    </li>
+                    {editingId === persona.id && <li className="persona-editor-row">{editorForm}</li>}
+                  </Fragment>
                 ))}
               </ul>
             ) : (
               !isEditorOpen && <p className="settings-view-note">No personas yet.</p>
             )}
 
-            {isEditorOpen ? (
-              <form
-                className="persona-editor"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  handleSubmit()
-                }}
-              >
-                <div className="settings-field-row">
-                  <label htmlFor="persona-display-name">Display Name</label>
-                  <input
-                    id="persona-display-name"
-                    type="text"
-                    value={form.displayName}
-                    onChange={(event) => setForm((prev) => ({ ...prev, displayName: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-email">Email</label>
-                  <input
-                    id="persona-email"
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-role">Role</label>
-                  <input
-                    id="persona-role"
-                    type="text"
-                    value={form.role}
-                    onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-reports-to">Reports To</label>
-                  <input
-                    id="persona-reports-to"
-                    type="text"
-                    placeholder="Optional — may be outside the configured cast"
-                    value={form.reportsTo}
-                    onChange={(event) => setForm((prev) => ({ ...prev, reportsTo: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-is-client">Client</label>
-                  <input
-                    id="persona-is-client"
-                    type="checkbox"
-                    checked={form.isClient}
-                    onChange={(event) => setForm((prev) => ({ ...prev, isClient: event.target.checked }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-bio">Bio</label>
-                  <textarea
-                    id="persona-bio"
-                    className="persona-textarea"
-                    value={form.bio}
-                    onChange={(event) => setForm((prev) => ({ ...prev, bio: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-writing-style">Writing Style</label>
-                  <textarea
-                    id="persona-writing-style"
-                    className="persona-textarea"
-                    value={form.writingStyleNotes}
-                    onChange={(event) => setForm((prev) => ({ ...prev, writingStyleNotes: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-field-row">
-                  <label htmlFor="persona-extra-prompt">Extra Prompt</label>
-                  <textarea
-                    id="persona-extra-prompt"
-                    className="persona-textarea"
-                    placeholder="Optional"
-                    value={form.extraPrompt}
-                    onChange={(event) => setForm((prev) => ({ ...prev, extraPrompt: event.target.value }))}
-                  />
-                </div>
-                <div className="settings-view-actions">
-                  <button type="submit" disabled={!form.displayName.trim() || !form.email.trim()}>
-                    {editingId ? 'Save' : 'Add Persona'}
-                  </button>
-                  <button type="button" onClick={closeEditor}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : generatedPersonas ? (
+            {creating ? (
+              editorForm
+            ) : editingId !== null ? null : generatedPersonas ? (
               <div className="persona-generate-review">
                 <p className="settings-view-note">
                   Generated {generatedPersonas.length} persona{generatedPersonas.length === 1 ? '' : 's'} — review

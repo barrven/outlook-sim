@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 050 (Settings — Persona editor opens inline under the edited persona)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,22 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 050 (Settings — Persona editor opens inline under
+  the edited persona) implemented: scoped entirely to
+  `PersonasSettings.tsx` + a small CSS addition. Pulled the editor form
+  JSX into a single `editorForm` variable, rendered inline right after the
+  edited persona's own `<li>` row (via a keyed `Fragment` per persona) when
+  `editingId` matches it, instead of below the whole list; creating a new
+  persona still renders it below the whole list, unchanged (AC3). AC2
+  (only one open at a time) falls out of `editingId` already being a
+  single value. AC4 (Save/Cancel/Delete) untouched — placement-only
+  change. Verified live via a throwaway RTL script (not committed): editor
+  row lands immediately after the clicked persona's row in the actual DOM
+  order, switching to a different persona's edit replaces it, create still
+  works below the list, Save persists the same payload shape. lint/
+  typecheck/build pass; full suite unchanged at 833/833 (existing 28-test
+  `PersonasSettings.test.tsx` suite passes unmodified — it queries by
+  label/role, not DOM position). Phase set to `test`.
 - 2026-09-18 — feature 067 (Mail — pop-out window for viewing attachments)
   accepted by user (selected "Accept (Recommended)" against the
   validation summary and AC-by-AC mapping, no changes requested); logged
