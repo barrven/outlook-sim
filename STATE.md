@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 066 (Mail — save an attachment into FileVine)
+- **Phase:** implement
+- **Active feature:** 067 (Mail — pop-out window for viewing attachments)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
+  accepted by user (selected "Accept (Recommended)" against the revised
+  validation summary and AC-by-AC mapping after the requested-changes fix,
+  no further changes requested); logged to CHANGELOG. Active feature set
+  to 067 (Mail — pop-out window for viewing attachments, next in
+  BACKLOG.md table order), phase set to `implement`.
 - 2026-09-18 — feature 066 (Mail — save an attachment into FileVine)
   validated (requested changes): lint/typecheck/build pass; full suite
   (821/821) re-run 4x total, stable; `git diff --stat` (1c9a5d6..HEAD)

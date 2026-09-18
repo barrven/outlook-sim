@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save an attachment into FileVine
-status: accept
+status: done
 priority: medium
 ---
 
@@ -229,3 +229,8 @@ attachment should be able to be saved into filvine." Decision: changes
 requested — Description/AC1 revised and the fix written up as a dated
 addendum in Implementation Notes; `/implement` re-entered to address it,
 chaining back through test/validate.
+
+2026-09-18 — after re-validation of the fix (the `generated` gate removed
+entirely), user selected "Accept (Recommended)" against the revised
+validation summary and AC-by-AC mapping, no further changes requested.
+Decision: accepted.

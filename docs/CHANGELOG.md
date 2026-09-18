@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Mail — save an attachment into FileVine (features/066-save-attachment-to-filevine.md)
+Any attachment with real content — one you sent yourself or one a persona
+generated — can now be saved as a note into a FileVine folder, via a new
+"Save to FileVine…" action next to it. Pick an existing folder, or create
+one on the spot if you don't have one yet; the original message and its
+attachment are left untouched.
+
 ## 2026-09-18 — Mail — multimodal image attachments sent directly to the LLM (features/064-multimodal-image-attachments.md)
 When you attach a real image (PNG/JPEG) to a message a persona is replying
 to, it's now sent straight to the configured LLM provider as an actual
