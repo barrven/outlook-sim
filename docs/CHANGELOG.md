@@ -7,6 +7,11 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Settings — Persona editor's Client checkbox left-aligned (features/051-persona-editor-checkbox-alignment.md)
+The "Client" checkbox in the persona editor no longer drifts out of place
+— it now sits immediately after its label, the same fixed alignment
+already used for the calendar event form's All-day checkbox.
+
 ## 2026-09-18 — Settings — Persona editor opens inline under the edited persona (features/050-persona-editor-inline-placement.md)
 Clicking "Edit" on a persona in Settings now opens the edit form right
 under that persona's own row, instead of in a shared editor below the

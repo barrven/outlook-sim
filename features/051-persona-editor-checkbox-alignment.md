@@ -1,7 +1,7 @@
 ---
 id: 051
 title: Settings — Persona editor's Client checkbox left-aligned
-status: accept
+status: done
 priority: low
 ---
 
@@ -127,4 +127,5 @@ calendar form's own All-day fix this one mirrors. All checks pass, no
 blocking gaps found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user selected "Accept (Recommended)" against the validation
+summary and AC-by-AC mapping, no changes requested. Decision: accepted.
