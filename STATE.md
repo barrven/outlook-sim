@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 051 (Settings — Persona editor's Client checkbox left-aligned)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 051 (Settings — Persona editor's Client checkbox
+  left-aligned) validated: lint/typecheck/build pass; full suite
+  (841/841) re-run 4x total, stable; `git diff --stat` (87c9cfb..HEAD)
+  confirms `/implement`+`/test` touched only the expected files, no new
+  dependency. All 4 ACs re-verified directly against current source: AC1
+  the new CSS overrides the `flex: 1 1 auto` drift cause; AC2 diffed
+  `.calendar-event-form-row-checkbox` against the new
+  `.settings-field-row-checkbox` directly — byte-for-byte identical rule
+  bodies; AC3 only the Client row carries the modifier class, base rules
+  untouched; AC4 the checkbox's `onChange` handler unchanged, new test
+  confirms persistence. Not independently re-verified: rendered visual
+  alignment (no attached display — same non-blocking gap as every prior
+  CSS feature). All checks pass, no blocking gaps. Phase set to `accept`.
 - 2026-09-18 — feature 051 (Settings — Persona editor's Client checkbox
   left-aligned) tested: 838 → 841 net (+3, all passing; re-run 3x,
   stable), all in `PersonasSettings.test.tsx`'s new "051" block. AC1/AC2

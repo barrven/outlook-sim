@@ -1,7 +1,7 @@
 ---
 id: 051
 title: Settings — Persona editor's Client checkbox left-aligned
-status: validating
+status: accept
 priority: low
 ---
 
@@ -92,7 +92,39 @@ checkbox fix this one mirrors, which likewise has no dedicated test).
 lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (841/841) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (87c9cfb..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+added.
+
+All 4 ACs re-verified directly against current source:
+
+- **AC1** (fixed, left-aligned layout): `.settings-field-row-checkbox`
+  sets `justify-content: flex-start` on the row and `flex: 0 0 auto` +
+  fixed `18px × 18px` on the checkbox itself, overriding the
+  `flex: 1 1 auto` every other `.settings-field-row input` gets — the
+  documented root cause of the drift.
+- **AC2** (mirrors the calendar form's exact pattern): diffed
+  `.calendar-event-form-row-checkbox` and its new
+  `.settings-field-row-checkbox` counterpart directly in `global.css` —
+  the rule bodies are byte-for-byte identical (same properties, same
+  values, same selector shape), only the class name differs.
+- **AC3** (no other field's layout changes): grepped every
+  `settings-field-row` usage in `PersonasSettings.tsx` — only the Client
+  row carries the new modifier class; the base `.settings-field-row`/
+  `.settings-field-row label`/`.settings-field-row select, .settings-
+  field-row input` rules in `global.css` are untouched by this diff.
+- **AC4** (behavior unchanged): the Client `<input>`'s `onChange` handler
+  is unchanged from before this feature (`git diff` shows only the
+  `className` attribute on its wrapping `<div>` changed); the new AC4 test
+  confirms toggling and Save still persists `isClient: true`.
+
+Not independently re-verified: the actual rendered visual alignment (no
+attached display, jsdom doesn't load the stylesheet) — same non-blocking
+gap as every prior pure-CSS feature in this project, including the
+calendar form's own All-day fix this one mirrors. All checks pass, no
+blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
