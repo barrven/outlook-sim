@@ -1,7 +1,7 @@
 ---
 id: 066
 title: Mail — save a generated attachment into FileVine
-status: testing
+status: validating
 priority: medium
 ---
 
@@ -64,7 +64,40 @@ unchanged at 813/813 (no new feature-specific tests yet — that's
 `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+813 → 822 net (+9, all passing; re-run 3x, stable) across 2 files.
+`generatedAttachment.test.ts` (+1) locks in `writeGeneratedAttachment`
+setting `generated: true`, the signal the UI relies on.
+
+`ReadingPane.test.tsx` (+9, new "066: Save a generated attachment into
+FileVine" block) covers:
+- AC1: a generated attachment shows exactly one "Save to FileVine" action
+  even alongside a plain real attachment on the same message; a real
+  attachment — including one with `extractedText` from feature 063's
+  extraction — never shows it.
+- AC1/AC2: picking a folder from the `<select>` (multiple real options,
+  picking a non-default one) and clicking Save calls
+  `fileVineNotes.create` with the exact `{folderId, name, content}`
+  expected, and the dialog closes afterward.
+- AC3: saving never calls `messages.update`, and the attachment's own
+  filename button is unaffected afterward.
+- AC4: with no folders, the empty-state copy and inline create-folder form
+  show instead of a dead end (no Save button present at all in that
+  state); submitting it calls `fileVineFolders.create` then
+  `fileVineNotes.create` with the new folder's id, in one interaction; a
+  blank folder name submits neither call.
+- Supporting UI behavior: Cancel closes the dialog without calling any
+  create API; switching to a different message resets the open dialog
+  (mirrors the existing `openAttachmentIndex` reset test for the mock-
+  attachment placeholder).
+
+Deliberately uncovered: the actual rendered appearance of the dialog (CSS
+layout, no attached display — same non-blocking category as every prior
+pure-CSS-touching change) and viewing the saved note afterward through
+`FileVineView.tsx` itself — that component's own Markdown-rendering path
+is already covered by its existing test suite and is unchanged by this
+feature (the note is created through the same `fileVineNotes.create` API
+`FileVineView.tsx` already uses for every other note). lint/typecheck/build
+all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

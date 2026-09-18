@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 066 (Mail — save a generated attachment into FileVine)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 066 (Mail — save a generated attachment into
+  FileVine) tested: 813 → 822 net (+9, all passing; re-run 3x, stable)
+  across 2 files. `generatedAttachment.test.ts` (+1) locks in
+  `generated: true`. `ReadingPane.test.tsx` (+9, new "066" block) covers
+  AC1 (action shown only for a generated attachment, even one alongside a
+  real attachment with its own `extractedText`), AC1/AC2 (picking a folder
+  and saving calls `fileVineNotes.create` with the exact content, dialog
+  closes), AC3 (no `messages.update` call, attachment unaffected), AC4 (no
+  folders → inline create-folder-and-save path, no dead end, blank name
+  rejected), plus Cancel and cross-message-reset behavior. lint/typecheck/
+  build all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 066 (Mail — save a generated attachment into
   FileVine) implemented: `MessageAttachment` gained an optional
   `generated?: boolean`, set by `writeGeneratedAttachment` (065) so the UI

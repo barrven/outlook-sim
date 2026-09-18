@@ -111,6 +111,12 @@ describe('writeGeneratedAttachment', () => {
     expect(attachment.extractedText).toBe('Some **bold** notes.')
   })
 
+  it('066: marks the attachment as generated, so the UI can offer "Save to FileVine" only for it', () => {
+    const attachment = writeGeneratedAttachment(userDataDir, 'notes.html', 'Some **bold** notes.')
+
+    expect(attachment.generated).toBe(true)
+  })
+
   it('always forces a .html extension, regardless of what the model asked for', () => {
     const attachment = writeGeneratedAttachment(userDataDir, 'invoice.pdf', '# Invoice')
 
