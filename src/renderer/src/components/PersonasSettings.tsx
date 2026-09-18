@@ -216,7 +216,7 @@ function PersonasSettings({ reloadKey }: PersonasSettingsProps): ReactElement {
           onChange={(event) => setForm((prev) => ({ ...prev, reportsTo: event.target.value }))}
         />
       </div>
-      <div className="settings-field-row">
+      <div className="settings-field-row settings-field-row-checkbox">
         <label htmlFor="persona-is-client">Client</label>
         <input
           id="persona-is-client"

@@ -800,6 +800,20 @@ body {
   border-radius: var(--radius);
 }
 
+.settings-field-row-checkbox {
+  justify-content: flex-start;
+}
+
+.settings-field-row-checkbox input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
 .settings-view-note {
   margin: 0 0 16px;
   font-size: 12px;
