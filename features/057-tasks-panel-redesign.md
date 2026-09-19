@@ -1,7 +1,7 @@
 ---
 id: 057
 title: Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort)
-status: validating
+status: accept
 priority: low
 ---
 
@@ -143,7 +143,51 @@ inline form spacing — no attached display, same non-blocking gap as
 every prior CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (872/872) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (53a26a3..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+added.
+
+All 7 ACs re-verified directly against current source, not just by
+re-running the new tests:
+
+- **AC1/AC2** (header layout, form hidden by default): `.tasks-panel-
+  section-header` wraps the "Tasks" heading and the new "Add" button in a
+  flex row; `{creating && taskForm}` sits directly after that header,
+  before the list — and the Add button/form are never both rendered
+  (`!isTaskFormOpen` gates the button).
+- **AC3** (Edit inline under the task's own row): the `sortedTasks.map()`
+  loop's `<Fragment key={task.id}>` places `{editingTaskId === task.id &&
+  <li className="tasks-panel-form-row">{taskForm}</li>}` directly after
+  that task's own `<li>`, inside the same `<ul>`.
+- **AC4** (only one form open at a time): `creating`/`editingTaskId`
+  remain single-valued state — structurally never more than one match.
+- **AC5** (editing updates via the real API): `handleSaveTask` calls
+  `window.api.data.tasks.update(editingTaskId, { text, dueAt })` when
+  `editingTaskId` is set.
+- **AC6** (sort order): `sortedTasks`'s comparator matches the spec
+  exactly — `dueAt === null` sorted first (tie-broken by `createdAt`
+  descending), then ascending by `dueAt`.
+- **AC7** (add/toggle-done/remove otherwise unchanged): `git diff` on
+  `TasksPanel.tsx` shows `handleToggleDone` byte-for-byte unchanged (only
+  re-indented from the new `Fragment` nesting); `handleRemoveTask` gained
+  exactly one line (the close-if-editing guard) with its core
+  `tasks.delete` call untouched; the create path's payload shape
+  (`{ text, done: false, dueAt }`) is identical to before, just reached
+  through `handleSaveTask`'s create branch instead of the old
+  `handleAddTask`.
+
+Also re-confirmed the date round-trip fix isn't itself an AC but is
+load-bearing for AC5: `dueAtToDateInputValue` uses `getUTC*` accessors,
+correctly inverting the existing `new Date(value).getTime()` UTC-parse
+`handleSaveTask` uses to write a due date — read directly in source, not
+just trusted from the passing test.
+
+Not independently re-verified: the actual rendered visual layout (header
+row spacing, inline form appearance — no attached display, same
+non-blocking gap as every prior CSS-touching feature). All checks pass,
+no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

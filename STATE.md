@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 057 (Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort))
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
+  validated: lint/typecheck/build pass; full suite (872/872) re-run 4x
+  total, stable; `git diff --stat` (53a26a3..HEAD) confirms
+  `/implement`+`/test` touched only the expected files, no new
+  dependency. All 7 ACs re-verified directly against current source:
+  AC1/AC2 header layout + form-visibility gating; AC3 the Fragment
+  places the inline form directly after the edited task's own `<li>`;
+  AC4 single-valued state; AC5 the real `tasks.update` call; AC6 the
+  sort comparator matches spec exactly; AC7 `git diff` confirms
+  `handleToggleDone` byte-for-byte unchanged and `handleRemoveTask`
+  gained exactly one guard line. Also re-confirmed the date round-trip
+  fix's `getUTC*` accessors directly in source. Not independently
+  re-verified: rendered visual layout (no attached display). All checks
+  pass, no blocking gaps. Phase set to `accept`.
 - 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign) tested:
   861 → 872 net (+11, all passing; re-run 3x, stable), all in
   `TasksPanel.test.tsx` (18 → 29 tests, matching the overall delta — no
