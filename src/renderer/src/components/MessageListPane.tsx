@@ -216,7 +216,12 @@ function MessageListPane({
                 onContextMenu={(event) => handleMessageContextMenu(message.id, event)}
                 onDoubleClick={() => window.api.messagePopout.open(message.id)}
               >
-                <span className="message-list-item-from">{message.fromName || message.fromEmail}</span>
+                <div className="message-list-item-top-row">
+                  <span className="message-list-item-from">{message.fromName || message.fromEmail}</span>
+                  <span className="message-list-item-timestamp">
+                    {new Date(message.timestamp).toLocaleString()}
+                  </span>
+                </div>
                 <span className="message-list-item-subject">{message.subject || '(no subject)'}</span>
                 {message.categories.length > 0 && (
                   <span className="message-list-item-categories">{message.categories.join(', ')}</span>

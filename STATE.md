@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 055 (Mail message list — show each message's timestamp)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,20 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 055 (Mail message list — show each message's
+  timestamp) implemented: `MessageListPane.tsx`'s row gained a
+  `.message-list-item-top-row` (from + a new timestamp span, flex
+  space-between) above the existing subject/categories, formatted via
+  `new Date(message.timestamp).toLocaleString()` — the exact same call
+  `ReadingPane.tsx` already uses (AC1). Subject/categories/flag button
+  unchanged in position (AC2); `visibleMessages`'s filtering/sort logic
+  untouched (AC3). New CSS gives the from-span ellipsis truncation (now a
+  flex child alongside a fixed-width timestamp) and the timestamp
+  `flex: 0 0 auto`/`white-space: nowrap`. Verified live via a throwaway
+  RTL script (not committed): rendered timestamp text matches
+  `toLocaleString()` exactly, all other row content intact. lint/
+  typecheck/build pass; full suite unchanged at 852/852. Phase set to
+  `test`.
 - 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
   accepted by user (selected "Accept (Recommended)" against the
   validation summary and AC-by-AC mapping, no changes requested); logged
