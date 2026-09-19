@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 054 (Mail message list — flagged-row styling)
+- **Phase:** implement
+- **Active feature:** 055 (Mail message list — show each message's timestamp)
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,12 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
+  accepted by user (selected "Accept (Recommended)" against the
+  validation summary and AC-by-AC mapping, no changes requested); logged
+  to CHANGELOG. Active feature set to 055 (Mail message list — show each
+  message's timestamp, next in BACKLOG.md table order), phase set to
+  `implement`.
 - 2026-09-18 — feature 054 (Mail message list — flagged-row styling)
   validated: lint/typecheck/build pass; full suite (852/852) re-run 4x
   total, stable; `git diff --stat` (1ba8223..HEAD) confirms

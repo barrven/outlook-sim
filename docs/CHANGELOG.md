@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Mail message list — flagged-row styling (features/054-flagged-row-styling.md)
+Flagged messages now stand out more in the message list: a larger flag
+icon and a distinct background highlight on the whole row, so flagged
+mail is obvious at a glance. Selecting a flagged row still shows your
+selection clearly.
+
 ## 2026-09-18 — Ribbon — Home tab: remove dead placeholder buttons (features/053-remove-dead-home-tab-buttons.md)
 The Home tab's ribbon no longer shows "New Items", "Reply", "Reply All",
 or "Forward" as permanently-disabled buttons that never did anything —
