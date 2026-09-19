@@ -1,7 +1,7 @@
 ---
 id: 057
 title: Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort)
-status: testing
+status: validating
 priority: low
 ---
 
@@ -104,7 +104,43 @@ convention (e.g. feature 062 left 5 attachment tests failing the same
 way).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+861 → 872 net (+11, all passing; re-run 3x, stable), all in the existing
+`TasksPanel.test.tsx` (18 → 29 tests in that file, matching the overall
+delta exactly — no other file touched this stage).
+
+Rewrote the 5 pre-existing tests this feature's AC1/AC2 broke (the
+always-visible add row is now hidden by default) into the new behavior —
+click header "Add" first, then interact with the form; the "keeps the
+add-task row above the list" test became "the open add form stays above
+the task list," same intent, updated mechanism. Added a Cancel test for
+the add path (didn't exist before, since there was previously nothing to
+cancel).
+
+New coverage: AC1/AC2 — form hidden by default, opens below the header
+on click, header Add button and open form are never both visible at
+once. AC3 — Edit opens the form's `<li>` immediately after the clicked
+task's own row (asserted on real DOM child order, not just "the field
+exists somewhere"), pre-filled with that task's text and due date
+(including the undated case, which pre-fills a blank date field). AC4 —
+three angles: opening a different task's Edit replaces the open one
+(exactly one edit-text-field in the document); opening Edit closes an
+open Add form; Cancel closes an edit without updating. AC5 — Save calls
+`tasks.update` with the edited text/dueAt and closes the form. AC6 — a
+4-task mix (two dated, two undated, one of each pair created at the same
+`createdAt` as its sibling) asserts the exact expected order in one
+test. AC7 — a dedicated test confirms removing a task that's mid-edit
+also closes its form (the defensive guard added in `handleRemoveTask`).
+
+Also locked in the date round-trip fix specifically: editing a dated
+task without touching the due date, then saving, sends back the exact
+same `dueAt` timestamp it started with — this would fail if
+`dueAtToDateInputValue` used local getters instead of UTC ones,
+confirming the fix end-to-end rather than just asserting the helper's
+output in isolation.
+
+Deliberately uncovered: the actual rendered visual layout (header row,
+inline form spacing — no attached display, same non-blocking gap as
+every prior CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

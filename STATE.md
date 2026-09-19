@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 057 (Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort))
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,19 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign) tested:
+  861 → 872 net (+11, all passing; re-run 3x, stable), all in
+  `TasksPanel.test.tsx` (18 → 29 tests, matching the overall delta — no
+  other file touched). Rewrote the 5 tests this feature's AC1/AC2 broke
+  into the new hidden-by-default behavior. New coverage per AC: AC1/AC2
+  form visibility; AC3 real DOM child-order placement + pre-fill
+  (including the undated case); AC4 three angles (Edit-replaces-Edit,
+  Edit-closes-Add, Cancel-closes-edit); AC5 Save persists via the real
+  API; AC6 a 4-task mixed-sort assertion; AC7 remove-while-editing closes
+  the form. Also locked in the date round-trip fix end-to-end (edit
+  without touching the date reproduces the exact same stored timestamp).
+  lint/typecheck/build all pass. Test Notes filled in; phase set to
+  `validate`.
 - 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
   implemented: shared add/edit form (`taskForm`, a plain JSX variable) and
   `creating`/`editingTaskId` state, mirroring `PersonasSettings.tsx`'s

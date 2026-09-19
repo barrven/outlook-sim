@@ -144,12 +144,29 @@ describe('TasksPanel', () => {
   })
 
   // AC3
-  it('adds a freestanding task with the typed text and an optional due date, then clears the inputs', async () => {
+  it('057 AC1/AC2: the add form is hidden by default; clicking header Add opens it below the header', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('No tasks yet.')
+    expect(screen.queryByLabelText('New task')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(screen.getByLabelText('New task')).toBeInTheDocument()
+    // The header's own Add button is replaced by the open form, not
+    // duplicated alongside it.
+    expect(screen.getAllByRole('button', { name: 'Add' })).toHaveLength(1)
+  })
+
+  it('adds a freestanding task with the typed text and an optional due date, then closes the form', async () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.tasks.create).mockResolvedValue(makeTask())
     render(<TasksPanel messagesVersion={0} />)
     await waitFor(() => expect(window.api.data.tasks.list).toHaveBeenCalledTimes(1))
 
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     await user.type(screen.getByLabelText('New task'), 'Call client')
     await user.type(screen.getByLabelText('Due date'), '2026-03-15')
     await user.click(screen.getByRole('button', { name: 'Add' }))
@@ -162,8 +179,7 @@ describe('TasksPanel', () => {
       })
     )
     expect(window.api.data.tasks.list).toHaveBeenCalledTimes(2) // initial + post-add refetch
-    expect(screen.getByLabelText('New task')).toHaveValue('')
-    expect(screen.getByLabelText('Due date')).toHaveValue('')
+    expect(screen.queryByLabelText('New task')).not.toBeInTheDocument()
   })
 
   it('adding a task with no due date sends dueAt: null', async () => {
@@ -171,6 +187,7 @@ describe('TasksPanel', () => {
     vi.mocked(window.api.data.tasks.create).mockResolvedValue(makeTask())
     render(<TasksPanel messagesVersion={0} />)
 
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     await user.type(screen.getByLabelText('New task'), 'No due date')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
@@ -184,6 +201,7 @@ describe('TasksPanel', () => {
     vi.mocked(window.api.data.tasks.create).mockResolvedValue(makeTask())
     render(<TasksPanel messagesVersion={0} />)
 
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     await user.type(screen.getByLabelText('New task'), 'Via Enter{Enter}')
 
     await waitFor(() =>
@@ -193,17 +211,188 @@ describe('TasksPanel', () => {
     )
   })
 
-  it('the Add button is disabled, and Enter is a no-op, when the task text is blank', async () => {
+  it('the form\'s Add button is disabled, and Enter is a no-op, when the task text is blank', async () => {
     const user = userEvent.setup()
     render(<TasksPanel messagesVersion={0} />)
 
+    await user.click(screen.getByRole('button', { name: 'Add' }))
     expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled()
 
     await user.type(screen.getByLabelText('New task'), '   {Enter}')
     expect(window.api.data.tasks.create).not.toHaveBeenCalled()
   })
 
-  // AC4
+  it('Cancel closes the add form without creating anything', async () => {
+    const user = userEvent.setup()
+    render(<TasksPanel messagesVersion={0} />)
+
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.type(screen.getByLabelText('New task'), 'Should not be saved')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(window.api.data.tasks.create).not.toHaveBeenCalled()
+    expect(screen.queryByLabelText('New task')).not.toBeInTheDocument()
+    // The header Add button is back.
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument()
+  })
+
+  // 057 — Edit opens the form inline under the task's own row
+
+  it('057 AC3: Edit opens the form immediately below that task\'s own row, pre-filled with its text and due date', async () => {
+    const user = userEvent.setup()
+    const dueAt = new Date('2026-03-15').getTime()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'a', text: 'Alpha', dueAt, createdAt: 1 }),
+      makeTask({ id: 'b', text: 'Bravo', dueAt: null, createdAt: 2 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Bravo') // sorted first: undated, newest-created
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+
+    const list = document.querySelector('.tasks-panel-list') as HTMLElement
+    const rows = Array.from(list.children)
+    const alphaIndex = rows.findIndex((row) => row.textContent?.includes('Alpha'))
+    const formIndex = rows.findIndex((row) => row.querySelector('.tasks-panel-form'))
+    expect(formIndex).toBe(alphaIndex + 1)
+
+    expect(screen.getByLabelText('Edit task text')).toHaveValue('Alpha')
+    expect(screen.getByLabelText('Due date')).toHaveValue('2026-03-15')
+  })
+
+  it('057 AC3: editing an undated task pre-fills a blank due date', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'a', text: 'No due date yet', dueAt: null, createdAt: 1 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('No due date yet')
+    await user.click(screen.getByRole('button', { name: 'Edit "No due date yet"' }))
+
+    expect(screen.getByLabelText('Due date')).toHaveValue('')
+  })
+
+  it('057 AC4: opening a different task\'s Edit closes the one already open', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'a', text: 'Alpha', createdAt: 1 }),
+      makeTask({ id: 'b', text: 'Bravo', createdAt: 2 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Alpha')
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+    expect(screen.getByLabelText('Edit task text')).toHaveValue('Alpha')
+
+    await user.click(screen.getByRole('button', { name: 'Edit "Bravo"' }))
+
+    expect(screen.getAllByLabelText('Edit task text')).toHaveLength(1)
+    expect(screen.getByLabelText('Edit task text')).toHaveValue('Bravo')
+  })
+
+  it('057 AC4: opening Edit on a task closes an open Add form', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([makeTask({ id: 'a', text: 'Alpha', createdAt: 1 })])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Alpha')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    expect(screen.getByLabelText('New task')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+
+    expect(screen.queryByLabelText('New task')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Edit task text')).toHaveValue('Alpha')
+  })
+
+  it('057 AC5: saving an edit updates the task via the real data API and closes the form', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'a', text: 'Alpha', dueAt: null, createdAt: 1 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Alpha')
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+    const textInput = screen.getByLabelText('Edit task text')
+    await user.clear(textInput)
+    await user.type(textInput, 'Alpha updated')
+    await user.type(screen.getByLabelText('Due date'), '2026-04-01')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(window.api.data.tasks.update).toHaveBeenCalledWith('a', {
+      text: 'Alpha updated',
+      dueAt: new Date('2026-04-01').getTime()
+    })
+    await waitFor(() => expect(screen.queryByLabelText('Edit task text')).not.toBeInTheDocument())
+  })
+
+  it('057: editing a dated task without changing its due date round-trips to the exact same stored value', async () => {
+    const user = userEvent.setup()
+    const dueAt = new Date('2026-03-15').getTime()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'a', text: 'Alpha', dueAt, createdAt: 1 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Alpha')
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(window.api.data.tasks.update).toHaveBeenCalledWith('a', { text: 'Alpha', dueAt })
+  })
+
+  it('Cancel closes an open edit form without updating anything', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([makeTask({ id: 'a', text: 'Alpha', createdAt: 1 })])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Alpha')
+    await user.click(screen.getByRole('button', { name: 'Edit "Alpha"' }))
+    await user.type(screen.getByLabelText('Edit task text'), ' but not saved')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(window.api.data.tasks.update).not.toHaveBeenCalled()
+    expect(screen.queryByLabelText('Edit task text')).not.toBeInTheDocument()
+    expect(screen.getByText('Alpha')).toBeInTheDocument()
+  })
+
+  it('removing a task that is mid-edit also closes its form', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.tasks.list)
+      .mockResolvedValueOnce([makeTask({ id: 'a', text: 'Going away', createdAt: 1 })])
+      .mockResolvedValueOnce([])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Going away')
+    await user.click(screen.getByRole('button', { name: 'Edit "Going away"' }))
+    expect(screen.getByLabelText('Edit task text')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Remove/ }))
+
+    await waitFor(() => expect(screen.queryByLabelText('Edit task text')).not.toBeInTheDocument())
+    await screen.findByText('No tasks yet.')
+  })
+
+  // 057 AC6 — due-date sort order
+
+  it('057 AC6: undated tasks appear first, newest-created first among themselves, then dated tasks ascending', async () => {
+    vi.mocked(window.api.data.tasks.list).mockResolvedValue([
+      makeTask({ id: 'dated-later', text: 'Dated Later', dueAt: 2_000_000, createdAt: 1 }),
+      makeTask({ id: 'undated-old', text: 'Undated Old', dueAt: null, createdAt: 1 }),
+      makeTask({ id: 'dated-earlier', text: 'Dated Earlier', dueAt: 1_000_000, createdAt: 1 }),
+      makeTask({ id: 'undated-new', text: 'Undated New', dueAt: null, createdAt: 2 })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Dated Later')
+    const texts = Array.from(document.querySelectorAll('.tasks-panel-task-text')).map((el) => el.textContent)
+
+    expect(texts).toEqual(['Undated New', 'Undated Old', 'Dated Earlier', 'Dated Later'])
+  })
+
+  // AC4 (feature 046)
   it('toggling the checkbox marks a task complete/incomplete, and shows it struck through when done', async () => {
     const user = userEvent.setup()
     vi.mocked(window.api.data.tasks.list).mockResolvedValue([makeTask({ id: 't1', text: 'Follow up', done: false })])
@@ -252,20 +441,24 @@ describe('TasksPanel', () => {
     expect(await screen.findByText('No tasks yet.')).toBeInTheDocument()
   })
 
-  // Requested-changes round: the add-task row must stay fixed above the
-  // list rather than being pushed down as tasks accumulate.
-  it('keeps the add-task row above the task list, regardless of how many tasks exist', async () => {
+  // 057: the add form must appear below the header (fixed spot), not
+  // interspersed among existing tasks, regardless of how many exist —
+  // the redesigned equivalent of the requested-changes fix from 046 that
+  // originally pinned the (then always-visible) add row above the list.
+  it('057 AC2: the open add form stays above the task list, not pushed down by existing tasks', async () => {
+    const user = userEvent.setup()
     vi.mocked(window.api.data.tasks.list).mockResolvedValue([
-      makeTask({ id: 't1', text: 'First' }),
-      makeTask({ id: 't2', text: 'Second' })
+      makeTask({ id: 't1', text: 'First', createdAt: 1 }),
+      makeTask({ id: 't2', text: 'Second', createdAt: 2 })
     ])
     render(<TasksPanel messagesVersion={0} />)
 
-    const addRow = screen.getByLabelText('New task')
     const firstTask = await screen.findByText('First')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    const addForm = screen.getByLabelText('New task')
 
-    // DOCUMENT_POSITION_FOLLOWING on the task relative to the add row means
-    // the add row comes first in document order.
-    expect(addRow.compareDocumentPosition(firstTask) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // DOCUMENT_POSITION_FOLLOWING on the task relative to the add form
+    // means the form comes first in document order.
+    expect(addForm.compareDocumentPosition(firstTask) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
