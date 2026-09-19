@@ -2227,6 +2227,29 @@ body {
   color: var(--text-muted);
 }
 
+.tasks-panel-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tasks-panel-section-header .tasks-panel-heading {
+  margin: 0 0 8px;
+}
+
+.tasks-panel-add-btn {
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
 .tasks-panel-empty {
   margin: 0;
   font-size: 12px;
@@ -2309,6 +2332,15 @@ body {
   color: var(--text-muted);
 }
 
+.tasks-panel-edit {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+
 .tasks-panel-remove {
   flex: 0 0 auto;
   background: transparent;
@@ -2319,19 +2351,37 @@ body {
   line-height: 1;
 }
 
-.tasks-panel-add-row {
+.tasks-panel-form {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-bottom: 10px;
 }
 
-.tasks-panel-add-row input,
-.tasks-panel-add-row button {
+.tasks-panel-form input {
   padding: 5px 6px;
   font-size: 12px;
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-family: inherit;
+}
+
+.tasks-panel-form-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tasks-panel-form-actions button {
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.tasks-panel-form-row {
+  padding: 4px 0;
 }

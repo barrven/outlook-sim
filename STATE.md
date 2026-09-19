@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 057 (Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort))
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,28 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
+  implemented: shared add/edit form (`taskForm`, a plain JSX variable) and
+  `creating`/`editingTaskId` state, mirroring `PersonasSettings.tsx`'s
+  inline-edit pattern (050). Header gained an "Add" button
+  (`.tasks-panel-section-header`), hidden while any form is open (AC1/
+  AC2). Each task gained an "Edit" button opening the form inline in a
+  per-task `<Fragment>` (AC3), single-valued state giving AC4's mutual
+  exclusion for free. `handleSaveTask` branches create-vs-update via the
+  real `tasks.update`/`tasks.create` APIs (AC5). New `sortedTasks`
+  (undated first, newest-created-first among themselves, then dated
+  ascending — AC6) computed as a copy, `tasks` state untouched.
+  `handleRemoveTask` gained a defensive close-if-editing guard (AC7,
+  matching PersonasSettings' identical pattern). Also added
+  `dueAtToDateInputValue`, inverting the existing UTC-parse quirk in how
+  due dates are already stored (feature 046, left unchanged per AC7) so
+  editing a date-having task's date round-trips correctly. Verified live
+  via a throwaway RTL script (not committed): all 6 ACs plus the date
+  round-trip fix confirmed end-to-end. lint/typecheck/build pass; full
+  suite 856/861 — 5 pre-existing tests fail because they drove the old
+  always-visible add row this feature deliberately replaced, left for
+  `/test` to rewrite per this repo's established convention. Phase set to
+  `test`.
 - 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
   Flagged Mail rows) accepted by user (selected "Accept (Recommended)"
   against the validation summary and AC-by-AC mapping, no changes
