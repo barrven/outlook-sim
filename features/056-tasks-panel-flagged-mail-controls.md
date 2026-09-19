@@ -1,7 +1,7 @@
 ---
 id: 056
 title: Tasks panel — unflag and pop-out controls on Flagged Mail rows
-status: validating
+status: accept
 priority: low
 ---
 
@@ -85,7 +85,35 @@ side-by-side buttons (no attached display, same non-blocking gap as
 every prior CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (861/861) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (74827f6..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+added.
+
+All 4 ACs re-verified directly against current source:
+
+- **AC1** (unflag control per row): a real `.tasks-panel-flagged-unflag`
+  `<button>` exists per row, calling `handleUnflagMessage`.
+- **AC2** (real API + row disappears): `handleUnflagMessage` calls
+  `window.api.data.messages.update(message.id, { isFlagged: false })` —
+  the genuine IPC call, not a local-only state mutation; no new refetch
+  logic was added, confirming the disappearance relies entirely on the
+  pre-existing broadcast → `messagesVersion` path.
+- **AC3** (double-click opens pop-out): the subject button's
+  `onDoubleClick` calls `window.api.messagePopout.open(message.id)` —
+  the identical call `MessageListPane.tsx` uses.
+- **AC4** (no interference): read the JSX directly — the subject and
+  unflag buttons are sibling `<button>` elements, both direct children
+  of the `<li>`, never nested inside each other. DOM event bubbling only
+  travels up an element's own ancestor chain, so a `dblclick` on one can
+  never reach the other's handler — this is a structural guarantee, not
+  dependent on `stopPropagation()` (which the code doesn't use).
+
+Not independently re-verified: the actual rendered visual layout of the
+two side-by-side buttons (no attached display — same non-blocking gap as
+every prior CSS-touching feature). All checks pass, no blocking gaps
+found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._

@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 056 (Tasks panel — unflag and pop-out controls on Flagged Mail rows)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,18 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
+  Flagged Mail rows) validated: lint/typecheck/build pass; full suite
+  (861/861) re-run 4x total, stable; `git diff --stat` (74827f6..HEAD)
+  confirms `/implement`+`/test` touched only the expected files, no new
+  dependency. All 4 ACs re-verified directly against current source: AC1
+  a real unflag button per row; AC2 the real `messages.update` IPC call,
+  no new local refetch logic added; AC3 the same `messagePopout.open`
+  call `MessageListPane.tsx` uses; AC4 confirmed the two buttons are
+  sibling elements, never nested, a structural (not `stopPropagation()`-
+  based) guarantee against dblclick bubbling between them. Not
+  independently re-verified: rendered visual layout (no attached
+  display). All checks pass, no blocking gaps. Phase set to `accept`.
 - 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
   Flagged Mail rows) tested: 856 → 861 net (+5, all passing; re-run 3x,
   stable), all in `TasksPanel.test.tsx`'s new "056" block. AC1 confirms
