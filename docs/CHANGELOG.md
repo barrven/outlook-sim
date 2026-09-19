@@ -7,6 +7,11 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Mail message list — show each message's timestamp (features/055-message-list-timestamp.md)
+Each row in the message list now shows its timestamp, no longer requiring
+you to open a message to see when it arrived — formatted the same way as
+the Reading Pane already does.
+
 ## 2026-09-18 — Mail message list — flagged-row styling (features/054-flagged-row-styling.md)
 Flagged messages now stand out more in the message list: a larger flag
 icon and a distinct background highlight on the whole row, so flagged
