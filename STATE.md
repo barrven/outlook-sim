@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 055 (Mail message list — show each message's timestamp)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,15 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 055 (Mail message list — show each message's
+  timestamp) tested: 852 → 856 net (+4, all passing; re-run 3x, stable),
+  all in `MessageListPane.test.tsx`'s new "055" block. AC1 confirms exact
+  `toLocaleString()` text match plus per-row correctness (two messages,
+  two different timestamps, neither shared/stale). AC2 confirms from/
+  subject/categories/flag button all still present alongside a real
+  `.message-list-item-timestamp` element. AC3 confirms search filtering
+  is unaffected. lint/typecheck/build all pass. Test Notes filled in;
+  phase set to `validate`.
 - 2026-09-18 — feature 055 (Mail message list — show each message's
   timestamp) implemented: `MessageListPane.tsx`'s row gained a
   `.message-list-item-top-row` (from + a new timestamp span, flex

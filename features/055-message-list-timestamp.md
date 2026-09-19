@@ -1,7 +1,7 @@
 ---
 id: 055
 title: Mail message list — show each message's timestamp
-status: testing
+status: validating
 priority: low
 ---
 
@@ -53,7 +53,25 @@ unchanged at 852/852 (no new feature-specific tests yet — that's
 `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+852 → 856 net (+4, all passing; re-run 3x, stable), all in
+`MessageListPane.test.tsx`'s new "055" block.
+
+AC1: the rendered timestamp text matches
+`new Date(timestamp).toLocaleString()` exactly — the same call the
+Reading Pane uses, so this test would fail if the formatting ever drifted
+from that; a second test with two messages at different timestamps
+confirms each row shows *its own* message's timestamp, not a shared or
+stale value. AC2: from/subject/categories/flag button are all still
+present and findable in the row, with the timestamp landing in a real
+`.message-list-item-timestamp` element (not just present as loose text
+somewhere). AC3: with `searchQuery` set, only the matching message
+renders — the existing search-filtering behavior, unaffected by this
+purely-additive display change.
+
+Deliberately uncovered: the actual rendered visual alignment (right-
+aligned timestamp, ellipsis truncation on a long sender name — no
+attached display, same non-blocking gap as every prior CSS-touching
+feature). lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

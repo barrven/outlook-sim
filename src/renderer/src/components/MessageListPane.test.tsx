@@ -148,6 +148,100 @@ describe('MessageListPane', () => {
     expect(onSelectMessage).not.toHaveBeenCalled()
   })
 
+  // 055 — each row shows its timestamp
+
+  it('055 AC1: shows each message\'s timestamp, formatted exactly like the Reading Pane\'s own toLocaleString() call', async () => {
+    const timestamp = new Date('2026-01-15T10:30:00').getTime()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([makeMessage({ timestamp })])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    await screen.findByText('Test subject')
+    expect(screen.getByText(new Date(timestamp).toLocaleString())).toBeInTheDocument()
+  })
+
+  it('055 AC1: each row gets its own message\'s timestamp, not a shared/stale one', async () => {
+    const earlier = new Date('2026-01-10T09:00:00').getTime()
+    const later = new Date('2026-01-15T14:45:00').getTime()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Earlier message', timestamp: earlier }),
+      makeMessage({ id: 'b', subject: 'Later message', timestamp: later })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    await screen.findByText('Earlier message')
+    expect(screen.getByText('Earlier message').closest('.message-list-item')).toHaveTextContent(
+      new Date(earlier).toLocaleString()
+    )
+    expect(screen.getByText('Later message').closest('.message-list-item')).toHaveTextContent(
+      new Date(later).toLocaleString()
+    )
+  })
+
+  it('055 AC2: the timestamp appears alongside from/subject/categories/flag button, none of which are displaced', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ fromName: 'Priya Shah', subject: 'Quarterly numbers', categories: ['Urgent', 'Finance'] })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+      />
+    )
+
+    const item = (await screen.findByText('Quarterly numbers')).closest('.message-list-item')!
+    expect(item).toHaveTextContent('Priya Shah')
+    expect(item).toHaveTextContent('Urgent, Finance')
+    expect(item.querySelector('.message-list-item-timestamp')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Flag message' })).toBeInTheDocument()
+  })
+
+  it('055 AC3: adding the timestamp does not change the message list\'s search/filter behavior', async () => {
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'a', subject: 'Alpha report' }),
+      makeMessage({ id: 'b', subject: 'Beta notes' })
+    ])
+
+    render(
+      <MessageListPane
+        selectedFolderId="inbox"
+        selectedFolderName="Inbox"
+        selectedMessageIds={[]}
+        onSelectionChange={vi.fn()}
+        messagesVersion={0}
+        {...defaultProps}
+        searchQuery="report"
+      />
+    )
+
+    await screen.findByText('Alpha report')
+    expect(screen.queryByText('Beta notes')).not.toBeInTheDocument()
+  })
+
   // 054 — flagged-row background highlight
 
   it('054 AC2: a flagged row carries the highlight class; an unflagged row does not', async () => {
