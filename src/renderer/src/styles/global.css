@@ -2245,15 +2245,38 @@ body {
    adjacent items share one line instead of drawing it twice; the last
    item then needs its own bottom border to close the list off. */
 .tasks-panel-flagged-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 0;
-  font-size: 13px;
-  color: var(--text);
-  overflow-wrap: break-word;
   border-top: 1px solid var(--border);
 }
 
 .tasks-panel-flagged-item:last-child {
   border-bottom: 1px solid var(--border);
+}
+
+.tasks-panel-flagged-subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--text);
+  overflow-wrap: break-word;
+  cursor: pointer;
+}
+
+.tasks-panel-flagged-unflag {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--flag-border);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .tasks-panel-task {

@@ -60,6 +60,14 @@ function TasksPanel({ messagesVersion }: TasksPanelProps): ReactElement {
     refreshTasks()
   }
 
+  // AC2: no local refetch needed here — the same `db:messages:update`
+  // broadcast every other flag toggle in the app already relies on
+  // (MessageListPane, ReadingPane, ribbon) bumps `messagesVersion` in
+  // App.tsx, which this component's own effect above is already keyed on.
+  function handleUnflagMessage(message: MailMessage): void {
+    window.api.data.messages.update(message.id, { isFlagged: false })
+  }
+
   return (
     <div className="tasks-panel">
       <div className="tasks-panel-section">
@@ -70,7 +78,21 @@ function TasksPanel({ messagesVersion }: TasksPanelProps): ReactElement {
           <ul className="tasks-panel-list">
             {flaggedMessages.map((message) => (
               <li key={message.id} className="tasks-panel-flagged-item">
-                {message.subject || '(no subject)'}
+                <button
+                  type="button"
+                  className="tasks-panel-flagged-subject"
+                  onDoubleClick={() => window.api.messagePopout.open(message.id)}
+                >
+                  {message.subject || '(no subject)'}
+                </button>
+                <button
+                  type="button"
+                  className="tasks-panel-flagged-unflag"
+                  aria-label={`Unflag "${message.subject || '(no subject)'}"`}
+                  onClick={() => handleUnflagMessage(message)}
+                >
+                  ⚑
+                </button>
               </li>
             ))}
           </ul>

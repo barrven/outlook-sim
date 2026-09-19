@@ -1,7 +1,7 @@
 ---
 id: 056
 title: Tasks panel — unflag and pop-out controls on Flagged Mail rows
-status: backlog
+status: testing
 priority: low
 ---
 
@@ -25,7 +25,44 @@ double-click handler that opens the message in its pop-out reading window
       pop-out)
 
 ## Implementation Notes
-_Filled in during `/implement` — approach taken, files touched, tradeoffs._
+Scoped to `TasksPanel.tsx` + `global.css`. Each Flagged Mail `<li>` now
+renders two sibling `<button>`s instead of plain text — same structural
+pattern `MessageListPane.tsx` already uses for its row-button + flag-button
+pair (never nested inside each other, so a `dblclick` on one can never
+bubble into the other's handler):
+- `.tasks-panel-flagged-subject` — the message subject, with
+  `onDoubleClick={() => window.api.messagePopout.open(message.id)}`
+  (AC3, the exact same call `MessageListPane.tsx` uses for the main list).
+- `.tasks-panel-flagged-unflag` — a new `handleUnflagMessage` calling
+  `window.api.data.messages.update(message.id, { isFlagged: false })`
+  (AC1). No local refetch needed: this update triggers the same
+  `db:messages:update` → `broadcastMessagesChanged` → `messagesVersion`
+  bump App.tsx already wires up, and `TasksPanel`'s own
+  `flaggedMessages` effect is already keyed on `messagesVersion` — so the
+  row disappears once the broadcast round-trips, the same live-update
+  path every other flag toggle in the app already relies on (AC2).
+
+**AC4 (no interference):** solved structurally, not with
+`stopPropagation()` — since the two buttons are siblings rather than
+nested, a double-click on the unflag button fires only its own `onClick`
+(twice, standard double-click behavior) and never reaches the subject
+button's `onDoubleClick`, because DOM event bubbling only travels up an
+element's own ancestor chain, never sideways to siblings.
+
+New CSS: `.tasks-panel-flagged-item` became a flex row (mirroring
+`.tasks-panel-task`'s existing layout); `.tasks-panel-flagged-subject` is
+an unstyled, left-aligned, flexible-width button (visually identical to
+the old plain text); `.tasks-panel-flagged-unflag` mirrors
+`.message-list-flag-btn.flagged`'s flag-colored icon-button look
+(`color: var(--flag-border)`).
+
+Verified live via a throwaway RTL script (not committed): the unflag
+button calls `messages.update` with `{ isFlagged: false }`; double-
+clicking the subject calls `messagePopout.open` with the right id;
+double-clicking the unflag button itself never calls
+`messagePopout.open` (only its own `onClick` fires, twice). lint/
+typecheck/build pass; full suite unchanged at 856/856 (no new
+feature-specific tests yet — that's `/test`'s job).
 
 ## Test Notes
 _Filled in during `/test` — what's covered, what's deliberately not._

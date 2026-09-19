@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** implement
+- **Phase:** test
 - **Active feature:** 056 (Tasks panel — unflag and pop-out controls on Flagged Mail rows)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,21 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
+  Flagged Mail rows) implemented: each Flagged Mail row now renders two
+  sibling `<button>`s (never nested, mirroring `MessageListPane.tsx`'s
+  row-button/flag-button pattern) instead of plain text — a subject
+  button with `onDoubleClick` calling `messagePopout.open` (AC3), and a
+  new unflag button calling `messages.update(id, { isFlagged: false })`
+  (AC1). No local refetch needed: the update triggers the same broadcast
+  → `messagesVersion` bump path this component's `flaggedMessages` effect
+  is already keyed on (AC2). AC4 (no interference) is structural — since
+  the buttons are siblings, a double-click on one can never bubble into
+  the other's handler. Verified live via a throwaway RTL script (not
+  committed): unflag calls the right API, double-clicking the subject
+  opens the pop-out, double-clicking the unflag button never does. lint/
+  typecheck/build pass; full suite unchanged at 856/856. Phase set to
+  `test`.
 - 2026-09-18 — feature 055 (Mail message list — show each message's
   timestamp) accepted by user (selected "Accept (Recommended)" against
   the validation summary and AC-by-AC mapping, no changes requested);
