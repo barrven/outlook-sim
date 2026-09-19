@@ -7,6 +7,13 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Tasks panel — Tasks section redesign (features/057-tasks-panel-redesign.md)
+The Tasks section has a cleaner layout: an "Add" button in the header
+opens the add-task form only when you need it, and each task now has its
+own "Edit" button that opens the same form right under that task instead
+of a shared editor. Tasks are also sorted — undated ones first (newest
+first), then dated ones soonest-due first.
+
 ## 2026-09-18 — Tasks panel — unflag and pop-out controls on Flagged Mail rows (features/056-tasks-panel-flagged-mail-controls.md)
 Flagged Mail rows in the Tasks panel now have their own unflag button —
 no more needing to go find the message elsewhere — and double-clicking a

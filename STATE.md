@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 057 (Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort))
+- **Phase:** retro
+- **Active feature:** _(none — backlog empty)_
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
+  accepted by user (selected "Accept (Recommended)" against the
+  validation summary and AC-by-AC mapping, no changes requested); logged
+  to CHANGELOG. This was the last `backlog`-status feature in
+  `features/BACKLOG.md` — Active feature cleared, phase set to `retro`.
 - 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
   validated: lint/typecheck/build pass; full suite (872/872) re-run 4x
   total, stable; `git diff --stat` (53a26a3..HEAD) confirms
