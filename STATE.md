@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** validate
+- **Phase:** accept
 - **Active feature:** 055 (Mail message list — show each message's timestamp)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,17 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 055 (Mail message list — show each message's
+  timestamp) validated: lint/typecheck/build pass; full suite (856/856)
+  re-run 4x total, stable; `git diff --stat` (293c602..HEAD) confirms
+  `/implement`+`/test` touched only the expected files, no new
+  dependency. All 3 ACs re-verified directly against current source: AC1
+  both `MessageListPane.tsx` and `ReadingPane.tsx` call the identical
+  `new Date(x).toLocaleString()` expression; AC2 all existing row content
+  and handlers untouched; AC3 `visibleMessages` (the search/filter/sort
+  computation) is entirely outside this diff's line range. Not
+  independently re-verified: rendered visual layout (no attached
+  display). All checks pass, no blocking gaps. Phase set to `accept`.
 - 2026-09-18 — feature 055 (Mail message list — show each message's
   timestamp) tested: 852 → 856 net (+4, all passing; re-run 3x, stable),
   all in `MessageListPane.test.tsx`'s new "055" block. AC1 confirms exact

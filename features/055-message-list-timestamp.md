@@ -1,7 +1,7 @@
 ---
 id: 055
 title: Mail message list — show each message's timestamp
-status: validating
+status: accept
 priority: low
 ---
 
@@ -74,7 +74,33 @@ attached display, same non-blocking gap as every prior CSS-touching
 feature). lint/typecheck/build all pass.
 
 ## Validation Notes
-_Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._
+lint/typecheck/build pass; full suite (856/856) re-run 4x total across
+`/test` and `/validate`, stable. `git diff --stat` (293c602..HEAD, the
+commit immediately before this feature's `/implement` started) confirms
+`/implement`+`/test` touched only the expected files; no new dependency
+added.
+
+All 3 ACs re-verified directly against current source:
+
+- **AC1** (formatted consistently with the Reading Pane): both
+  `MessageListPane.tsx` and `ReadingPane.tsx` call
+  `new Date(x).toLocaleString()` — the identical expression, confirmed by
+  reading both files directly, not just visually similar output.
+- **AC2** (existing row content remains visible and functional):
+  `from`/`subject`/`categories`/flag `<button>` are all still present in
+  the JSX, in the same relative order, with the same handlers
+  (`handleToggleFlag`, click/context-menu/double-click on the row)
+  untouched.
+- **AC3** (no sorting/filtering/search change): `visibleMessages` (the
+  computation search/scope filtering and sorting flow through) is defined
+  entirely outside the diff's line range — this feature's only change is
+  inside the `.map()` render body, reading `message.timestamp` for
+  display and nothing else.
+
+Not independently re-verified: the actual rendered visual layout (right-
+aligned timestamp, from-name ellipsis truncation under a long sender
+name — no attached display, same non-blocking gap as every prior
+CSS-touching feature). All checks pass, no blocking gaps found.
 
 ## Acceptance Log
 _Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
