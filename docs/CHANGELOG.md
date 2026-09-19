@@ -7,6 +7,12 @@
 What shipped, in user-facing terms.
 -->
 
+## 2026-09-18 — Tasks panel — unflag and pop-out controls on Flagged Mail rows (features/056-tasks-panel-flagged-mail-controls.md)
+Flagged Mail rows in the Tasks panel now have their own unflag button —
+no more needing to go find the message elsewhere — and double-clicking a
+row opens that message in its own pop-out window, same as double-clicking
+it in the main message list.
+
 ## 2026-09-18 — Mail message list — show each message's timestamp (features/055-message-list-timestamp.md)
 Each row in the message list now shows its timestamp, no longer requiring
 you to open a message to see when it arrived — formatted the same way as

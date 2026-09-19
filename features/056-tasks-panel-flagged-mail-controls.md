@@ -1,7 +1,7 @@
 ---
 id: 056
 title: Tasks panel — unflag and pop-out controls on Flagged Mail rows
-status: accept
+status: done
 priority: low
 ---
 
@@ -116,4 +116,5 @@ every prior CSS-touching feature). All checks pass, no blocking gaps
 found.
 
 ## Acceptance Log
-_Filled in during `/accept` — what the user said, and the decision (accepted / changes requested / rejected)._
+2026-09-18 — user selected "Accept (Recommended)" against the validation
+summary and AC-by-AC mapping, no changes requested. Decision: accepted.

@@ -4,8 +4,8 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** accept
-- **Active feature:** 056 (Tasks panel — unflag and pop-out controls on Flagged Mail rows)
+- **Phase:** implement
+- **Active feature:** 057 (Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort))
 - **Last updated:** 2026-09-18
 
 ## Phases
@@ -22,6 +22,13 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
+  Flagged Mail rows) accepted by user (selected "Accept (Recommended)"
+  against the validation summary and AC-by-AC mapping, no changes
+  requested); logged to CHANGELOG. This was the second-to-last backlog
+  feature. Active feature set to 057 (Tasks panel — Tasks section
+  redesign, the last remaining `backlog`-status feature in BACKLOG.md),
+  phase set to `implement`.
 - 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
   Flagged Mail rows) validated: lint/typecheck/build pass; full suite
   (861/861) re-run 4x total, stable; `git diff --stat` (74827f6..HEAD)
