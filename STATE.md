@@ -4,7 +4,7 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** test
+- **Phase:** validate
 - **Active feature:** 056 (Tasks panel — unflag and pop-out controls on Flagged Mail rows)
 - **Last updated:** 2026-09-18
 
@@ -22,6 +22,16 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
+  Flagged Mail rows) tested: 856 → 861 net (+5, all passing; re-run 3x,
+  stable), all in `TasksPanel.test.tsx`'s new "056" block. AC1 confirms
+  the unflag button calls the real `messages.update` API. AC2 confirms
+  the row disappears via the same broadcast-driven refetch path the
+  existing 046 test already exercises. AC3 confirms double-clicking the
+  subject opens the real pop-out with the right id. AC4 covers both
+  directions of non-interference (unflag double-click never opens the
+  pop-out; subject double-click never calls unflag). lint/typecheck/build
+  all pass. Test Notes filled in; phase set to `validate`.
 - 2026-09-18 — feature 056 (Tasks panel — unflag and pop-out controls on
   Flagged Mail rows) implemented: each Flagged Mail row now renders two
   sibling `<button>`s (never nested, mirroring `MessageListPane.tsx`'s

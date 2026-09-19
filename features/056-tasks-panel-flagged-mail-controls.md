@@ -1,7 +1,7 @@
 ---
 id: 056
 title: Tasks panel — unflag and pop-out controls on Flagged Mail rows
-status: testing
+status: validating
 priority: low
 ---
 
@@ -65,7 +65,24 @@ typecheck/build pass; full suite unchanged at 856/856 (no new
 feature-specific tests yet — that's `/test`'s job).
 
 ## Test Notes
-_Filled in during `/test` — what's covered, what's deliberately not._
+856 → 861 net (+5, all passing; re-run 3x, stable), all in the existing
+`TasksPanel.test.tsx`'s new "056" block.
+
+AC1: clicking the unflag button calls `messages.update(id, { isFlagged:
+false })` — the real data API, not a local-only toggle. AC2: after that
+call, simulating the same broadcast-driven `messagesVersion` bump the
+existing 046 AC2 test already exercises (a `rerender` with the mock list
+now excluding the message) makes the row disappear — confirming this
+component's existing refetch path is what removes it, no new local-state
+mutation added. AC3: double-clicking the subject calls
+`messagePopout.open` with the message's real id. AC4: two tests —
+double-clicking the unflag button never calls `messagePopout.open`, and
+double-clicking the subject never calls the unflag API — covering
+non-interference in both directions, not just one.
+
+Deliberately uncovered: the actual rendered visual layout of the two
+side-by-side buttons (no attached display, same non-blocking gap as
+every prior CSS-touching feature). lint/typecheck/build all pass.
 
 ## Validation Notes
 _Filled in during `/validate` — lint/typecheck/build/test results, and a check against each acceptance criterion above._

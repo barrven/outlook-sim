@@ -69,6 +69,80 @@ describe('TasksPanel', () => {
     expect(await screen.findByText('(no subject)')).toBeInTheDocument()
   })
 
+  // 056 — unflag and pop-out controls on Flagged Mail rows
+
+  it('056 AC1: the unflag control calls messages.update with isFlagged: false, via the real data API', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'm1', subject: 'Flagged one' })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Flagged one')
+    await user.click(screen.getByRole('button', { name: 'Unflag "Flagged one"' }))
+
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('m1', { isFlagged: false })
+  })
+
+  it('056 AC2: unflagging removes the row once the broadcast-driven messagesVersion bump refetches (no local list mutation needed)', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'm1', subject: 'Flagged one' })
+    ])
+    const { rerender } = render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Flagged one')
+    await user.click(screen.getByRole('button', { name: 'Unflag "Flagged one"' }))
+    expect(window.api.data.messages.update).toHaveBeenCalledWith('m1', { isFlagged: false })
+
+    // The real IPC update triggers a `data:messages-changed` broadcast
+    // App.tsx turns into a `messagesVersion` bump — simulated here the
+    // same way the existing 046 AC2 test above does.
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([])
+    rerender(<TasksPanel messagesVersion={1} />)
+
+    await screen.findByText('No flagged messages.')
+  })
+
+  it('056 AC3: double-clicking a Flagged Mail row\'s subject opens it in its own pop-out window', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'm1', subject: 'Flagged one' })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    const subject = await screen.findByText('Flagged one')
+    await user.dblClick(subject)
+
+    expect(window.api.messagePopout.open).toHaveBeenCalledWith('m1')
+  })
+
+  it('056 AC4: double-clicking the unflag control never triggers the pop-out', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'm1', subject: 'Flagged one' })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    await screen.findByText('Flagged one')
+    await user.dblClick(screen.getByRole('button', { name: 'Unflag "Flagged one"' }))
+
+    expect(window.api.messagePopout.open).not.toHaveBeenCalled()
+  })
+
+  it('056 AC4: double-clicking the subject never calls the unflag API', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.messages.list).mockResolvedValue([
+      makeMessage({ id: 'm1', subject: 'Flagged one' })
+    ])
+    render(<TasksPanel messagesVersion={0} />)
+
+    const subject = await screen.findByText('Flagged one')
+    await user.dblClick(subject)
+
+    expect(window.api.data.messages.update).not.toHaveBeenCalled()
+  })
+
   // AC3
   it('adds a freestanding task with the typed text and an optional due date, then clears the inputs', async () => {
     const user = userEvent.setup()

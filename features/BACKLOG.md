@@ -72,7 +72,7 @@
 | 053 | Ribbon — Home tab: remove dead placeholder buttons | done | low | 053-remove-dead-home-tab-buttons.md |
 | 054 | Mail message list — flagged-row styling | done | low | 054-flagged-row-styling.md |
 | 055 | Mail message list — show each message's timestamp | done | low | 055-message-list-timestamp.md |
-| 056 | Tasks panel — unflag and pop-out controls on Flagged Mail rows | testing | low | 056-tasks-panel-flagged-mail-controls.md |
+| 056 | Tasks panel — unflag and pop-out controls on Flagged Mail rows | validating | low | 056-tasks-panel-flagged-mail-controls.md |
 | 057 | Tasks panel — Tasks section redesign (inline edit, header Add, due-date sort) | backlog | low | 057-tasks-panel-redesign.md |
 
 <!--
