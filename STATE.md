@@ -25,7 +25,7 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 - 2026-11-11 — feature 068 (Ghost Practice tab, replacing FileVine) implemented,
   tested and validated in a single pass outside the usual /features →
   /implement chain, from features/ghost-practice/SPEC.md (commit 63e7175).
-  Not committed per stage — the work is uncommitted in the working tree.
+  Not committed per stage — landed as one commit (ca41bd7).
   build/lint pass, 928/928 tests; checked in the running app. Decisions
   and unverified items are in the feature file. Phase set to `accept`
   (was `retro`, which is still owed for outer iteration 3).
