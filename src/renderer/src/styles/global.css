@@ -1359,7 +1359,7 @@ body {
   color: var(--text-muted);
 }
 
-.attachment-save-filevine-btn {
+.attachment-save-file-btn {
   padding: 3px 8px;
   background: var(--pane-bg);
   border: 1px solid var(--border);
@@ -1369,7 +1369,7 @@ body {
   cursor: pointer;
 }
 
-.attachment-save-filevine-dialog {
+.attachment-save-file-dialog {
   flex-basis: 100%;
   display: flex;
   flex-direction: column;
@@ -1382,8 +1382,8 @@ body {
   max-width: 280px;
 }
 
-.attachment-save-filevine-dialog select,
-.attachment-save-filevine-dialog input {
+.attachment-save-file-dialog select,
+.attachment-save-file-dialog input {
   padding: 5px 6px;
   font-size: 13px;
   color: var(--text);
@@ -1391,18 +1391,18 @@ body {
   border-radius: var(--radius);
 }
 
-.attachment-save-filevine-empty-note {
+.attachment-save-file-empty-note {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.attachment-save-filevine-create-form {
+.attachment-save-file-create-form {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.attachment-save-filevine-actions {
+.attachment-save-file-actions {
   display: flex;
   gap: 6px;
 }
@@ -1887,92 +1887,442 @@ body {
   outline: none;
 }
 
-/* FileVine view */
+/* Ghost Practice view (features/ghost-practice/SPEC.md) */
 
-.filevine-view {
+.gp-view {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   background: var(--pane-bg);
+  min-width: 0;
   min-height: 0;
 }
 
-.filevine-view-header {
+.gp-view-header,
+.gp-matter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
 }
 
-.filevine-view-title {
+.gp-view-title {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
 }
 
-.filevine-view-body {
+.gp-matter {
   display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
 }
 
-.filevine-tree-pane {
-  flex: 0 0 320px;
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  padding: 8px 0;
-}
-
-.filevine-tree-empty {
-  padding: 12px 16px;
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.filevine-tree-root,
-.filevine-tree-children {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.filevine-tree-row {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px 4px 6px;
-}
-
-.filevine-tree-name {
+.gp-matter-title {
   flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-  padding: 3px 6px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.gp-matter-header label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gp-view button,
+.gp-view select,
+.gp-view input,
+.gp-view textarea {
   font-size: 13px;
   color: var(--text);
+}
+
+.gp-view input:not([type='checkbox']),
+.gp-view select,
+.gp-view textarea {
+  padding: 5px 6px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.gp-view button:not(.btn-primary):not(.gp-tab):not(.gp-link):not(.gp-tree-name):not(.gp-icon-btn):not(.gp-dashed-btn) {
+  padding: 4px 10px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
-.filevine-tree-name:hover {
-  background: var(--hover-bg);
+.gp-view .btn-primary {
+  padding: 4px 10px;
 }
 
-.filevine-tree-name.selected {
-  background: var(--selected-bg);
-  border: 1px solid var(--selected-border);
-  padding: 2px 5px;
-}
-
-.filevine-tree-actions {
+.gp-tabs {
   display: flex;
-  flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: 2px;
 }
 
-.filevine-tree-action-btn {
+.gp-matter > .gp-tabs {
+  padding: 6px 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.gp-tab {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.gp-tab:hover {
+  background: var(--hover-bg);
+}
+
+.gp-tab.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.gp-tab-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 20px 24px;
+}
+
+.gp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.gp-toolbar input[type='search'] {
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+
+.gp-section {
+  margin-bottom: 22px;
+}
+
+.gp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gp-section-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gp-table th,
+.gp-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.gp-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.gp-row-voided td {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.gp-row-voided td.gp-row-actions {
+  text-decoration: none;
+}
+
+.gp-row-selected td {
+  background: var(--selected-bg);
+}
+
+.gp-row-actions {
+  white-space: nowrap;
+}
+
+.gp-row-actions > * {
+  margin-right: 4px;
+}
+
+.gp-tag {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.gp-link {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gp-link:hover {
+  text-decoration: underline;
+}
+
+.gp-empty,
+.gp-muted {
+  color: var(--text-muted);
+}
+
+.gp-empty {
+  padding: 8px 0;
+  font-style: italic;
+}
+
+.gp-muted {
+  font-size: 12px;
+}
+
+.gp-overdue,
+.gp-table tr.gp-overdue td {
+  color: var(--danger-border);
+  font-weight: 600;
+}
+
+.gp-form {
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--nav-rail-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.gp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.gp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.gp-field label,
+.gp-form > label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gp-field-wide {
+  grid-column: 1 / -1;
+}
+
+.gp-field textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.gp-field-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 5px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.gp-fieldset {
+  margin: 0 0 12px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.gp-fieldset legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gp-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.gp-section-header .gp-form-actions {
+  margin-top: 0;
+}
+
+.gp-form-error {
+  margin-top: 8px;
+  color: var(--danger-border);
+  font-size: 12px;
+}
+
+.gp-totals {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--nav-rail-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gp-summary {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.gp-summary dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gp-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gp-summary-note {
+  white-space: pre-wrap;
+}
+
+.gp-diary {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.gp-diary li {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.gp-diary-date {
+  display: inline-block;
+  min-width: 96px;
+  font-weight: 600;
+}
+
+/* Documents tab */
+
+.gp-documents {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.gp-documents-tree {
+  flex: 0 0 280px;
+  padding: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.gp-documents-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px;
+  border: 1px dashed transparent;
+  border-radius: var(--radius);
+}
+
+.gp-documents-main.gp-drag-over {
+  border-color: var(--accent);
+  background: var(--hover-bg);
+}
+
+.gp-documents-location {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.gp-documents-location .gp-muted {
+  font-weight: 400;
+}
+
+.gp-tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gp-tree-row {
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+}
+
+.gp-tree-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.gp-tree-top {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 0 6px 2px;
+  font-weight: 600;
+}
+
+.gp-tree-name:hover {
+  background: var(--hover-bg);
+}
+
+.gp-tree-name.selected {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+}
+
+.gp-icon-btn {
+  flex: 0 0 auto;
   padding: 2px 5px;
   background: transparent;
   border: none;
@@ -1981,226 +2331,83 @@ body {
   cursor: pointer;
 }
 
-.filevine-tree-action-btn:hover {
+.gp-view .gp-icon-btn {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.gp-icon-btn:hover {
   color: var(--text);
 }
 
-.filevine-tree-rename-form,
-.filevine-tree-create-form {
-  padding: 3px 8px 3px 6px;
-}
-
-.filevine-tree-rename-form input,
-.filevine-tree-create-form input {
-  width: 100%;
-  padding: 3px 6px;
-  font-size: 13px;
-  color: var(--text);
-  border: 1px solid var(--selected-border);
-  border-radius: var(--radius);
-}
-
-.filevine-new-root-btn {
+.gp-dashed-btn {
   display: block;
-  width: calc(100% - 16px);
   margin: 6px 8px 0;
   padding: 5px 8px;
   background: transparent;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
-  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
 }
 
-.filevine-new-root-btn:hover {
+.gp-dashed-btn:hover {
   color: var(--text);
   border-color: var(--text-muted);
 }
 
-.filevine-detail-pane {
-  flex: 1 1 auto;
-  padding: 16px 20px;
-  overflow-y: auto;
-}
-
-.filevine-detail-empty {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.filevine-detail-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 14px;
-}
-
-.filevine-detail-field {
+.gp-folder-form {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 320px;
+  margin: 8px;
 }
 
-.filevine-detail-field label {
+.gp-note-textarea {
+  min-height: 140px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.gp-view textarea.gp-note-textarea {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
 }
 
-.filevine-detail-field select {
-  padding: 5px 6px;
-  font-size: 13px;
-  color: var(--text);
+.gp-preview {
+  margin-top: 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-.filevine-detail-client-summary {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.filevine-notes-section {
-  margin-top: 20px;
-  max-width: 640px;
-}
-
-.filevine-notes-header {
+.gp-preview-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.filevine-notes-title {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.filevine-new-note-btn {
-  padding: 4px 8px;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.filevine-new-note-btn:hover {
-  color: var(--text);
-  border-color: var(--text-muted);
-}
-
-.filevine-notes-empty {
-  color: var(--text-muted);
-  font-style: italic;
-  font-size: 13px;
-}
-
-.filevine-notes-list {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.filevine-notes-list-item {
+  gap: 8px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--border);
-}
-
-.filevine-notes-list-item:last-child {
-  border-bottom: none;
-}
-
-.filevine-notes-list-row {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px 4px 6px;
-}
-
-.filevine-note-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-  padding: 3px 6px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius);
+  background: var(--nav-rail-bg);
   font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
 }
 
-.filevine-note-name:hover {
-  background: var(--hover-bg);
-}
-
-.filevine-note-name.selected {
-  background: var(--selected-bg);
-  border: 1px solid var(--selected-border);
-  padding: 2px 5px;
-}
-
-.filevine-note-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 2px;
-}
-
-.filevine-note-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-}
-
-.filevine-note-editor input {
-  padding: 5px 6px;
-  font-size: 13px;
-  color: var(--text);
-  border: 1px solid var(--selected-border);
-  border-radius: var(--radius);
-}
-
-.filevine-note-textarea {
-  min-height: 140px;
-  padding: 6px;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  resize: vertical;
-}
-
-.filevine-note-editor-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.filevine-note-rendered {
+.gp-preview-rendered,
+.gp-preview-text,
+.gp-preview .gp-empty {
+  max-height: 360px;
+  overflow: auto;
   padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   font-size: 13px;
-  color: var(--text);
   overflow-wrap: break-word;
 }
 
-.filevine-note-rendered :first-child {
+.gp-preview-text {
+  white-space: pre-wrap;
+}
+
+.gp-preview-rendered :first-child {
   margin-top: 0;
 }
 
-.filevine-note-rendered :last-child {
+.gp-preview-rendered :last-child {
   margin-bottom: 0;
 }
 

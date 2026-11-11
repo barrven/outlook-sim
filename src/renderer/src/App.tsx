@@ -18,7 +18,7 @@ import CalendarFolderPane from './components/CalendarFolderPane'
 import MessageListPane from './components/MessageListPane'
 import ReadingPane from './components/ReadingPane'
 import CalendarView from './components/CalendarView'
-import FileVineView from './components/FileVineView'
+import GhostPracticeView from './components/GhostPracticeView'
 import SettingsView from './components/SettingsView'
 import TasksPanel from './components/TasksPanel'
 
@@ -43,8 +43,8 @@ function App(): ReactElement {
   const [retryingLlmFailure, setRetryingLlmFailure] = useState(false)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
   const [firedReminders, setFiredReminders] = useState<FiredReminder[]>([])
-  const [showFileVine, setShowFileVine] = useState(false)
-  // View ribbon tab (feature 046) — orthogonal to activeModule/showFileVine:
+  const [showGhostPractice, setShowGhostPractice] = useState(false)
+  // View ribbon tab (feature 046) — orthogonal to activeModule/showGhostPractice:
   // selecting it only changes which ribbon action set is shown (the Tasks
   // toggle), never the underlying Mail/Calendar content. showTasksPanel is
   // its own independent on/off state (AC6: unaffected by folder/view nav) —
@@ -59,10 +59,10 @@ function App(): ReactElement {
   // (which renders above it) can own the input, while MessageListPane still
   // does the actual filtering. Visible in exactly the same circumstances the
   // search box was before it moved: the Mail module, its own message list
-  // (not FileVine), and not behind Settings.
+  // (not Ghost Practice), and not behind Settings.
   const [searchQuery, setSearchQuery] = useState('')
   const [searchScope, setSearchScope] = useState<'folder' | 'all'>('folder')
-  const showMailSearch = activeModule === 'mail' && !showFileVine && !showSettings
+  const showMailSearch = activeModule === 'mail' && !showGhostPractice && !showSettings
 
   const refreshFolders = useCallback(async () => {
     const list = await window.api.data.folders.list()
@@ -130,32 +130,32 @@ function App(): ReactElement {
     setSelectedFolderId(folderId)
     setSelectedMessageIds([])
     setShowSettings(false)
-    setShowFileVine(false)
+    setShowGhostPractice(false)
   }
 
   function handleSelectModule(moduleId: ModuleId): void {
     setActiveModule(moduleId)
     setShowSettings(false)
     setShowNewEventForm(false)
-    setShowFileVine(false)
+    setShowGhostPractice(false)
   }
 
-  // FileVine (feature 047) is a ribbon-tab overlay scoped to the Mail
-  // module — spec: "swaps the center/right content area... while the
+  // Ghost Practice (which replaced FileVine, feature 047, in the same
+  // slot) is a ribbon-tab overlay scoped to the Mail module — 047's spec: "swaps the center/right content area... while the
   // left-hand folder pane keeps showing the mail folder list". Selecting
   // either tab forces activeModule to 'mail' so that pane is always what's
   // underneath it.
   function handleSelectHomeTab(): void {
     setActiveModule('mail')
     setShowSettings(false)
-    setShowFileVine(false)
+    setShowGhostPractice(false)
     setViewTabActive(false)
   }
 
-  function handleSelectFileVineTab(): void {
+  function handleSelectGhostPracticeTab(): void {
     setActiveModule('mail')
     setShowSettings(false)
-    setShowFileVine(true)
+    setShowGhostPractice(true)
     setViewTabActive(false)
   }
 
@@ -271,7 +271,7 @@ function App(): ReactElement {
       ))}
       <RibbonBar
         activeModule={activeModule}
-        showFileVine={showFileVine}
+        showGhostPractice={showGhostPractice}
         viewTabActive={viewTabActive}
         showTasksPanel={showTasksPanel}
         showMailSearch={showMailSearch}
@@ -282,7 +282,7 @@ function App(): ReactElement {
         readingPaneMode={readingPaneMode}
         onReadingPaneModeChange={setReadingPaneMode}
         onSelectHomeTab={handleSelectHomeTab}
-        onSelectFileVineTab={handleSelectFileVineTab}
+        onSelectGhostPracticeTab={handleSelectGhostPracticeTab}
         onSelectViewTab={handleSelectViewTab}
         onToggleTasksPanel={handleToggleTasksPanel}
         onOpenSettings={() => setShowSettings(true)}
@@ -311,8 +311,8 @@ function App(): ReactElement {
             onScenarioPackLoaded={() => setSelectedMessageIds([])}
           />
         ) : activeModule === 'mail' ? (
-          showFileVine ? (
-            <FileVineView />
+          showGhostPractice ? (
+            <GhostPracticeView />
           ) : (
             <>
               <MessageListPane

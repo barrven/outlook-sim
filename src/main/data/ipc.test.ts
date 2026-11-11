@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   CalendarItem,
   ClockState,
-  FileVineFolder,
-  FileVineNote,
   FiredReminder,
   Folder,
   LlmGenerateResult,
@@ -15,6 +13,7 @@ import type {
   Settings,
   Task
 } from '../../shared/data-types'
+import type { GpAdmin, GpDocument, GpFolder, GpMatter, GpRecord } from '../../shared/ghostPractice'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 const handlers = new Map<string, Handler>()
@@ -76,17 +75,26 @@ describe('registerDataIpcHandlers', () => {
         'db:calendarItems:create',
         'db:calendarItems:update',
         'db:calendarItems:delete',
-        'db:fileVineFolders:list',
-        'db:fileVineFolders:get',
-        'db:fileVineFolders:create',
-        'db:fileVineFolders:update',
-        'db:fileVineFolders:delete',
-        'db:fileVineNotes:list',
-        'db:fileVineNotes:get',
-        'db:fileVineNotes:create',
-        'db:fileVineNotes:update',
-        'db:fileVineNotes:delete',
-        'db:tasks:list',
+'gp:matters:list',
+        'gp:matters:get',
+        'gp:matters:create',
+        'gp:matters:update',
+        'gp:matters:delete',
+        'gp:records:list',
+        'gp:records:create',
+        'gp:records:update',
+        'gp:records:delete',
+        'gp:folders:list',
+        'gp:folders:create',
+        'gp:folders:update',
+        'gp:folders:delete',
+        'gp:documents:list',
+        'gp:documents:create',
+        'gp:documents:update',
+        'gp:documents:delete',
+        'gp:admin:get',
+        'gp:admin:set',
+                'db:tasks:list',
         'db:tasks:get',
         'db:tasks:create',
         'db:tasks:update',
@@ -178,56 +186,73 @@ describe('registerDataIpcHandlers', () => {
     expect(handlers.get('db:tasks:list')!(fakeEvent) as Task[]).toEqual([])
   })
 
-  it('047: creates, nests, updates, and deletes a FileVine folder through the IPC channels', () => {
-    const root = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
-    const child = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
-      name: 'Discovery',
-      parentId: root.id
-    }) as FileVineFolder
+  it('Ghost Practice: creates, updates, and deletes a matter, stamping it from the simulated clock', () => {
+    const created = handlers.get('gp:matters:create')!(fakeEvent, { clientName: 'Rivera, Ana' }) as GpMatter
+    const simYear = new Date(clock.now()).getFullYear()
+    expect(created.matterNumber).toBe(`AB-${simYear}-0001`)
+    expect(Math.abs(created.createdAt - clock.now())).toBeLessThan(5000)
+    // DOC-02: a new matter arrives with the default folder tree.
+    expect((handlers.get('gp:folders:list')!(fakeEvent, created.id) as GpFolder[]).length).toBeGreaterThan(10)
 
-    expect((handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).map((f) => f.id).sort()).toEqual(
-      [root.id, child.id].sort()
-    )
-    expect(handlers.get('db:fileVineFolders:get')!(fakeEvent, child.id)).toMatchObject({ parentId: root.id })
+    const updated = handlers.get('gp:matters:update')!(fakeEvent, created.id, { status: 'lat' }) as GpMatter
+    expect(updated.status).toBe('lat')
+    expect(handlers.get('gp:matters:get')!(fakeEvent, created.id)).toMatchObject({ status: 'lat' })
 
-    const updated = handlers.get('db:fileVineFolders:update')!(fakeEvent, root.id, {
-      clientPersonaId: 'persona-1'
-    }) as FileVineFolder
-    expect(updated.clientPersonaId).toBe('persona-1')
-
-    handlers.get('db:fileVineFolders:delete')!(fakeEvent, root.id)
-    expect(handlers.get('db:fileVineFolders:list')!(fakeEvent) as FileVineFolder[]).toEqual([])
+    handlers.get('gp:matters:delete')!(fakeEvent, created.id)
+    expect(handlers.get('gp:matters:list')!(fakeEvent)).toEqual([])
+    expect(handlers.get('gp:folders:list')!(fakeEvent, created.id)).toEqual([])
   })
 
-  it('048: creates, lists (scoped by folder), updates, and deletes a FileVine note through the IPC channels', () => {
-    const folder = handlers.get('db:fileVineFolders:create')!(fakeEvent, { name: 'Smith v. Jones' }) as FileVineFolder
-    const otherFolder = handlers.get('db:fileVineFolders:create')!(fakeEvent, {
-      name: 'Unrelated matter'
-    }) as FileVineFolder
-    handlers.get('db:fileVineNotes:create')!(fakeEvent, {
-      folderId: otherFolder.id,
-      name: 'Unrelated note',
-      content: ''
-    })
+  it('Ghost Practice: records are listed per matter or across all, and an update merges and marks the edit', () => {
+    const matter = handlers.get('gp:matters:create')!(fakeEvent, { clientName: 'Rivera, Ana' }) as GpMatter
+    const other = handlers.get('gp:matters:create')!(fakeEvent, { clientName: 'Doe, John' }) as GpMatter
+    const entry = handlers.get('gp:records:create')!(fakeEvent, {
+      matterId: matter.id,
+      kind: 'time',
+      data: { date: '2026-03-01', hours: 0.5, description: 'Call with adjuster' }
+    }) as GpRecord
+    handlers.get('gp:records:create')!(fakeEvent, { matterId: other.id, kind: 'task', data: { text: 'Serve application' } })
+    expect(entry.updatedAt).toBeNull()
 
-    const note = handlers.get('db:fileVineNotes:create')!(fakeEvent, {
-      folderId: folder.id,
-      name: 'Intake summary',
-      content: '# Hello'
-    }) as FileVineNote
+    expect((handlers.get('gp:records:list')!(fakeEvent, matter.id) as GpRecord[]).map((r) => r.id)).toEqual([entry.id])
+    expect(handlers.get('gp:records:list')!(fakeEvent) as GpRecord[]).toHaveLength(2)
 
-    expect((handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).map((n) => n.id)).toEqual(
-      [note.id]
-    )
-    expect(handlers.get('db:fileVineNotes:get')!(fakeEvent, note.id)).toMatchObject({ name: 'Intake summary' })
+    const voided = handlers.get('gp:records:update')!(fakeEvent, entry.id, { voided: true }) as GpRecord
+    expect(voided.data).toEqual({ date: '2026-03-01', hours: 0.5, description: 'Call with adjuster', voided: true })
+    expect(voided.updatedAt).not.toBeNull()
 
-    const updated = handlers.get('db:fileVineNotes:update')!(fakeEvent, note.id, {
-      content: '# Updated'
-    }) as FileVineNote
-    expect(updated.content).toBe('# Updated')
+    handlers.get('gp:records:delete')!(fakeEvent, entry.id)
+    expect(handlers.get('gp:records:list')!(fakeEvent, matter.id)).toEqual([])
+  })
 
-    handlers.get('db:fileVineNotes:delete')!(fakeEvent, note.id)
-    expect(handlers.get('db:fileVineNotes:list')!(fakeEvent, folder.id) as FileVineNote[]).toEqual([])
+  it('Ghost Practice: folders and documents are created, moved, and deleted through the IPC channels', () => {
+    const matter = handlers.get('gp:matters:create')!(fakeEvent, { clientName: 'Rivera, Ana' }) as GpMatter
+    const folder = handlers.get('gp:folders:create')!(fakeEvent, { matterId: matter.id, name: 'Scans' }) as GpFolder
+    const document = handlers.get('gp:documents:create')!(fakeEvent, {
+      matterId: matter.id,
+      name: 'April EOB.pdf',
+      content: 'Explanation of benefits',
+      path: '/tmp/eob.pdf',
+      uploadedBy: 'Trainee'
+    }) as GpDocument
+    expect(document).toMatchObject({ folderId: null, path: '/tmp/eob.pdf', uploadedBy: 'Trainee' })
+
+    const moved = handlers.get('gp:documents:update')!(fakeEvent, document.id, { folderId: folder.id }) as GpDocument
+    expect(moved.folderId).toBe(folder.id)
+    const renamed = handlers.get('gp:folders:update')!(fakeEvent, folder.id, { name: 'Scanned mail' }) as GpFolder
+    expect(renamed.name).toBe('Scanned mail')
+
+    handlers.get('gp:folders:delete')!(fakeEvent, folder.id)
+    expect(handlers.get('gp:documents:list')!(fakeEvent, matter.id)).toEqual([])
+  })
+
+  it('Ghost Practice: firm admin round-trips, starting from the default pick-lists', () => {
+    const initial = handlers.get('gp:admin:get')!(fakeEvent) as GpAdmin
+    expect(initial.chargeCategories).toContain('Records')
+
+    const next: GpAdmin = { ...initial, firmName: 'Example LLP', users: [{ name: 'Sam', role: 'Assistant', defaultRate: 90 }] }
+    handlers.get('gp:admin:set')!(fakeEvent, next)
+    expect(handlers.get('gp:admin:get')!(fakeEvent)).toEqual(next)
   })
 
   it('broadcasts a messages-changed event to every open window on create, update, and delete', () => {

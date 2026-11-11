@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
-import type { FileVineFolder, MailMessage, MessageAttachment } from '../../../shared/data-types'
+import type { MailMessage, MessageAttachment } from '../../../shared/data-types'
+import type { GpMatter } from '../../../shared/ghostPractice'
 
 interface ReadingPaneProps {
   selectedMessageId: string | null
@@ -39,18 +40,19 @@ function ReadingPane({
   // Which attachment (if any) is showing its "no real file behind this"
   // placeholder note, reset alongside categoryDraft below.
   const [openAttachmentIndex, setOpenAttachmentIndex] = useState<number | null>(null)
-  // Which attachment (if any) has its "Save to FileVine" dialog open
-  // (feature 066), plus that dialog's own transient state — all reset
-  // alongside categoryDraft/openAttachmentIndex when the selection changes.
-  const [saveToFileVineIndex, setSaveToFileVineIndex] = useState<number | null>(null)
-  const [fileVineFolders, setFileVineFolders] = useState<FileVineFolder[]>([])
-  const [selectedFileVineFolderId, setSelectedFileVineFolderId] = useState('')
-  const [newFileVineFolderName, setNewFileVineFolderName] = useState('')
+  // Which attachment (if any) has its "Save to Ghost Practice" dialog open
+  // (feature 066, retargeted from FileVine folders to Ghost Practice
+  // files), plus that dialog's own transient state — all reset alongside
+  // categoryDraft/openAttachmentIndex when the selection changes.
+  const [saveToFileIndex, setSaveToFileIndex] = useState<number | null>(null)
+  const [gpMatters, setGpMatters] = useState<GpMatter[]>([])
+  const [selectedGpMatterId, setSelectedGpMatterId] = useState('')
+  const [newFileClientName, setNewFileClientName] = useState('')
   if (selectedMessageId !== categoryDraftMessageId) {
     setCategoryDraftMessageId(selectedMessageId)
     setCategoryDraft('')
     setOpenAttachmentIndex(null)
-    setSaveToFileVineIndex(null)
+    setSaveToFileIndex(null)
   }
 
   // Tracks which message id we've already run the open/auto-mark-read check
@@ -136,44 +138,48 @@ function ReadingPane({
     setOpenAttachmentIndex((current) => (current === index ? null : index))
   }
 
-  // Opens the "Save to FileVine" dialog for an attachment with content to
-  // save (feature 066 — real or LLM-generated, no distinction made),
-  // fetching the current folder list fresh each time so a folder
+  // Opens the "Save to Ghost Practice" dialog for an attachment with
+  // content to save (feature 066 — real or LLM-generated, no distinction
+  // made), fetching the current file list fresh each time so a file
   // created/renamed/deleted elsewhere is never stale here.
-  async function handleOpenSaveToFileVine(index: number): Promise<void> {
-    setSaveToFileVineIndex(index)
-    setNewFileVineFolderName('')
-    const folders = await window.api.data.fileVineFolders.list()
-    setFileVineFolders(folders)
-    setSelectedFileVineFolderId(folders[0]?.id ?? '')
+  async function handleOpenSaveToFile(index: number): Promise<void> {
+    setSaveToFileIndex(index)
+    setNewFileClientName('')
+    const matters = await window.api.gp.matters.list()
+    setGpMatters(matters)
+    setSelectedGpMatterId(matters[0]?.id ?? '')
   }
 
-  function closeSaveToFileVine(): void {
-    setSaveToFileVineIndex(null)
+  function closeSaveToFile(): void {
+    setSaveToFileIndex(null)
   }
 
-  async function handleSaveToFileVine(attachment: MessageAttachment): Promise<void> {
-    if (!selectedFileVineFolderId || attachment.extractedText === undefined) return
-    await window.api.data.fileVineNotes.create({
-      folderId: selectedFileVineFolderId,
+  // The copy lands at the file's top level, keeping a pointer to the
+  // original on disk (when there is one) so it can still be opened in its
+  // own application from the Documents tab.
+  async function saveAttachmentToMatter(matterId: string, attachment: MessageAttachment): Promise<void> {
+    if (attachment.extractedText === undefined) return
+    await window.api.gp.documents.create({
+      matterId,
       name: attachment.filename,
-      content: attachment.extractedText
+      content: attachment.extractedText,
+      path: attachment.path ?? null
     })
-    closeSaveToFileVine()
+    closeSaveToFile()
   }
 
-  // AC4: no FileVine folders exist yet — rather than a dead end, the dialog
-  // itself lets the user create one and save into it in the same step.
-  async function handleCreateFileVineFolderAndSave(attachment: MessageAttachment): Promise<void> {
-    const name = newFileVineFolderName.trim()
-    if (!name || attachment.extractedText === undefined) return
-    const folder = await window.api.data.fileVineFolders.create({ name })
-    await window.api.data.fileVineNotes.create({
-      folderId: folder.id,
-      name: attachment.filename,
-      content: attachment.extractedText
-    })
-    closeSaveToFileVine()
+  async function handleSaveToFile(attachment: MessageAttachment): Promise<void> {
+    if (!selectedGpMatterId) return
+    await saveAttachmentToMatter(selectedGpMatterId, attachment)
+  }
+
+  // AC4: no Ghost Practice files exist yet — rather than a dead end, the
+  // dialog itself lets the user create one and save into it in the same step.
+  async function handleCreateFileAndSave(attachment: MessageAttachment): Promise<void> {
+    const clientName = newFileClientName.trim()
+    if (!clientName || attachment.extractedText === undefined) return
+    const matter = await window.api.gp.matters.create({ clientName })
+    await saveAttachmentToMatter(matter.id, attachment)
   }
 
   const readToggleLabel = displayedMessage.isRead ? 'Mark as unread' : 'Mark as read'
@@ -299,62 +305,62 @@ function ReadingPane({
                 {attachment.extractedText !== undefined && (
                   <button
                     type="button"
-                    className="attachment-save-filevine-btn"
-                    onClick={() => handleOpenSaveToFileVine(index)}
+                    className="attachment-save-file-btn"
+                    onClick={() => handleOpenSaveToFile(index)}
                   >
-                    Save to FileVine…
+                    Save to Ghost Practice…
                   </button>
                 )}
-                {saveToFileVineIndex === index && (
+                {saveToFileIndex === index && (
                   <div
-                    className="attachment-save-filevine-dialog"
+                    className="attachment-save-file-dialog"
                     role="dialog"
-                    aria-label={`Save ${attachment.filename} to FileVine`}
+                    aria-label={`Save ${attachment.filename} to Ghost Practice`}
                   >
-                    {fileVineFolders.length > 0 ? (
+                    {gpMatters.length > 0 ? (
                       <>
-                        <label htmlFor="attachment-filevine-folder-select">Folder</label>
+                        <label htmlFor="attachment-gp-matter-select">File</label>
                         <select
-                          id="attachment-filevine-folder-select"
-                          value={selectedFileVineFolderId}
-                          onChange={(event) => setSelectedFileVineFolderId(event.target.value)}
+                          id="attachment-gp-matter-select"
+                          value={selectedGpMatterId}
+                          onChange={(event) => setSelectedGpMatterId(event.target.value)}
                         >
-                          {fileVineFolders.map((folder) => (
-                            <option key={folder.id} value={folder.id}>
-                              {folder.name}
+                          {gpMatters.map((matter) => (
+                            <option key={matter.id} value={matter.id}>
+                              {matter.matterNumber} — {matter.clientName}
                             </option>
                           ))}
                         </select>
-                        <div className="attachment-save-filevine-actions">
-                          <button type="button" onClick={() => handleSaveToFileVine(attachment)}>
+                        <div className="attachment-save-file-actions">
+                          <button type="button" onClick={() => handleSaveToFile(attachment)}>
                             Save
                           </button>
-                          <button type="button" onClick={closeSaveToFileVine}>
+                          <button type="button" onClick={closeSaveToFile}>
                             Cancel
                           </button>
                         </div>
                       </>
                     ) : (
                       <form
-                        className="attachment-save-filevine-create-form"
+                        className="attachment-save-file-create-form"
                         onSubmit={(event: FormEvent) => {
                           event.preventDefault()
-                          handleCreateFileVineFolderAndSave(attachment)
+                          handleCreateFileAndSave(attachment)
                         }}
                       >
-                        <p className="attachment-save-filevine-empty-note">
-                          No FileVine folders yet — create one to save into.
+                        <p className="attachment-save-file-empty-note">
+                          No Ghost Practice files yet — create one to save into.
                         </p>
                         <input
                           autoFocus
-                          aria-label="New FileVine folder name"
-                          placeholder="Folder name"
-                          value={newFileVineFolderName}
-                          onChange={(event) => setNewFileVineFolderName(event.target.value)}
+                          aria-label="New file client name"
+                          placeholder="Client name"
+                          value={newFileClientName}
+                          onChange={(event) => setNewFileClientName(event.target.value)}
                         />
-                        <div className="attachment-save-filevine-actions">
-                          <button type="submit">Create folder &amp; save</button>
-                          <button type="button" onClick={closeSaveToFileVine}>
+                        <div className="attachment-save-file-actions">
+                          <button type="submit">Create file &amp; save</button>
+                          <button type="button" onClick={closeSaveToFile}>
                             Cancel
                           </button>
                         </div>

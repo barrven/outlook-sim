@@ -865,163 +865,297 @@ describe('MailDb', () => {
     db = new MailDb(baseDir)
   })
 
-  // FileVine folders (feature 047)
+  // Ghost Practice (features/ghost-practice/SPEC.md)
 
-  it('047 AC3: creates, renames, and deletes a folder', () => {
-    const created = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    expect(created.parentId).toBeNull()
-    expect(created.clientPersonaId).toBeNull()
-    expect(db.listFileVineFolders().map((f) => f.id)).toEqual([created.id])
+  describe('Ghost Practice', () => {
+    it('FILE-01/07: creates a matter with a sequential matter number, blank defaults, and intake status', () => {
+      const createdAt = new Date('2026-03-04T12:00:00').getTime()
+      const first = db.createGpMatter({ clientName: 'Rivera, Ana', createdAt })
+      const second = db.createGpMatter({ clientName: 'Doe, John', claimNumber: 'C-99', createdAt })
 
-    const renamed = db.updateFileVineFolder(created.id, { name: 'Smith v. Jones (Amended)' })
-    expect(renamed?.name).toBe('Smith v. Jones (Amended)')
-    expect(db.getFileVineFolder(created.id)?.name).toBe('Smith v. Jones (Amended)')
-
-    db.deleteFileVineFolder(created.id)
-    expect(db.listFileVineFolders()).toEqual([])
-  })
-
-  it('047 AC3: nests folders under other folders (a real tree, not a flat list)', () => {
-    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
-    const grandchild = db.createFileVineFolder({ name: 'Depositions', parentId: child.id })
-
-    expect(db.getFileVineFolder(child.id)?.parentId).toBe(root.id)
-    expect(db.getFileVineFolder(grandchild.id)?.parentId).toBe(child.id)
-  })
-
-  it('047 AC3 (regression): deleting a folder with children cascades to descendants, without a foreign-key error', () => {
-    // A first implementation deleted the parent before its children (plain
-    // insertion order) and threw "FOREIGN KEY constraint failed" — this
-    // pins the fix (delete deepest-first).
-    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
-    const grandchild = db.createFileVineFolder({ name: 'Depositions', parentId: child.id })
-    const unrelated = db.createFileVineFolder({ name: 'Unrelated matter' })
-
-    expect(() => db.deleteFileVineFolder(root.id)).not.toThrow()
-
-    const remaining = db.listFileVineFolders().map((f) => f.id)
-    expect(remaining).toEqual([unrelated.id])
-    expect(remaining).not.toContain(root.id)
-    expect(remaining).not.toContain(child.id)
-    expect(remaining).not.toContain(grandchild.id)
-  })
-
-  it('047 AC4: associates a folder with a persona as its client, then un-associates it', () => {
-    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
-
-    const associated = db.updateFileVineFolder(folder.id, { clientPersonaId: 'persona-1' })
-    expect(associated?.clientPersonaId).toBe('persona-1')
-    expect(db.getFileVineFolder(folder.id)?.clientPersonaId).toBe('persona-1')
-
-    const changed = db.updateFileVineFolder(folder.id, { clientPersonaId: 'persona-2' })
-    expect(changed?.clientPersonaId).toBe('persona-2')
-
-    const unassociated = db.updateFileVineFolder(folder.id, { clientPersonaId: null })
-    expect(unassociated?.clientPersonaId).toBeNull()
-  })
-
-  it('047 AC5: folder structure and client association persist across a close/reopen cycle', () => {
-    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
-    db.updateFileVineFolder(root.id, { clientPersonaId: 'persona-1' })
-    db.close()
-
-    const reopened = new MailDb(baseDir)
-    expect(reopened.getFileVineFolder(root.id)).toEqual({
-      id: root.id,
-      name: 'Smith v. Jones',
-      parentId: null,
-      clientPersonaId: 'persona-1'
+      expect(first.matterNumber).toBe('AB-2026-0001')
+      expect(second.matterNumber).toBe('AB-2026-0002')
+      expect(first).toMatchObject({ status: 'intake', clientPersonaId: null, insurerCompany: '', latOpen: false })
+      expect(db.getGpMatter(second.id)?.claimNumber).toBe('C-99')
+      expect(db.listGpMatters().map((matter) => matter.id)).toEqual([first.id, second.id])
     })
-    expect(reopened.getFileVineFolder(child.id)?.parentId).toBe(root.id)
-    reopened.close()
-    // reassign so the outer afterEach's db.close() doesn't double-close
-    db = new MailDb(baseDir)
-  })
 
-  it('returns null when getting or updating a FileVine folder that does not exist', () => {
-    expect(db.getFileVineFolder('missing')).toBeNull()
-    expect(db.updateFileVineFolder('missing', { name: 'x' })).toBeNull()
-  })
+    it('never reuses a live matter number after an earlier matter is deleted', () => {
+      const first = db.createGpMatter({ clientName: 'A' })
+      const second = db.createGpMatter({ clientName: 'B' })
+      db.deleteGpMatter(first.id)
 
-  // FileVine notes (feature 048)
+      const third = db.createGpMatter({ clientName: 'C' })
 
-  it('048 AC1: creates, edits, and deletes a note within a folder', () => {
-    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const created = db.createFileVineNote({ folderId: folder.id, name: 'Intake summary', content: '# Hello' })
-    expect(created.folderId).toBe(folder.id)
-    expect(db.listFileVineNotes(folder.id).map((n) => n.id)).toEqual([created.id])
-
-    const edited = db.updateFileVineNote(created.id, { name: 'Intake summary (revised)', content: '# Hi there' })
-    expect(edited).toEqual({
-      id: created.id,
-      folderId: folder.id,
-      name: 'Intake summary (revised)',
-      content: '# Hi there'
+      expect(third.matterNumber.endsWith('-0003')).toBe(true)
+      expect(third.matterNumber).not.toBe(second.matterNumber)
     })
-    expect(db.getFileVineNote(created.id)?.content).toBe('# Hi there')
 
-    db.deleteFileVineNote(created.id)
-    expect(db.listFileVineNotes(folder.id)).toEqual([])
-  })
+    it('updates a matter without letting a patch change its id, number, or creation time', () => {
+      const matter = db.createGpMatter({ clientName: 'Rivera, Ana', createdAt: 1000 })
 
-  it('048 AC1: scopes listFileVineNotes to the given folder', () => {
-    const folderA = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const folderB = db.createFileVineFolder({ name: 'Unrelated matter' })
-    const noteA = db.createFileVineNote({ folderId: folderA.id, name: 'A note', content: '' })
-    db.createFileVineNote({ folderId: folderB.id, name: 'B note', content: '' })
+      const updated = db.updateGpMatter(matter.id, {
+        status: 'lat',
+        coverageIrb: true,
+        ...({ matterNumber: 'HACKED', createdAt: 5 } as object)
+      })
 
-    expect(db.listFileVineNotes(folderA.id).map((n) => n.id)).toEqual([noteA.id])
-  })
-
-  it('048 AC4: notes persist across a close/reopen cycle, associated with their folder', () => {
-    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const note = db.createFileVineNote({ folderId: folder.id, name: 'Call log', content: '- called client' })
-    db.close()
-
-    const reopened = new MailDb(baseDir)
-    expect(reopened.getFileVineNote(note.id)).toEqual({
-      id: note.id,
-      folderId: folder.id,
-      name: 'Call log',
-      content: '- called client'
+      expect(updated).toMatchObject({ status: 'lat', coverageIrb: true, matterNumber: matter.matterNumber, createdAt: 1000 })
+      expect(db.updateGpMatter('missing', { status: 'closed' })).toBeNull()
+      expect(db.getGpMatter('missing')).toBeNull()
     })
-    reopened.close()
-    // reassign so the outer afterEach's db.close() doesn't double-close
-    db = new MailDb(baseDir)
+
+    it('persists matters, records, and documents across a reopen', () => {
+      const matter = db.createGpMatter({ clientName: 'Rivera, Ana', clientPersonaId: 'persona-1' })
+      const record = db.createGpRecord({ matterId: matter.id, kind: 'charge', data: { vendor: 'LAT', amount: 106 } })
+      const document = db.createGpDocument({ matterId: matter.id, name: 'Retainer', content: '# Signed' })
+      db.close()
+
+      db = new MailDb(baseDir)
+
+      expect(db.getGpMatter(matter.id)?.clientPersonaId).toBe('persona-1')
+      expect(db.getGpRecord(record.id)?.data).toEqual({ vendor: 'LAT', amount: 106 })
+      expect(db.getGpDocument(document.id)).toMatchObject({ name: 'Retainer', content: '# Signed', path: null })
+    })
+
+    it('DOC-02: seeds every new matter with the default AB folder tree, nested as in the spec', () => {
+      const matter = db.createGpMatter({ clientName: 'Rivera, Ana' })
+
+      const folders = db.listGpFolders(matter.id)
+      const names = folders.map((folder) => folder.name)
+      expect(names).toContain('01 Intake and retainer')
+      expect(names).toContain('99 Closed / archive')
+      expect(folders).toHaveLength(21)
+      const lat = folders.find((folder) => folder.name === '08 LAT')
+      const caseConference = folders.find((folder) => folder.name === '08.02 Case conference')
+      expect(lat?.parentId).toBeNull()
+      expect(caseConference?.parentId).toBe(lat?.id)
+    })
+
+    it('scopes folders to their own matter', () => {
+      const first = db.createGpMatter({ clientName: 'A' }, { seedDefaultFolders: false })
+      const second = db.createGpMatter({ clientName: 'B' }, { seedDefaultFolders: false })
+      const folder = db.createGpFolder({ matterId: first.id, name: 'Scans' })
+
+      expect(db.listGpFolders(first.id).map((f) => f.id)).toEqual([folder.id])
+      expect(db.listGpFolders(second.id)).toEqual([])
+    })
+
+    it('DOC-03: renames and moves a folder, but refuses a move into its own subtree', () => {
+      const matter = db.createGpMatter({ clientName: 'A' }, { seedDefaultFolders: false })
+      const parent = db.createGpFolder({ matterId: matter.id, name: 'Parent' })
+      const child = db.createGpFolder({ matterId: matter.id, name: 'Child', parentId: parent.id })
+      const other = db.createGpFolder({ matterId: matter.id, name: 'Other' })
+
+      expect(db.updateGpFolder(child.id, { name: 'Renamed', parentId: other.id })).toMatchObject({
+        name: 'Renamed',
+        parentId: other.id
+      })
+
+      db.updateGpFolder(child.id, { parentId: parent.id })
+      const cyclic = db.updateGpFolder(parent.id, { parentId: child.id })
+      expect(cyclic?.parentId).toBeNull()
+      expect(db.updateGpFolder(parent.id, { parentId: parent.id })?.parentId).toBeNull()
+      expect(db.updateGpFolder('missing', { name: 'x' })).toBeNull()
+    })
+
+    it('deleting a folder removes its descendants and their documents, leaving the rest of the matter alone', () => {
+      const matter = db.createGpMatter({ clientName: 'A' }, { seedDefaultFolders: false })
+      const root = db.createGpFolder({ matterId: matter.id, name: 'Root' })
+      const child = db.createGpFolder({ matterId: matter.id, name: 'Child', parentId: root.id })
+      const unrelated = db.createGpFolder({ matterId: matter.id, name: 'Unrelated' })
+      const inChild = db.createGpDocument({ matterId: matter.id, folderId: child.id, name: 'In child', content: '' })
+      const topLevel = db.createGpDocument({ matterId: matter.id, name: 'Top level', content: '' })
+
+      expect(() => db.deleteGpFolder(root.id)).not.toThrow()
+
+      expect(db.listGpFolders(matter.id).map((f) => f.id)).toEqual([unrelated.id])
+      expect(db.getGpDocument(inChild.id)).toBeNull()
+      expect(db.getGpDocument(topLevel.id)).not.toBeNull()
+    })
+
+    it('DOC-03/05: stores a document\'s uploader and date, and renames, edits, and moves it', () => {
+      const matter = db.createGpMatter({ clientName: 'A' }, { seedDefaultFolders: false })
+      const folder = db.createGpFolder({ matterId: matter.id, name: 'Scans' })
+      const document = db.createGpDocument({
+        matterId: matter.id,
+        name: 'eob.pdf',
+        content: 'text',
+        path: '/tmp/eob.pdf',
+        uploadedBy: 'Trainee',
+        createdAt: 4242
+      })
+
+      expect(document).toMatchObject({ uploadedBy: 'Trainee', createdAt: 4242, folderId: null })
+      expect(db.updateGpDocument(document.id, { name: 'April EOB.pdf', folderId: folder.id })).toMatchObject({
+        name: 'April EOB.pdf',
+        folderId: folder.id,
+        content: 'text',
+        path: '/tmp/eob.pdf'
+      })
+      db.deleteGpDocument(document.id)
+      expect(db.listGpDocuments(matter.id)).toEqual([])
+      expect(db.updateGpDocument('missing', { name: 'x' })).toBeNull()
+    })
+
+    it('TIME-05: updating a record merges into its data and stamps updatedAt, so an edit or void leaves a trace', () => {
+      const matter = db.createGpMatter({ clientName: 'A' })
+      const entry = db.createGpRecord({
+        matterId: matter.id,
+        kind: 'time',
+        data: { date: '2026-03-01', hours: 1, description: 'Draft LAT application' },
+        createdAt: 100
+      })
+      expect(entry.updatedAt).toBeNull()
+
+      const voided = db.updateGpRecord(entry.id, { voided: true }, 200)
+
+      expect(voided).toMatchObject({
+        createdAt: 100,
+        updatedAt: 200,
+        data: { date: '2026-03-01', hours: 1, description: 'Draft LAT application', voided: true }
+      })
+      expect(db.listGpRecords(matter.id)).toHaveLength(1)
+      expect(db.updateGpRecord('missing', { voided: true })).toBeNull()
+    })
+
+    it('lists records for one matter in creation order, or for every matter when no id is given', () => {
+      const first = db.createGpMatter({ clientName: 'A' })
+      const second = db.createGpMatter({ clientName: 'B' })
+      const later = db.createGpRecord({ matterId: first.id, kind: 'task', data: { text: 'later' }, createdAt: 200 })
+      const earlier = db.createGpRecord({ matterId: first.id, kind: 'log', data: { summary: 'earlier' }, createdAt: 100 })
+      db.createGpRecord({ matterId: second.id, kind: 'task', data: { text: 'other file' }, createdAt: 150 })
+
+      expect(db.listGpRecords(first.id).map((record) => record.id)).toEqual([earlier.id, later.id])
+      expect(db.listGpRecords()).toHaveLength(3)
+
+      db.deleteGpRecord(later.id)
+      expect(db.listGpRecords(first.id).map((record) => record.id)).toEqual([earlier.id])
+    })
+
+    it('deleting a matter removes its records, folders, and documents but not another matter\'s', () => {
+      const doomed = db.createGpMatter({ clientName: 'A' })
+      const kept = db.createGpMatter({ clientName: 'B' })
+      db.createGpRecord({ matterId: doomed.id, kind: 'task', data: { text: 'x' } })
+      const folder = db.listGpFolders(doomed.id)[0]
+      db.createGpDocument({ matterId: doomed.id, folderId: folder.id, name: 'doc', content: '' })
+      const keptRecord = db.createGpRecord({ matterId: kept.id, kind: 'task', data: { text: 'y' } })
+
+      expect(() => db.deleteGpMatter(doomed.id)).not.toThrow()
+
+      expect(db.getGpMatter(doomed.id)).toBeNull()
+      expect(db.listGpRecords(doomed.id)).toEqual([])
+      expect(db.listGpFolders(doomed.id)).toEqual([])
+      expect(db.listGpDocuments(doomed.id)).toEqual([])
+      expect(db.listGpRecords().map((record) => record.id)).toEqual([keptRecord.id])
+      expect(db.listGpFolders(kept.id).length).toBeGreaterThan(0)
+    })
+
+    it('ADM-02..04: admin starts from the default pick-lists and round-trips, filling in keys an older save lacks', () => {
+      expect(db.getGpAdmin().activityTypes).toContain('LAT prep')
+
+      db.setGpAdmin({
+        firmName: 'Example LLP',
+        letterhead: '1 Main St',
+        users: [{ name: 'Sam', role: 'Assistant', defaultRate: 90 }],
+        activityTypes: ['Call'],
+        chargeCategories: ['Filing']
+      })
+      expect(db.getGpAdmin()).toMatchObject({ firmName: 'Example LLP', activityTypes: ['Call'] })
+
+      db.setGpAdmin({ firmName: 'Only a name' } as never)
+      expect(db.getGpAdmin()).toMatchObject({ firmName: 'Only a name', users: [], chargeCategories: ['Records', 'Filing', 'Expert', 'Travel', 'Other'] })
+    })
+
+    it('is left alone by a free-play / scenario reset, like tasks', () => {
+      const matter = db.createGpMatter({ clientName: 'A' })
+      db.resetMailboxAndCalendar()
+      expect(db.getGpMatter(matter.id)).not.toBeNull()
+    })
   })
 
-  it('048 AC5: deleting a folder also deletes its notes', () => {
-    const folder = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const note = db.createFileVineNote({ folderId: folder.id, name: 'Intake summary', content: '' })
-    const unrelatedFolder = db.createFileVineFolder({ name: 'Unrelated matter' })
-    const unrelatedNote = db.createFileVineNote({ folderId: unrelatedFolder.id, name: 'Unrelated note', content: '' })
+  describe('FileVine → Ghost Practice migration', () => {
+    // Recreates the tables exactly as the FileVine features (047/048) left
+    // them in an existing user's database.
+    function seedLegacyFileVine(): void {
+      db.close()
+      const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+      raw.exec(`
+        CREATE TABLE filevine_folders (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          parent_id TEXT REFERENCES filevine_folders(id),
+          client_persona_id TEXT
+        );
+        CREATE TABLE filevine_notes (
+          id TEXT PRIMARY KEY,
+          folder_id TEXT NOT NULL REFERENCES filevine_folders(id),
+          name TEXT NOT NULL,
+          content TEXT NOT NULL DEFAULT ''
+        );
+        CREATE INDEX idx_filevine_notes_folder_id ON filevine_notes(folder_id);
+        INSERT INTO filevine_folders VALUES ('root', 'Smith v. Jones', NULL, 'persona-1');
+        INSERT INTO filevine_folders VALUES ('child', 'Discovery', 'root', NULL);
+        INSERT INTO filevine_folders VALUES ('grandchild', 'Depositions', 'child', NULL);
+        INSERT INTO filevine_folders VALUES ('other', 'Doe Estate', NULL, NULL);
+        INSERT INTO filevine_notes VALUES ('n1', 'root', 'Intake summary', '# Intake');
+        INSERT INTO filevine_notes VALUES ('n2', 'grandchild', 'Transcript', 'Q. A.');
+      `)
+      raw.close()
+      db = new MailDb(baseDir)
+    }
 
-    db.deleteFileVineFolder(folder.id)
+    it('turns each root FileVine folder into a matter, keeping its client persona, subfolders, and notes', () => {
+      seedLegacyFileVine()
 
-    expect(db.getFileVineNote(note.id)).toBeNull()
-    expect(db.getFileVineNote(unrelatedNote.id)).not.toBeNull()
-  })
+      const matters = db.listGpMatters()
+      expect(matters.map((matter) => matter.clientName).sort()).toEqual(['Doe Estate', 'Smith v. Jones'])
+      const smith = matters.find((matter) => matter.clientName === 'Smith v. Jones')!
+      expect(smith.clientPersonaId).toBe('persona-1')
 
-  it('048 AC5 (regression): deleting a folder with a nested child cascades notes in both, without a foreign-key error', () => {
-    // Mirrors 047's own folder-cascade FK-ordering bug: notes must be
-    // deleted before the folders that reference them, for every folder
-    // about to be deleted (not just the one passed in).
-    const root = db.createFileVineFolder({ name: 'Smith v. Jones' })
-    const child = db.createFileVineFolder({ name: 'Discovery', parentId: root.id })
-    const rootNote = db.createFileVineNote({ folderId: root.id, name: 'Root note', content: '' })
-    const childNote = db.createFileVineNote({ folderId: child.id, name: 'Child note', content: '' })
+      // Its own folders came across — no default template layered on top.
+      const folders = db.listGpFolders(smith.id)
+      expect(folders.map((folder) => folder.name).sort()).toEqual(['Depositions', 'Discovery'])
+      const discovery = folders.find((folder) => folder.name === 'Discovery')!
+      const depositions = folders.find((folder) => folder.name === 'Depositions')!
+      expect(discovery.parentId).toBeNull()
+      expect(depositions.parentId).toBe(discovery.id)
 
-    expect(() => db.deleteFileVineFolder(root.id)).not.toThrow()
+      const documents = db.listGpDocuments(smith.id)
+      expect(documents.find((document) => document.name === 'Intake summary')).toMatchObject({
+        folderId: null,
+        content: '# Intake',
+        path: null
+      })
+      expect(documents.find((document) => document.name === 'Transcript')).toMatchObject({
+        folderId: depositions.id,
+        content: 'Q. A.'
+      })
+    })
 
-    expect(db.getFileVineNote(rootNote.id)).toBeNull()
-    expect(db.getFileVineNote(childNote.id)).toBeNull()
-  })
+    it('runs once: reopening does not duplicate the migrated matters, and the old rows are kept, renamed', () => {
+      seedLegacyFileVine()
+      db.close()
+      db = new MailDb(baseDir)
 
-  it('returns null when getting or updating a FileVine note that does not exist', () => {
-    expect(db.getFileVineNote('missing')).toBeNull()
-    expect(db.updateFileVineNote('missing', { name: 'x' })).toBeNull()
+      expect(db.listGpMatters()).toHaveLength(2)
+
+      db.close()
+      const raw = new DatabaseSync(join(baseDir, 'outlook-sim.db'))
+      const tables = (raw.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map(
+        (row) => row.name
+      )
+      const keptNotes = raw.prepare('SELECT COUNT(*) AS count FROM filevine_notes_migrated').get() as { count: number }
+      raw.close()
+      db = new MailDb(baseDir)
+
+      expect(tables).toContain('filevine_folders_migrated')
+      expect(tables).not.toContain('filevine_folders')
+      expect(keptNotes.count).toBe(2)
+    })
+
+    it('does nothing on a database that never had FileVine data', () => {
+      expect(db.listGpMatters()).toEqual([])
+    })
   })
 })

@@ -46,8 +46,7 @@ function AttachmentPopoutWindow({ messageId, attachmentIndex }: AttachmentPopout
   // carries its Markdown source as `extractedText` — feature 063's real-
   // attachment extraction never supports `.html`, so this combination can
   // only be a generated document, no separate flag needed. Rendered via the
-  // same `renderMarkdown` FileVine's note view (and 066's "Save to
-  // FileVine") already use, so it looks identical wherever it's viewed.
+  // same `renderMarkdown` Ghost Practice's note view already uses, so it looks identical wherever it's viewed.
   const { extractedText } = attachment
   const isGeneratedDocument = attachment.filename.toLowerCase().endsWith('.html') && extractedText !== undefined
 

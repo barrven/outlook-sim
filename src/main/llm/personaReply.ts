@@ -1,7 +1,7 @@
 import type { MailMessage, MessageAttachment, Persona, PersonaReplyResult, TraineeIdentity } from '../../shared/data-types'
 import { quoteBody } from '../../shared/quoteBody'
 import { generateText } from './client'
-import { buildFileVineContextPrompt } from './fileVineContext'
+import { buildMatterContextPrompt } from './matterContext'
 import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
 import { readImageAttachment, type ImageAttachmentData } from './imageAttachment'
 import type { SimClock } from '../data/clock'
@@ -46,7 +46,7 @@ function buildSystemPrompt(
   systemPrompt: string,
   persona: Persona,
   identity: TraineeIdentity,
-  fileVineContext: string | null
+  matterContext: string | null
 ): string {
   return [
     systemPrompt,
@@ -54,7 +54,7 @@ function buildSystemPrompt(
     persona.bio && `Background: ${persona.bio}`,
     persona.writingStyleNotes && `Writing style: ${persona.writingStyleNotes}`,
     persona.extraPrompt,
-    fileVineContext,
+    matterContext,
     `Decide whether a reply is appropriate given the conversation and the guidance above — for example, a purely FYI message may not warrant one. If a reply is NOT warranted, respond with exactly this text and nothing else: ${NO_REPLY_MARKER}`,
     'Otherwise, respond with ONLY the body text of your reply email — no subject line, no meta-commentary about being an AI.',
     ATTACHMENT_PROMPT_INSTRUCTION
@@ -128,10 +128,10 @@ export async function generatePersonaReply(
   const identity = config.getIdentity()
   const { systemPrompt } = config.getSystemPrompt()
   const thread = findThread(db.listMessages(), persona.email, identity.fromEmail, sentMessage.subject)
-  const fileVineContext = buildFileVineContextPrompt(db, persona.id)
+  const matterContext = buildMatterContextPrompt(db, persona.id)
 
   const result = await generateText(config.getSettings(), {
-    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, fileVineContext),
+    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, matterContext),
     userPrompt: buildThreadTranscript(thread),
     images: collectImageAttachments(thread)
   })

@@ -4,16 +4,10 @@ import { DatabaseSync } from 'node:sqlite'
 import type {
   CalendarItem,
   CalendarItemPatch,
-  FileVineFolder,
-  FileVineFolderPatch,
-  FileVineNote,
-  FileVineNotePatch,
   Folder,
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
-  NewFileVineFolder,
-  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   NewTask,
@@ -21,6 +15,26 @@ import type {
   Task,
   TaskPatch
 } from '../../shared/data-types'
+import {
+  BLANK_GP_MATTER_FIELDS,
+  DEFAULT_GP_ADMIN,
+  DEFAULT_GP_FOLDERS,
+  type GpAdmin,
+  type GpDocument,
+  type GpDocumentPatch,
+  type GpFolder,
+  type GpFolderPatch,
+  type GpFolderTemplate,
+  type GpMatter,
+  type GpMatterPatch,
+  type GpRecord,
+  type GpRecordData,
+  type GpRecordKind,
+  type NewGpDocument,
+  type NewGpFolder,
+  type NewGpMatter,
+  type NewGpRecord
+} from '../../shared/ghostPractice'
 
 const DB_FILE_NAME = 'outlook-sim.db'
 
@@ -66,21 +80,46 @@ CREATE TABLE IF NOT EXISTS calendar_items (
   reminders_fired TEXT NOT NULL DEFAULT '[]'
 );
 
-CREATE TABLE IF NOT EXISTS filevine_folders (
+CREATE TABLE IF NOT EXISTS gp_matters (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  parent_id TEXT REFERENCES filevine_folders(id),
-  client_persona_id TEXT
+  data TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS filevine_notes (
+CREATE TABLE IF NOT EXISTS gp_records (
   id TEXT PRIMARY KEY,
-  folder_id TEXT NOT NULL REFERENCES filevine_folders(id),
-  name TEXT NOT NULL,
-  content TEXT NOT NULL DEFAULT ''
+  matter_id TEXT NOT NULL REFERENCES gp_matters(id),
+  kind TEXT NOT NULL,
+  data TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER
 );
 
-CREATE INDEX IF NOT EXISTS idx_filevine_notes_folder_id ON filevine_notes(folder_id);
+CREATE INDEX IF NOT EXISTS idx_gp_records_matter_id ON gp_records(matter_id);
+
+CREATE TABLE IF NOT EXISTS gp_folders (
+  id TEXT PRIMARY KEY,
+  matter_id TEXT NOT NULL REFERENCES gp_matters(id),
+  name TEXT NOT NULL,
+  parent_id TEXT REFERENCES gp_folders(id)
+);
+
+CREATE TABLE IF NOT EXISTS gp_documents (
+  id TEXT PRIMARY KEY,
+  matter_id TEXT NOT NULL REFERENCES gp_matters(id),
+  folder_id TEXT REFERENCES gp_folders(id),
+  name TEXT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  path TEXT,
+  uploaded_by TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_gp_documents_matter_id ON gp_documents(matter_id);
+
+CREATE TABLE IF NOT EXISTS gp_admin (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
@@ -137,18 +176,36 @@ interface CalendarItemRow {
   reminders_fired: string
 }
 
-interface FileVineFolderRow {
+interface GpJsonRow {
   id: string
-  name: string
-  parent_id: string | null
-  client_persona_id: string | null
+  data: string
 }
 
-interface FileVineNoteRow {
+interface GpRecordRow {
   id: string
-  folder_id: string
+  matter_id: string
+  kind: string
+  data: string
+  created_at: number
+  updated_at: number | null
+}
+
+interface GpFolderRow {
+  id: string
+  matter_id: string
+  name: string
+  parent_id: string | null
+}
+
+interface GpDocumentRow {
+  id: string
+  matter_id: string
+  folder_id: string | null
   name: string
   content: string
+  path: string | null
+  uploaded_by: string
+  created_at: number
 }
 
 interface TaskRow {
@@ -199,12 +256,38 @@ function calendarItemFromRow(row: CalendarItemRow): CalendarItem {
   }
 }
 
-function fileVineFolderFromRow(row: FileVineFolderRow): FileVineFolder {
-  return { id: row.id, name: row.name, parentId: row.parent_id, clientPersonaId: row.client_persona_id }
+// Blank defaults first, so a matter saved before a field existed still
+// loads with every field present.
+function gpMatterFromRow(row: GpJsonRow): GpMatter {
+  return { ...BLANK_GP_MATTER_FIELDS, ...JSON.parse(row.data), id: row.id }
 }
 
-function fileVineNoteFromRow(row: FileVineNoteRow): FileVineNote {
-  return { id: row.id, folderId: row.folder_id, name: row.name, content: row.content }
+function gpRecordFromRow(row: GpRecordRow): GpRecord {
+  return {
+    id: row.id,
+    matterId: row.matter_id,
+    kind: row.kind as GpRecordKind,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    data: JSON.parse(row.data)
+  }
+}
+
+function gpFolderFromRow(row: GpFolderRow): GpFolder {
+  return { id: row.id, matterId: row.matter_id, name: row.name, parentId: row.parent_id }
+}
+
+function gpDocumentFromRow(row: GpDocumentRow): GpDocument {
+  return {
+    id: row.id,
+    matterId: row.matter_id,
+    folderId: row.folder_id,
+    name: row.name,
+    content: row.content,
+    path: row.path,
+    uploadedBy: row.uploaded_by,
+    createdAt: row.created_at
+  }
 }
 
 function taskFromRow(row: TaskRow): Task {
@@ -227,6 +310,7 @@ export class MailDb {
     this.migrateCalendarItemsRemindersFiredColumn()
     this.migrateCalendarItemsRecurrenceExceptionsColumn()
     this.seedDefaultFolders()
+    this.migrateFileVineData()
   }
 
   // `CREATE TABLE IF NOT EXISTS` doesn't add new columns to a pre-existing
@@ -472,106 +556,291 @@ export class MailDb {
     this.db.prepare('DELETE FROM calendar_items WHERE id = ?').run(id)
   }
 
-  // FileVine folders
+  // Ghost Practice (features/ghost-practice/SPEC.md) — AB matters, their
+  // generic list records, document folders/documents, and firm admin.
+  // Like tasks below, none of this is touched by
+  // resetMailboxAndCalendar/free-play/scenario-pack loads.
 
-  listFileVineFolders(): FileVineFolder[] {
-    const rows = this.db
-      .prepare('SELECT * FROM filevine_folders ORDER BY name ASC')
-      .all() as unknown as FileVineFolderRow[]
-    return rows.map(fileVineFolderFromRow)
-  }
+  // One-time carry-over of the FileVine module's data (features 047/048),
+  // which Ghost Practice replaced. Each root FileVine folder becomes a
+  // matter (keeping its client persona association); its subfolders become
+  // that matter's document folders and its notes become documents. The old
+  // tables are then renamed rather than dropped, so the migration never
+  // runs twice and the original rows stay recoverable.
+  private migrateFileVineData(): void {
+    const hasTable = (name: string): boolean =>
+      this.db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined
+    if (!hasTable('filevine_folders')) return
 
-  getFileVineFolder(id: string): FileVineFolder | null {
-    const row = this.db.prepare('SELECT * FROM filevine_folders WHERE id = ?').get(id) as
-      | FileVineFolderRow
-      | undefined
-    return row ? fileVineFolderFromRow(row) : null
-  }
+    const folders = this.db.prepare('SELECT * FROM filevine_folders ORDER BY name ASC').all() as unknown as {
+      id: string
+      name: string
+      parent_id: string | null
+      client_persona_id: string | null
+    }[]
+    const notes = hasTable('filevine_notes')
+      ? (this.db.prepare('SELECT * FROM filevine_notes ORDER BY name ASC').all() as unknown as {
+          folder_id: string
+          name: string
+          content: string
+        }[])
+      : []
 
-  createFileVineFolder(folder: NewFileVineFolder): FileVineFolder {
-    const id = generateId()
-    const full: FileVineFolder = { id, parentId: null, clientPersonaId: null, ...folder }
-    this.db
-      .prepare('INSERT INTO filevine_folders (id, name, parent_id, client_persona_id) VALUES (?, ?, ?, ?)')
-      .run(full.id, full.name, full.parentId, full.clientPersonaId)
-    return full
-  }
-
-  updateFileVineFolder(id: string, patch: FileVineFolderPatch): FileVineFolder | null {
-    const existing = this.getFileVineFolder(id)
-    if (!existing) return null
-    const updated: FileVineFolder = { ...existing, ...patch, id }
-    this.db
-      .prepare('UPDATE filevine_folders SET name = ?, parent_id = ?, client_persona_id = ? WHERE id = ?')
-      .run(updated.name, updated.parentId, updated.clientPersonaId, id)
-    return updated
-  }
-
-  // Deletes a folder and all of its descendants — mirrors a real
-  // file-system folder delete removing its contents, rather than silently
-  // orphaning/reparenting children to the root. Also removes every deleted
-  // folder's notes (feature 048) — otherwise their folder_id foreign key
-  // would block the folder deletes below, and orphaned notes would be an
-  // undefined, not deliberate, outcome.
-  deleteFileVineFolder(id: string): void {
-    const all = this.listFileVineFolders()
-    const toDelete = new Set<string>()
-    const collect = (folderId: string): void => {
-      toDelete.add(folderId)
-      for (const folder of all) {
-        if (folder.parentId === folderId) collect(folder.id)
+    const migrateChildren = (oldParentId: string, matterId: string, newParentId: string | null): void => {
+      for (const note of notes.filter((candidate) => candidate.folder_id === oldParentId)) {
+        this.createGpDocument({ matterId, folderId: newParentId, name: note.name, content: note.content })
+      }
+      for (const child of folders.filter((candidate) => candidate.parent_id === oldParentId)) {
+        const created = this.createGpFolder({ matterId, name: child.name, parentId: newParentId })
+        migrateChildren(child.id, matterId, created.id)
       }
     }
-    collect(id)
-    for (const folderId of toDelete) {
-      this.db.prepare('DELETE FROM filevine_notes WHERE folder_id = ?').run(folderId)
+
+    const ids = new Set(folders.map((folder) => folder.id))
+    for (const root of folders.filter((folder) => !folder.parent_id || !ids.has(folder.parent_id))) {
+      const matter = this.createGpMatter(
+        { clientName: root.name, clientPersonaId: root.client_persona_id },
+        { seedDefaultFolders: false }
+      )
+      migrateChildren(root.id, matter.id, null)
     }
-    // `collect` visits a folder before its children (pre-order), so
-    // reversing guarantees every descendant is deleted before its parent —
-    // required by the parent_id foreign key, since a parent can't be
-    // deleted while a still-existing child still references it.
-    for (const folderId of [...toDelete].reverse()) {
-      this.db.prepare('DELETE FROM filevine_folders WHERE id = ?').run(folderId)
-    }
+
+    this.db.exec('ALTER TABLE filevine_folders RENAME TO filevine_folders_migrated')
+    if (hasTable('filevine_notes')) this.db.exec('ALTER TABLE filevine_notes RENAME TO filevine_notes_migrated')
   }
 
-  // FileVine notes (feature 048)
-
-  listFileVineNotes(folderId: string): FileVineNote[] {
-    const rows = this.db
-      .prepare('SELECT * FROM filevine_notes WHERE folder_id = ? ORDER BY name ASC')
-      .all(folderId) as unknown as FileVineNoteRow[]
-    return rows.map(fileVineNoteFromRow)
+  listGpMatters(): GpMatter[] {
+    const rows = this.db.prepare('SELECT * FROM gp_matters').all() as unknown as GpJsonRow[]
+    return rows
+      .map(gpMatterFromRow)
+      .sort((a, b) => a.matterNumber.localeCompare(b.matterNumber))
   }
 
-  getFileVineNote(id: string): FileVineNote | null {
-    const row = this.db.prepare('SELECT * FROM filevine_notes WHERE id = ?').get(id) as
-      | FileVineNoteRow
-      | undefined
-    return row ? fileVineNoteFromRow(row) : null
+  getGpMatter(id: string): GpMatter | null {
+    const row = this.db.prepare('SELECT * FROM gp_matters WHERE id = ?').get(id) as GpJsonRow | undefined
+    return row ? gpMatterFromRow(row) : null
   }
 
-  createFileVineNote(note: NewFileVineNote): FileVineNote {
+  // Matter numbers are `AB-<year>-<sequence>`; the sequence is one more than
+  // the highest ever issued that is still on file, so deleting a matter in
+  // the middle never causes a later one to reuse a live number.
+  private nextGpMatterNumber(createdAt: number): string {
+    const highest = this.listGpMatters().reduce((max, matter) => {
+      const sequence = Number(matter.matterNumber.split('-').pop())
+      return Number.isFinite(sequence) ? Math.max(max, sequence) : max
+    }, 0)
+    return `AB-${new Date(createdAt).getFullYear()}-${String(highest + 1).padStart(4, '0')}`
+  }
+
+  // Every new AB matter starts with the default document folder tree
+  // (DOC-02) unless the caller opts out (the FileVine migration, which
+  // brings its own folders).
+  createGpMatter(matter: NewGpMatter, options: { seedDefaultFolders?: boolean } = {}): GpMatter {
     const id = generateId()
-    const full: FileVineNote = { id, ...note }
-    this.db
-      .prepare('INSERT INTO filevine_notes (id, folder_id, name, content) VALUES (?, ?, ?, ?)')
-      .run(full.id, full.folderId, full.name, full.content)
+    const createdAt = matter.createdAt ?? Date.now()
+    const full: GpMatter = {
+      ...BLANK_GP_MATTER_FIELDS,
+      ...matter,
+      id,
+      createdAt,
+      matterNumber: this.nextGpMatterNumber(createdAt)
+    }
+    this.db.prepare('INSERT INTO gp_matters (id, data) VALUES (?, ?)').run(id, JSON.stringify(full))
+    if (options.seedDefaultFolders ?? true) {
+      const seed = (templates: GpFolderTemplate[], parentId: string | null): void => {
+        for (const template of templates) {
+          const folder = this.createGpFolder({ matterId: id, name: template.name, parentId })
+          if (template.children) seed(template.children, folder.id)
+        }
+      }
+      seed(DEFAULT_GP_FOLDERS, null)
+    }
     return full
   }
 
-  updateFileVineNote(id: string, patch: FileVineNotePatch): FileVineNote | null {
-    const existing = this.getFileVineNote(id)
+  updateGpMatter(id: string, patch: GpMatterPatch): GpMatter | null {
+    const existing = this.getGpMatter(id)
     if (!existing) return null
-    const updated: FileVineNote = { ...existing, ...patch, id }
-    this.db
-      .prepare('UPDATE filevine_notes SET name = ?, content = ? WHERE id = ?')
-      .run(updated.name, updated.content, id)
+    const updated: GpMatter = {
+      ...existing,
+      ...patch,
+      id,
+      matterNumber: existing.matterNumber,
+      createdAt: existing.createdAt
+    }
+    this.db.prepare('UPDATE gp_matters SET data = ? WHERE id = ?').run(JSON.stringify(updated), id)
     return updated
   }
 
-  deleteFileVineNote(id: string): void {
-    this.db.prepare('DELETE FROM filevine_notes WHERE id = ?').run(id)
+  deleteGpMatter(id: string): void {
+    this.db.prepare('DELETE FROM gp_records WHERE matter_id = ?').run(id)
+    this.db.prepare('DELETE FROM gp_documents WHERE matter_id = ?').run(id)
+    this.db.prepare('DELETE FROM gp_folders WHERE matter_id = ?').run(id)
+    this.db.prepare('DELETE FROM gp_matters WHERE id = ?').run(id)
+  }
+
+  // Omitting matterId lists every matter's records — the files list needs
+  // them all at once for its next-deadline column and the global diary.
+  listGpRecords(matterId?: string): GpRecord[] {
+    const rows = (
+      matterId
+        ? this.db.prepare('SELECT * FROM gp_records WHERE matter_id = ? ORDER BY created_at ASC, rowid ASC').all(matterId)
+        : this.db.prepare('SELECT * FROM gp_records ORDER BY created_at ASC, rowid ASC').all()
+    ) as unknown as GpRecordRow[]
+    return rows.map(gpRecordFromRow)
+  }
+
+  getGpRecord(id: string): GpRecord | null {
+    const row = this.db.prepare('SELECT * FROM gp_records WHERE id = ?').get(id) as GpRecordRow | undefined
+    return row ? gpRecordFromRow(row) : null
+  }
+
+  createGpRecord(record: NewGpRecord): GpRecord {
+    const full: GpRecord = {
+      id: generateId(),
+      matterId: record.matterId,
+      kind: record.kind,
+      createdAt: record.createdAt ?? Date.now(),
+      updatedAt: null,
+      data: record.data
+    }
+    this.db
+      .prepare('INSERT INTO gp_records (id, matter_id, kind, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(full.id, full.matterId, full.kind, JSON.stringify(full.data), full.createdAt, full.updatedAt)
+    return full
+  }
+
+  // `data` is merged into the existing values, not replaced, so a caller
+  // can change one field (e.g. void a time entry) without resending the rest.
+  updateGpRecord(id: string, data: GpRecordData, updatedAt: number = Date.now()): GpRecord | null {
+    const existing = this.getGpRecord(id)
+    if (!existing) return null
+    const updated: GpRecord = { ...existing, data: { ...existing.data, ...data }, updatedAt }
+    this.db
+      .prepare('UPDATE gp_records SET data = ?, updated_at = ? WHERE id = ?')
+      .run(JSON.stringify(updated.data), updated.updatedAt, id)
+    return updated
+  }
+
+  deleteGpRecord(id: string): void {
+    this.db.prepare('DELETE FROM gp_records WHERE id = ?').run(id)
+  }
+
+  listGpFolders(matterId: string): GpFolder[] {
+    const rows = this.db
+      .prepare('SELECT * FROM gp_folders WHERE matter_id = ? ORDER BY name ASC')
+      .all(matterId) as unknown as GpFolderRow[]
+    return rows.map(gpFolderFromRow)
+  }
+
+  getGpFolder(id: string): GpFolder | null {
+    const row = this.db.prepare('SELECT * FROM gp_folders WHERE id = ?').get(id) as GpFolderRow | undefined
+    return row ? gpFolderFromRow(row) : null
+  }
+
+  createGpFolder(folder: NewGpFolder): GpFolder {
+    const full: GpFolder = { id: generateId(), parentId: null, ...folder }
+    this.db
+      .prepare('INSERT INTO gp_folders (id, matter_id, name, parent_id) VALUES (?, ?, ?, ?)')
+      .run(full.id, full.matterId, full.name, full.parentId)
+    return full
+  }
+
+  private gpFolderSubtreeIds(folder: GpFolder): string[] {
+    const all = this.listGpFolders(folder.matterId)
+    const ids: string[] = []
+    const collect = (folderId: string): void => {
+      ids.push(folderId)
+      for (const candidate of all) {
+        if (candidate.parentId === folderId) collect(candidate.id)
+      }
+    }
+    collect(folder.id)
+    return ids
+  }
+
+  // Renames and/or moves a folder. A move into the folder itself or one of
+  // its own descendants would detach the whole subtree from the matter's
+  // tree, so that part of the patch is ignored.
+  updateGpFolder(id: string, patch: GpFolderPatch): GpFolder | null {
+    const existing = this.getGpFolder(id)
+    if (!existing) return null
+    const updated: GpFolder = { ...existing, ...patch, id, matterId: existing.matterId }
+    if (updated.parentId && this.gpFolderSubtreeIds(existing).includes(updated.parentId)) {
+      updated.parentId = existing.parentId
+    }
+    this.db.prepare('UPDATE gp_folders SET name = ?, parent_id = ? WHERE id = ?').run(updated.name, updated.parentId, id)
+    return updated
+  }
+
+  // Deletes a folder, all of its descendants, and every document inside
+  // them — mirrors a real file-system folder delete.
+  deleteGpFolder(id: string): void {
+    const existing = this.getGpFolder(id)
+    if (!existing) return
+    // Pre-order (parent before child), so reversing deletes children first
+    // — required by the parent_id foreign key.
+    for (const folderId of this.gpFolderSubtreeIds(existing).reverse()) {
+      this.db.prepare('DELETE FROM gp_documents WHERE folder_id = ?').run(folderId)
+      this.db.prepare('DELETE FROM gp_folders WHERE id = ?').run(folderId)
+    }
+  }
+
+  listGpDocuments(matterId: string): GpDocument[] {
+    const rows = this.db
+      .prepare('SELECT * FROM gp_documents WHERE matter_id = ? ORDER BY name ASC')
+      .all(matterId) as unknown as GpDocumentRow[]
+    return rows.map(gpDocumentFromRow)
+  }
+
+  getGpDocument(id: string): GpDocument | null {
+    const row = this.db.prepare('SELECT * FROM gp_documents WHERE id = ?').get(id) as GpDocumentRow | undefined
+    return row ? gpDocumentFromRow(row) : null
+  }
+
+  createGpDocument(document: NewGpDocument): GpDocument {
+    const full: GpDocument = {
+      id: generateId(),
+      folderId: null,
+      path: null,
+      uploadedBy: '',
+      createdAt: Date.now(),
+      ...document
+    }
+    this.db
+      .prepare(
+        `INSERT INTO gp_documents (id, matter_id, folder_id, name, content, path, uploaded_by, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(full.id, full.matterId, full.folderId, full.name, full.content, full.path, full.uploadedBy, full.createdAt)
+    return full
+  }
+
+  updateGpDocument(id: string, patch: GpDocumentPatch): GpDocument | null {
+    const existing = this.getGpDocument(id)
+    if (!existing) return null
+    const updated: GpDocument = { ...existing, ...patch, id }
+    this.db
+      .prepare('UPDATE gp_documents SET name = ?, content = ?, folder_id = ? WHERE id = ?')
+      .run(updated.name, updated.content, updated.folderId, id)
+    return updated
+  }
+
+  deleteGpDocument(id: string): void {
+    this.db.prepare('DELETE FROM gp_documents WHERE id = ?').run(id)
+  }
+
+  // Missing keys fall back to the defaults, so admin data saved by an
+  // earlier version keeps loading as fields are added.
+  getGpAdmin(): GpAdmin {
+    const row = this.db.prepare('SELECT data FROM gp_admin WHERE id = 1').get() as { data: string } | undefined
+    return row ? { ...DEFAULT_GP_ADMIN, ...JSON.parse(row.data) } : DEFAULT_GP_ADMIN
+  }
+
+  setGpAdmin(admin: GpAdmin): void {
+    this.db
+      .prepare('INSERT INTO gp_admin (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data')
+      .run(JSON.stringify(admin))
   }
 
   // Freestanding tasks (feature 046) — deliberately not touched by

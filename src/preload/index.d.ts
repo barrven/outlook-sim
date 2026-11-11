@@ -6,10 +6,6 @@ import type {
   ClockState,
   ColorScheme,
   ComposeOpenOptions,
-  FileVineFolder,
-  FileVineFolderPatch,
-  FileVineNote,
-  FileVineNotePatch,
   FiredReminder,
   Folder,
   GeneratePersonasResult,
@@ -19,8 +15,6 @@ import type {
   MailMessage,
   MailMessagePatch,
   NewCalendarItem,
-  NewFileVineFolder,
-  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   NewTask,
@@ -38,6 +32,53 @@ import type {
   TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
+import type {
+  GpAdmin,
+  GpDocument,
+  GpDocumentPatch,
+  GpFolder,
+  GpFolderPatch,
+  GpMatter,
+  GpMatterPatch,
+  GpRecord,
+  GpRecordData,
+  NewGpDocument,
+  NewGpFolder,
+  NewGpMatter,
+  NewGpRecord
+} from '../shared/ghostPractice'
+
+export interface GhostPracticeApi {
+  matters: {
+    list: () => Promise<GpMatter[]>
+    get: (id: string) => Promise<GpMatter | null>
+    create: (matter: NewGpMatter) => Promise<GpMatter>
+    update: (id: string, patch: GpMatterPatch) => Promise<GpMatter | null>
+    delete: (id: string) => Promise<void>
+  }
+  records: {
+    list: (matterId?: string) => Promise<GpRecord[]>
+    create: (record: NewGpRecord) => Promise<GpRecord>
+    update: (id: string, data: GpRecordData) => Promise<GpRecord | null>
+    delete: (id: string) => Promise<void>
+  }
+  folders: {
+    list: (matterId: string) => Promise<GpFolder[]>
+    create: (folder: NewGpFolder) => Promise<GpFolder>
+    update: (id: string, patch: GpFolderPatch) => Promise<GpFolder | null>
+    delete: (id: string) => Promise<void>
+  }
+  documents: {
+    list: (matterId: string) => Promise<GpDocument[]>
+    create: (document: NewGpDocument) => Promise<GpDocument>
+    update: (id: string, patch: GpDocumentPatch) => Promise<GpDocument | null>
+    delete: (id: string) => Promise<void>
+  }
+  admin: {
+    get: () => Promise<GpAdmin>
+    set: (admin: GpAdmin) => Promise<void>
+  }
+}
 
 export interface DataApi {
   folders: {
@@ -58,20 +99,6 @@ export interface DataApi {
     get: (id: string) => Promise<CalendarItem | null>
     create: (item: NewCalendarItem) => Promise<CalendarItem>
     update: (id: string, patch: CalendarItemPatch) => Promise<CalendarItem | null>
-    delete: (id: string) => Promise<void>
-  }
-  fileVineFolders: {
-    list: () => Promise<FileVineFolder[]>
-    get: (id: string) => Promise<FileVineFolder | null>
-    create: (folder: NewFileVineFolder) => Promise<FileVineFolder>
-    update: (id: string, patch: FileVineFolderPatch) => Promise<FileVineFolder | null>
-    delete: (id: string) => Promise<void>
-  }
-  fileVineNotes: {
-    list: (folderId: string) => Promise<FileVineNote[]>
-    get: (id: string) => Promise<FileVineNote | null>
-    create: (note: NewFileVineNote) => Promise<FileVineNote>
-    update: (id: string, patch: FileVineNotePatch) => Promise<FileVineNote | null>
     delete: (id: string) => Promise<void>
   }
   tasks: {
@@ -148,6 +175,7 @@ export interface AttachmentsApi {
   pick: () => Promise<PickAttachmentResult>
   extractText: (filePath: string) => Promise<string | undefined>
   open: (filePath: string) => Promise<string>
+  pathForFile: (file: File) => string
 }
 
 export interface LlmApi {
@@ -165,6 +193,7 @@ declare global {
     api: {
       app: AppApi
       data: DataApi
+      gp: GhostPracticeApi
       compose: ComposeApi
       messagePopout: MessagePopoutApi
       calendarPopout: CalendarPopoutApi

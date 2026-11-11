@@ -4,9 +4,9 @@ This file is the single source of truth for where the project is in the
 lifecycle. Every stage command reads it first and updates it last.
 
 - **Outer iteration:** 3
-- **Phase:** retro
-- **Active feature:** _(none — backlog empty)_
-- **Last updated:** 2026-09-18
+- **Phase:** accept
+- **Active feature:** 068 — Ghost Practice tab (features/068-ghost-practice-tab.md)
+- **Last updated:** 2026-11-11
 
 ## Phases
 
@@ -22,6 +22,13 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-11-11 — feature 068 (Ghost Practice tab, replacing FileVine) implemented,
+  tested and validated in a single pass outside the usual /features →
+  /implement chain, from features/ghost-practice/SPEC.md (commit 63e7175).
+  Not committed per stage — the work is uncommitted in the working tree.
+  build/lint pass, 928/928 tests; checked in the running app. Decisions
+  and unverified items are in the feature file. Phase set to `accept`
+  (was `retro`, which is still owed for outer iteration 3).
 - 2026-09-18 — feature 057 (Tasks panel — Tasks section redesign)
   accepted by user (selected "Accept (Recommended)" against the
   validation summary and AC-by-AC mapping, no changes requested); logged

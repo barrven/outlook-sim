@@ -4,10 +4,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
 
-// Home/FileVine/View are now real tabs (features 047/046), and File opens
+// Home/Ghost Practice/View are now real tabs (features 047/046), and File opens
 // a menu (034) — every render needs these, even tests unrelated to them.
-function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boolean; showTasksPanel: boolean }> = {}): {
-  showFileVine: boolean
+function tabProps(overrides: Partial<{ showGhostPractice: boolean; viewTabActive: boolean; showTasksPanel: boolean }> = {}): {
+  showGhostPractice: boolean
   viewTabActive: boolean
   showTasksPanel: boolean
   showMailSearch: boolean
@@ -18,13 +18,13 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
   readingPaneMode: 'right' | 'off'
   onReadingPaneModeChange: () => void
   onSelectHomeTab: () => void
-  onSelectFileVineTab: () => void
+  onSelectGhostPracticeTab: () => void
   onSelectViewTab: () => void
   onToggleTasksPanel: () => void
   onOpenSettings: () => void
 } {
   return {
-    showFileVine: false,
+    showGhostPractice: false,
     viewTabActive: false,
     showTasksPanel: false,
     showMailSearch: false,
@@ -35,7 +35,7 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
     readingPaneMode: 'right',
     onReadingPaneModeChange: vi.fn(),
     onSelectHomeTab: vi.fn(),
-    onSelectFileVineTab: vi.fn(),
+    onSelectGhostPracticeTab: vi.fn(),
     onSelectViewTab: vi.fn(),
     onToggleTasksPanel: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -44,11 +44,11 @@ function tabProps(overrides: Partial<{ showFileVine: boolean; viewTabActive: boo
 }
 
 describe('RibbonBar', () => {
-  it('renders ribbon tabs and mail actions, with Home/FileVine/View/File/New Email interactive', () => {
+  it('renders ribbon tabs and mail actions, with Home/Ghost Practice/View/File/New Email interactive', () => {
     render(<RibbonBar activeModule="mail" {...tabProps()} />)
 
     expect(screen.getByRole('button', { name: 'Home' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'FileVine' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Ghost Practice' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'View' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'File' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'New Email' })).toBeDisabled()
@@ -295,32 +295,32 @@ describe('RibbonBar', () => {
     }
   })
 
-  it('FileVine tab between Home and View calls onSelectFileVineTab and becomes the active tab', async () => {
+  it('Ghost Practice tab between Home and View calls onSelectGhostPracticeTab and becomes the active tab', async () => {
     const user = userEvent.setup()
-    const onSelectFileVineTab = vi.fn()
-    render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} onSelectFileVineTab={onSelectFileVineTab} />)
+    const onSelectGhostPracticeTab = vi.fn()
+    render(<RibbonBar activeModule="mail" {...tabProps({ showGhostPractice: false })} onSelectGhostPracticeTab={onSelectGhostPracticeTab} />)
 
-    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|FileVine|View)$/ }).map((b) => b.textContent)
-    expect(tabNames.indexOf('FileVine')).toBeGreaterThan(tabNames.indexOf('Home'))
-    expect(tabNames.indexOf('FileVine')).toBeLessThan(tabNames.indexOf('View'))
+    const tabNames = screen.getAllByRole('button', { name: /^(File|Home|Ghost Practice|View)$/ }).map((b) => b.textContent)
+    expect(tabNames.indexOf('Ghost Practice')).toBeGreaterThan(tabNames.indexOf('Home'))
+    expect(tabNames.indexOf('Ghost Practice')).toBeLessThan(tabNames.indexOf('View'))
 
-    await user.click(screen.getByRole('button', { name: 'FileVine' }))
-    expect(onSelectFileVineTab).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Ghost Practice' }))
+    expect(onSelectGhostPracticeTab).toHaveBeenCalledTimes(1)
   })
 
-  it('marks FileVine active (not Home) when showFileVine is true, and vice versa', () => {
-    const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: true })} />)
-    expect(screen.getByRole('button', { name: 'FileVine' })).toHaveClass('active')
+  it('marks Ghost Practice active (not Home) when showGhostPractice is true, and vice versa', () => {
+    const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps({ showGhostPractice: true })} />)
+    expect(screen.getByRole('button', { name: 'Ghost Practice' })).toHaveClass('active')
     expect(screen.getByRole('button', { name: 'Home' })).not.toHaveClass('active')
 
-    rerender(<RibbonBar activeModule="mail" {...tabProps({ showFileVine: false })} />)
+    rerender(<RibbonBar activeModule="mail" {...tabProps({ showGhostPractice: false })} />)
     expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
-    expect(screen.getByRole('button', { name: 'FileVine' })).not.toHaveClass('active')
+    expect(screen.getByRole('button', { name: 'Ghost Practice' })).not.toHaveClass('active')
   })
 
   // 046 AC1: View tab has a Tasks toggle.
   describe('View tab (046)', () => {
-    it('clicking View calls onSelectViewTab, and marks View (not Home/FileVine) active', () => {
+    it('clicking View calls onSelectViewTab, and marks View (not Home/Ghost Practice) active', () => {
       const onSelectViewTab = vi.fn()
       const { rerender } = render(
         <RibbonBar activeModule="mail" {...tabProps()} onSelectViewTab={onSelectViewTab} />

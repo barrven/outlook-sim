@@ -3,14 +3,10 @@ import type {
   AppearanceConfig,
   ApplyScenarioPackResult,
   CalendarItemPatch,
-  FileVineFolderPatch,
-  FileVineNotePatch,
   FiredReminder,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
-  NewFileVineFolder,
-  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   NewTask,
@@ -22,6 +18,17 @@ import type {
   TaskPatch,
   TraineeIdentity
 } from '../../shared/data-types'
+import type {
+  GpAdmin,
+  GpDocumentPatch,
+  GpFolderPatch,
+  GpMatterPatch,
+  GpRecordData,
+  NewGpDocument,
+  NewGpFolder,
+  NewGpMatter,
+  NewGpRecord
+} from '../../shared/ghostPractice'
 import { generateText } from '../llm/client'
 import { generatePersonas } from '../llm/generatePersonas'
 import { generatePersonaReply } from '../llm/personaReply'
@@ -114,23 +121,42 @@ export function registerDataIpcHandlers(db: MailDb, config: ConfigStore, clock: 
     broadcastCalendarItemsChanged()
   })
 
-  ipcMain.handle('db:fileVineFolders:list', () => db.listFileVineFolders())
-  ipcMain.handle('db:fileVineFolders:get', (_event, id: string) => db.getFileVineFolder(id))
-  ipcMain.handle('db:fileVineFolders:create', (_event, folder: NewFileVineFolder) =>
-    db.createFileVineFolder(folder)
+  // Ghost Practice. Creation timestamps come from the simulated office
+  // clock, not the wall clock, so "date uploaded" and matter numbers agree
+  // with the date the trainee sees in the ribbon.
+  ipcMain.handle('gp:matters:list', () => db.listGpMatters())
+  ipcMain.handle('gp:matters:get', (_event, id: string) => db.getGpMatter(id))
+  ipcMain.handle('gp:matters:create', (_event, matter: NewGpMatter) =>
+    db.createGpMatter({ ...matter, createdAt: clock.now() })
   )
-  ipcMain.handle('db:fileVineFolders:update', (_event, id: string, patch: FileVineFolderPatch) =>
-    db.updateFileVineFolder(id, patch)
-  )
-  ipcMain.handle('db:fileVineFolders:delete', (_event, id: string) => db.deleteFileVineFolder(id))
+  ipcMain.handle('gp:matters:update', (_event, id: string, patch: GpMatterPatch) => db.updateGpMatter(id, patch))
+  ipcMain.handle('gp:matters:delete', (_event, id: string) => db.deleteGpMatter(id))
 
-  ipcMain.handle('db:fileVineNotes:list', (_event, folderId: string) => db.listFileVineNotes(folderId))
-  ipcMain.handle('db:fileVineNotes:get', (_event, id: string) => db.getFileVineNote(id))
-  ipcMain.handle('db:fileVineNotes:create', (_event, note: NewFileVineNote) => db.createFileVineNote(note))
-  ipcMain.handle('db:fileVineNotes:update', (_event, id: string, patch: FileVineNotePatch) =>
-    db.updateFileVineNote(id, patch)
+  ipcMain.handle('gp:records:list', (_event, matterId?: string) => db.listGpRecords(matterId))
+  ipcMain.handle('gp:records:create', (_event, record: NewGpRecord) =>
+    db.createGpRecord({ ...record, createdAt: clock.now() })
   )
-  ipcMain.handle('db:fileVineNotes:delete', (_event, id: string) => db.deleteFileVineNote(id))
+  ipcMain.handle('gp:records:update', (_event, id: string, data: GpRecordData) =>
+    db.updateGpRecord(id, data, clock.now())
+  )
+  ipcMain.handle('gp:records:delete', (_event, id: string) => db.deleteGpRecord(id))
+
+  ipcMain.handle('gp:folders:list', (_event, matterId: string) => db.listGpFolders(matterId))
+  ipcMain.handle('gp:folders:create', (_event, folder: NewGpFolder) => db.createGpFolder(folder))
+  ipcMain.handle('gp:folders:update', (_event, id: string, patch: GpFolderPatch) => db.updateGpFolder(id, patch))
+  ipcMain.handle('gp:folders:delete', (_event, id: string) => db.deleteGpFolder(id))
+
+  ipcMain.handle('gp:documents:list', (_event, matterId: string) => db.listGpDocuments(matterId))
+  ipcMain.handle('gp:documents:create', (_event, document: NewGpDocument) =>
+    db.createGpDocument({ ...document, createdAt: clock.now() })
+  )
+  ipcMain.handle('gp:documents:update', (_event, id: string, patch: GpDocumentPatch) =>
+    db.updateGpDocument(id, patch)
+  )
+  ipcMain.handle('gp:documents:delete', (_event, id: string) => db.deleteGpDocument(id))
+
+  ipcMain.handle('gp:admin:get', () => db.getGpAdmin())
+  ipcMain.handle('gp:admin:set', (_event, admin: GpAdmin) => db.setGpAdmin(admin))
 
   ipcMain.handle('db:tasks:list', () => db.listTasks())
   ipcMain.handle('db:tasks:get', (_event, id: string) => db.getTask(id))

@@ -428,15 +428,15 @@ describe('App shell', () => {
     expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument()
   })
 
-  it('047 AC2: clicking the FileVine ribbon tab swaps the center/right content area, keeping the mail folder pane visible', async () => {
+  it('047 AC2: clicking the Ghost Practice ribbon tab swaps the center/right content area, keeping the mail folder pane visible', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'FileVine' }))
+    await user.click(screen.getByRole('button', { name: 'Ghost Practice' }))
 
-    expect(await screen.findByRole('heading', { name: 'FileVine' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Ghost Practice' })).toBeInTheDocument()
     expect(screen.queryByText('Inbox', { selector: '.message-list-header' })).not.toBeInTheDocument()
     expect(screen.queryByText('Select an item to read.')).not.toBeInTheDocument()
     // left folder pane (mail folders) stays visible underneath, per spec
@@ -446,35 +446,35 @@ describe('App shell', () => {
     await user.click(screen.getByRole('button', { name: 'Home' }))
 
     expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'FileVine' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ghost Practice' })).not.toBeInTheDocument()
   })
 
-  it('047: selecting a mail folder while FileVine is open returns to the normal mail view', async () => {
+  it('047: selecting a mail folder while Ghost Practice is open returns to the normal mail view', async () => {
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('button', { name: 'Inbox' })
 
-    await user.click(screen.getByRole('button', { name: 'FileVine' }))
-    await screen.findByRole('heading', { name: 'FileVine' })
+    await user.click(screen.getByRole('button', { name: 'Ghost Practice' }))
+    await screen.findByRole('heading', { name: 'Ghost Practice' })
 
     await user.click(screen.getByRole('button', { name: 'Inbox' }))
 
     expect(await screen.findByText('Inbox', { selector: '.message-list-header' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'FileVine' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ghost Practice' })).not.toBeInTheDocument()
   })
 
-  it('047: switching to the Calendar module while FileVine is open closes it', async () => {
+  it('047: switching to the Calendar module while Ghost Practice is open closes it', async () => {
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('button', { name: 'Inbox' })
 
-    await user.click(screen.getByRole('button', { name: 'FileVine' }))
-    await screen.findByRole('heading', { name: 'FileVine' })
+    await user.click(screen.getByRole('button', { name: 'Ghost Practice' }))
+    await screen.findByRole('heading', { name: 'Ghost Practice' })
 
     await user.click(screen.getByRole('tab', { name: 'Calendar' }))
 
     expect(screen.getByText('My Calendars')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'FileVine' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ghost Practice' })).not.toBeInTheDocument()
   })
 
   it('starting free-play from Settings clears a previously-selected message', async () => {
@@ -813,7 +813,7 @@ describe('App shell', () => {
       expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
     })
 
-    it('AC4: hidden behind Settings and while FileVine is open, matching where the search box used to live', async () => {
+    it('AC4: hidden behind Settings and while Ghost Practice is open, matching where the search box used to live', async () => {
       const user = userEvent.setup()
       render(<App />)
       await screen.findByRole('button', { name: 'Inbox' })
@@ -825,8 +825,8 @@ describe('App shell', () => {
       await user.click(screen.getByRole('button', { name: 'Home' }))
       expect(screen.getByLabelText('Search mail')).toBeInTheDocument()
 
-      await user.click(screen.getByRole('button', { name: 'FileVine' }))
-      await screen.findByRole('heading', { name: 'FileVine' })
+      await user.click(screen.getByRole('button', { name: 'Ghost Practice' }))
+      await screen.findByRole('heading', { name: 'Ghost Practice' })
       expect(screen.queryByLabelText('Search mail')).not.toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Home' }))

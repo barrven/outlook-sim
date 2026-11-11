@@ -1,19 +1,15 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AppearanceConfig,
   ApplyScenarioPackResult,
   CalendarItemPatch,
   ColorScheme,
   ComposeOpenOptions,
-  FileVineFolderPatch,
-  FileVineNotePatch,
   FiredReminder,
   GeneratePersonasResult,
   LlmGenerateInput,
   MailMessagePatch,
   NewCalendarItem,
-  NewFileVineFolder,
-  NewFileVineNote,
   NewFolder,
   NewMailMessage,
   NewTask,
@@ -29,6 +25,17 @@ import type {
   TaskPatch,
   TraineeIdentity
 } from '../shared/data-types'
+import type {
+  GpAdmin,
+  GpDocumentPatch,
+  GpFolderPatch,
+  GpMatterPatch,
+  GpRecordData,
+  NewGpDocument,
+  NewGpFolder,
+  NewGpMatter,
+  NewGpRecord
+} from '../shared/ghostPractice'
 
 const api = {
   app: {
@@ -54,21 +61,6 @@ const api = {
       create: (item: NewCalendarItem) => ipcRenderer.invoke('db:calendarItems:create', item),
       update: (id: string, patch: CalendarItemPatch) => ipcRenderer.invoke('db:calendarItems:update', id, patch),
       delete: (id: string) => ipcRenderer.invoke('db:calendarItems:delete', id)
-    },
-    fileVineFolders: {
-      list: () => ipcRenderer.invoke('db:fileVineFolders:list'),
-      get: (id: string) => ipcRenderer.invoke('db:fileVineFolders:get', id),
-      create: (folder: NewFileVineFolder) => ipcRenderer.invoke('db:fileVineFolders:create', folder),
-      update: (id: string, patch: FileVineFolderPatch) =>
-        ipcRenderer.invoke('db:fileVineFolders:update', id, patch),
-      delete: (id: string) => ipcRenderer.invoke('db:fileVineFolders:delete', id)
-    },
-    fileVineNotes: {
-      list: (folderId: string) => ipcRenderer.invoke('db:fileVineNotes:list', folderId),
-      get: (id: string) => ipcRenderer.invoke('db:fileVineNotes:get', id),
-      create: (note: NewFileVineNote) => ipcRenderer.invoke('db:fileVineNotes:create', note),
-      update: (id: string, patch: FileVineNotePatch) => ipcRenderer.invoke('db:fileVineNotes:update', id, patch),
-      delete: (id: string) => ipcRenderer.invoke('db:fileVineNotes:delete', id)
     },
     tasks: {
       list: () => ipcRenderer.invoke('db:tasks:list'),
@@ -105,6 +97,37 @@ const api = {
       setSpeed: (speed: number) => ipcRenderer.invoke('clock:setSpeed', speed)
     }
   },
+  gp: {
+    matters: {
+      list: () => ipcRenderer.invoke('gp:matters:list'),
+      get: (id: string) => ipcRenderer.invoke('gp:matters:get', id),
+      create: (matter: NewGpMatter) => ipcRenderer.invoke('gp:matters:create', matter),
+      update: (id: string, patch: GpMatterPatch) => ipcRenderer.invoke('gp:matters:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('gp:matters:delete', id)
+    },
+    records: {
+      list: (matterId?: string) => ipcRenderer.invoke('gp:records:list', matterId),
+      create: (record: NewGpRecord) => ipcRenderer.invoke('gp:records:create', record),
+      update: (id: string, data: GpRecordData) => ipcRenderer.invoke('gp:records:update', id, data),
+      delete: (id: string) => ipcRenderer.invoke('gp:records:delete', id)
+    },
+    folders: {
+      list: (matterId: string) => ipcRenderer.invoke('gp:folders:list', matterId),
+      create: (folder: NewGpFolder) => ipcRenderer.invoke('gp:folders:create', folder),
+      update: (id: string, patch: GpFolderPatch) => ipcRenderer.invoke('gp:folders:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('gp:folders:delete', id)
+    },
+    documents: {
+      list: (matterId: string) => ipcRenderer.invoke('gp:documents:list', matterId),
+      create: (document: NewGpDocument) => ipcRenderer.invoke('gp:documents:create', document),
+      update: (id: string, patch: GpDocumentPatch) => ipcRenderer.invoke('gp:documents:update', id, patch),
+      delete: (id: string) => ipcRenderer.invoke('gp:documents:delete', id)
+    },
+    admin: {
+      get: () => ipcRenderer.invoke('gp:admin:get'),
+      set: (admin: GpAdmin) => ipcRenderer.invoke('gp:admin:set', admin)
+    }
+  },
   compose: {
     open: (options?: ComposeOpenOptions) => ipcRenderer.invoke('window:openCompose', options)
   },
@@ -136,7 +159,11 @@ const api = {
     pick: (): Promise<PickAttachmentResult> => ipcRenderer.invoke('attachments:pick'),
     extractText: (filePath: string): Promise<string | undefined> =>
       ipcRenderer.invoke('attachments:extractText', filePath),
-    open: (filePath: string): Promise<string> => ipcRenderer.invoke('attachments:open', filePath)
+    open: (filePath: string): Promise<string> => ipcRenderer.invoke('attachments:open', filePath),
+    // The on-disk path of a file dropped onto the window (Ghost Practice's
+    // drag-and-drop upload). Only the preload can resolve this — a
+    // renderer-side File object no longer exposes its path.
+    pathForFile: (file: File): string => webUtils.getPathForFile(file)
   },
   llm: {
     generate: (input: LlmGenerateInput) => ipcRenderer.invoke('llm:generate', input),

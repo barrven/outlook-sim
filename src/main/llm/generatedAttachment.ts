@@ -112,7 +112,7 @@ export function writeGeneratedAttachment(userDataDir: string, filename: string, 
   // trainer-supplied prompts/personas), and this file gets opened via the
   // OS's own handler (typically the user's default browser) — sanitize on
   // the same principle `renderMarkdown` already applies to trainee-authored
-  // FileVine notes rendered inside the app itself.
+  // Ghost Practice notes rendered inside the app itself.
   const bodyHtml = sanitizeHtml(rawBodyHtml)
   const html = `<!doctype html>\n<html>\n<head><meta charset="utf-8"><title>${escapeHtml(htmlFilename)}</title></head>\n<body>\n${bodyHtml}\n</body>\n</html>\n`
   writeFileSync(path, html, 'utf-8')

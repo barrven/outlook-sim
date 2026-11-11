@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { ClockState, Folder, MailMessage } from '../../../shared/data-types'
+import { DEFAULT_GP_ADMIN } from '../../../shared/ghostPractice'
 
 export const DEFAULT_MOCK_MESSAGE: MailMessage = {
   id: 'mock-message-id',
@@ -59,20 +60,6 @@ export function createMockApi(): Window['api'] {
         update: vi.fn().mockResolvedValue(undefined),
         delete: vi.fn().mockResolvedValue(undefined)
       },
-      fileVineFolders: {
-        list: vi.fn().mockResolvedValue([]),
-        get: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue(undefined),
-        update: vi.fn().mockResolvedValue(undefined),
-        delete: vi.fn().mockResolvedValue(undefined)
-      },
-      fileVineNotes: {
-        list: vi.fn().mockResolvedValue([]),
-        get: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue(undefined),
-        update: vi.fn().mockResolvedValue(undefined),
-        delete: vi.fn().mockResolvedValue(undefined)
-      },
       tasks: {
         list: vi.fn().mockResolvedValue([]),
         get: vi.fn().mockResolvedValue(null),
@@ -110,6 +97,37 @@ export function createMockApi(): Window['api'] {
         setSpeed: vi.fn().mockResolvedValue(DEFAULT_MOCK_CLOCK_STATE)
       }
     },
+    gp: {
+      matters: {
+        list: vi.fn().mockResolvedValue([]),
+        get: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
+      records: {
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
+      folders: {
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
+      documents: {
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(undefined)
+      },
+      admin: {
+        get: vi.fn().mockResolvedValue(DEFAULT_GP_ADMIN),
+        set: vi.fn().mockResolvedValue(undefined)
+      }
+    },
     compose: {
       open: vi.fn().mockResolvedValue(undefined)
     },
@@ -136,7 +154,8 @@ export function createMockApi(): Window['api'] {
     attachments: {
       pick: vi.fn().mockResolvedValue({ ok: false, canceled: true }),
       extractText: vi.fn().mockResolvedValue(undefined),
-      open: vi.fn().mockResolvedValue('')
+      open: vi.fn().mockResolvedValue(''),
+      pathForFile: vi.fn().mockReturnValue('')
     },
     llm: {
       generate: vi.fn().mockResolvedValue({ ok: true, text: '' }),

@@ -25,7 +25,7 @@ export interface MessageAttachment {
   // this feature, when attachments were filename-only) keeps loading.
   path?: string
   // Text extracted from a supported file type at send time (feature 063),
-  // truncated the same way FileVine note content is (a 4000-char cap).
+  // truncated the same way Ghost Practice document content is (a 4000-char cap).
   // Undefined for a draft attachment not yet sent, an unsupported file
   // type, or a failed extraction — never blocks sending either way, just
   // means no content is contributed to LLM context for that attachment.
@@ -142,38 +142,6 @@ export type NewTask = Omit<Task, 'id' | 'createdAt'> & Partial<Pick<Task, 'creat
 
 export type TaskPatch = Partial<Omit<Task, 'id'>>
 
-// A case-file/matter folder in the FileVine module (feature 047). Folders
-// nest via `parentId` (file-system-like, not the flat list mail folders
-// use); `clientPersonaId` optionally associates a folder with a configured
-// persona as its "client". Notes/files (feature 048) and LLM context
-// wiring (feature 049) are out of this type's scope.
-export interface FileVineFolder {
-  id: string
-  name: string
-  parentId: string | null
-  clientPersonaId: string | null
-}
-
-export type NewFileVineFolder = Omit<FileVineFolder, 'id' | 'parentId' | 'clientPersonaId'> &
-  Partial<Pick<FileVineFolder, 'parentId' | 'clientPersonaId'>>
-
-export type FileVineFolderPatch = Partial<Omit<FileVineFolder, 'id'>>
-
-// A note/file entry within a FileVine folder (feature 048). `content` is
-// Markdown source, rendered formatted in the view UI and edited as raw
-// source in edit mode — this type only stores the source, not any rendered
-// form.
-export interface FileVineNote {
-  id: string
-  folderId: string
-  name: string
-  content: string
-}
-
-export type NewFileVineNote = Omit<FileVineNote, 'id'>
-
-export type FileVineNotePatch = Partial<Omit<FileVineNote, 'id' | 'folderId'>>
-
 // Broadcast when the reminder scheduler fires a specific occurrence's
 // reminder. Deliberately not `CalendarItem` itself: `id` here is unique per
 // *occurrence* firing (`seriesId:originalStartTime`), not per series, so two
@@ -271,7 +239,7 @@ export interface Persona {
   extraPrompt: string
   // Whether this persona represents a client of the firm, as opposed to
   // firm staff or another external contact (adjuster, opposing counsel,
-  // etc.) — gates which personas can be assigned as a FileVine folder's
+  // etc.) — gates which personas can be linked as a Ghost Practice matter's
   // client.
   isClient: boolean
   // Free text, not a reference to another configured persona — a persona

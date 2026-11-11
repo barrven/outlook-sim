@@ -589,11 +589,11 @@ describe('generatePersonaReply', () => {
     expect(db.listMessages('inbox')).toEqual([])
   })
 
-  describe('049: FileVine content in the prompt', () => {
-    it('AC1: includes the associated FileVine folder\'s notes (name + content) in the system prompt', async () => {
-      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
-      db.createFileVineNote({
-        folderId: folder.id,
+  describe('049: Ghost Practice content in the prompt', () => {
+    it('AC1: includes the linked Ghost Practice file\'s documents (name + content) in the system prompt', async () => {
+      const matter = db.createGpMatter({ clientName: 'Rivera Estate', clientPersonaId: PERSONA.id })
+      db.createGpDocument({
+        matterId: matter.id,
         name: 'Deadline note',
         content: 'The probate filing is due 2026-06-01.'
       })
@@ -610,9 +610,9 @@ describe('generatePersonaReply', () => {
       expect(systemMessage).toContain('The probate filing is due 2026-06-01.')
     })
 
-    it('AC2: a persona with no associated FileVine folder generates exactly as before (no FileVine section)', async () => {
-      // An unrelated folder exists, but is not associated with this persona.
-      db.createFileVineFolder({ name: 'Unrelated Matter', parentId: null, clientPersonaId: null })
+    it('AC2: a persona with no linked Ghost Practice file generates exactly as before (no Ghost Practice section)', async () => {
+      // An unrelated file exists, but is not linked to this persona.
+      db.createGpMatter({ clientName: 'Unrelated Matter', clientPersonaId: null })
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
@@ -621,14 +621,14 @@ describe('generatePersonaReply', () => {
       const [, init] = fetchSpy.mock.calls[0]
       const body = JSON.parse(init?.body as string)
       const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
-      expect(systemMessage).not.toContain('FileVine')
+      expect(systemMessage).not.toContain('Ghost Practice')
       expect(systemMessage).not.toContain('Unrelated Matter')
     })
 
-    it('AC4: a folder content update is reflected in the very next generation, with the old content gone', async () => {
-      const folder = db.createFileVineFolder({ name: 'Rivera Estate', parentId: null, clientPersonaId: PERSONA.id })
-      const note = db.createFileVineNote({ folderId: folder.id, name: 'Deadline note', content: 'Due 2026-04-01.' })
-      db.updateFileVineNote(note.id, { content: 'Due 2026-05-15 (moved).' })
+    it('AC4: a document content update is reflected in the very next generation, with the old content gone', async () => {
+      const matter = db.createGpMatter({ clientName: 'Rivera Estate', clientPersonaId: PERSONA.id })
+      const note = db.createGpDocument({ matterId: matter.id, name: 'Deadline note', content: 'Due 2026-04-01.' })
+      db.updateGpDocument(note.id, { content: 'Due 2026-05-15 (moved).' })
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
@@ -641,8 +641,8 @@ describe('generatePersonaReply', () => {
       expect(systemMessage).not.toContain('Due 2026-04-01.')
     })
 
-    it('includes a folder with no notes yet as an explicit "no notes/files yet" line, not silently omitted', async () => {
-      db.createFileVineFolder({ name: 'Empty Matter', parentId: null, clientPersonaId: PERSONA.id })
+    it('includes a file with no documents yet as an explicit "No documents on this file yet" line, not silently omitted', async () => {
+      db.createGpMatter({ clientName: 'Empty Matter', clientPersonaId: PERSONA.id })
       const message = sendMessage()
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(chatResponse('Sure, noon works!'))
 
@@ -652,7 +652,7 @@ describe('generatePersonaReply', () => {
       const body = JSON.parse(init?.body as string)
       const systemMessage = body.messages.find((m: { role: string }) => m.role === 'system').content
       expect(systemMessage).toContain('Empty Matter')
-      expect(systemMessage).toContain('no notes/files yet')
+      expect(systemMessage).toContain('No documents on this file yet')
     })
   })
 })

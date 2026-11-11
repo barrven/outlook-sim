@@ -2,8 +2,8 @@ import { readFileSync } from 'fs'
 import { extname } from 'path'
 import { parseOfficeAsync } from 'officeparser'
 
-// Same per-item cap FileVine note content uses (feature 049's
-// MAX_NOTE_CONTENT_CHARS) — keeps a very large attachment from blowing out
+// Same per-item cap Ghost Practice document content uses (matterContext.ts's
+// MAX_DOCUMENT_CONTENT_CHARS) — keeps a very large attachment from blowing out
 // the prompt while staying free/instant, no LLM summarization call needed.
 const MAX_EXTRACTED_CHARS = 4000
 

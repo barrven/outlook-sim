@@ -1,6 +1,6 @@
 import type { GenerateUnsolicitedMailResult, Persona, TraineeIdentity } from '../../shared/data-types'
 import { generateText } from './client'
-import { buildFileVineContextPrompt } from './fileVineContext'
+import { buildMatterContextPrompt } from './matterContext'
 import { ATTACHMENT_PROMPT_INSTRUCTION, extractAttachmentBlocks, writeGeneratedAttachment } from './generatedAttachment'
 import type { SimClock } from '../data/clock'
 import type { ConfigStore } from '../data/config'
@@ -29,7 +29,7 @@ function buildSystemPrompt(
   systemPrompt: string,
   persona: Persona,
   identity: TraineeIdentity,
-  fileVineContext: string | null
+  matterContext: string | null
 ): string {
   return [
     systemPrompt,
@@ -37,7 +37,7 @@ function buildSystemPrompt(
     persona.bio && `Background: ${persona.bio}`,
     persona.writingStyleNotes && `Writing style: ${persona.writingStyleNotes}`,
     persona.extraPrompt,
-    fileVineContext,
+    matterContext,
     'Respond in exactly this format and nothing else, except optionally the attachment block described below:\nSubject: <subject line>\n\n<body text>',
     ATTACHMENT_PROMPT_INSTRUCTION
   ]
@@ -113,10 +113,10 @@ export async function generateUnsolicitedMail(
 
   const identity = config.getIdentity()
   const { systemPrompt } = config.getSystemPrompt()
-  const fileVineContext = buildFileVineContextPrompt(db, persona.id)
+  const matterContext = buildMatterContextPrompt(db, persona.id)
 
   const result = await generateText(config.getSettings(), {
-    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, fileVineContext),
+    systemPrompt: buildSystemPrompt(systemPrompt, persona, identity, matterContext),
     userPrompt: buildContextPrompt(db, clock, persona, identity)
   })
 

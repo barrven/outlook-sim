@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ReadingPane from './ReadingPane'
-import type { FileVineFolder, MailMessage } from '../../../shared/data-types'
+import type { MailMessage } from '../../../shared/data-types'
+import { BLANK_GP_MATTER_FIELDS, type GpMatter } from '../../../shared/ghostPractice'
 
 const MESSAGE: MailMessage = {
   id: 'msg-1',
@@ -490,7 +491,7 @@ describe('ReadingPane', () => {
     expect(screen.queryByText('Mock attachment — no file content.')).not.toBeInTheDocument()
   })
 
-  describe('066: Save an attachment into FileVine', () => {
+  describe('066: Save an attachment into Ghost Practice', () => {
     // Content from an LLM-generated attachment (065's `extractedText` is
     // its Markdown source) and content from a real attachment's extraction
     // (063) look identical from `ReadingPane`'s point of view — the whole
@@ -500,8 +501,8 @@ describe('ReadingPane', () => {
       path: '/data/generated-attachments/uuid/settlement-offer.html',
       extractedText: '# Settlement Offer\n\nAmount: $5,000'
     }
-    const FOLDER: FileVineFolder = { id: 'folder-1', name: 'Smith v. Jones', parentId: null, clientPersonaId: null }
-    const OTHER_FOLDER: FileVineFolder = { id: 'folder-2', name: 'Doe Estate', parentId: null, clientPersonaId: null }
+    const MATTER: GpMatter = { ...BLANK_GP_MATTER_FIELDS, id: 'matter-1', matterNumber: 'AB-2026-0001', createdAt: 0, clientName: 'Smith v. Jones' }
+    const OTHER_MATTER: GpMatter = { ...BLANK_GP_MATTER_FIELDS, id: 'matter-2', matterNumber: 'AB-2026-0002', createdAt: 0, clientName: 'Doe Estate' }
 
     it('AC1: any attachment with content shows the action — a real one and an LLM-generated one alike', async () => {
       const message: MailMessage = {
@@ -518,7 +519,7 @@ describe('ReadingPane', () => {
       await screen.findByRole('button', { name: /settlement-offer\.html/ })
       // Both attachments have content — neither is a "generated" vs "real"
       // special case, so both get the action.
-      expect(screen.getAllByRole('button', { name: /Save to FileVine/ })).toHaveLength(2)
+      expect(screen.getAllByRole('button', { name: /Save to Ghost Practice/ })).toHaveLength(2)
     })
 
     it('AC1: an attachment with no content (a true mock, or an unsupported/failed extraction) gets no action', async () => {
@@ -531,28 +532,29 @@ describe('ReadingPane', () => {
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
       await screen.findByRole('button', { name: /photo\.jpg/ })
-      expect(screen.queryByRole('button', { name: /Save to FileVine/ })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Save to Ghost Practice/ })).not.toBeInTheDocument()
     })
 
-    it('AC1/AC2: picking an existing folder and saving creates a note with the attachment\'s content', async () => {
+    it('AC1/AC2: picking an existing file and saving creates a document with the attachment\'s content', async () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER, OTHER_FOLDER])
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([MATTER, OTHER_MATTER])
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
-      expect(await screen.findByRole('option', { name: 'Smith v. Jones' })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Doe Estate' })).toBeInTheDocument()
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
+      expect(await screen.findByRole('option', { name: 'AB-2026-0001 — Smith v. Jones' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'AB-2026-0002 — Doe Estate' })).toBeInTheDocument()
 
-      await user.selectOptions(screen.getByLabelText('Folder'), 'folder-2')
+      await user.selectOptions(screen.getByLabelText('File'), 'matter-2')
       await user.click(screen.getByRole('button', { name: 'Save' }))
 
-      expect(window.api.data.fileVineNotes.create).toHaveBeenCalledWith({
-        folderId: 'folder-2',
+      expect(window.api.gp.documents.create).toHaveBeenCalledWith({
+        matterId: 'matter-2',
         name: 'settlement-offer.html',
-        content: '# Settlement Offer\n\nAmount: $5,000'
+        content: '# Settlement Offer\n\nAmount: $5,000',
+        path: '/data/generated-attachments/uuid/settlement-offer.html'
       })
       // The dialog closes once the save completes.
       expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
@@ -562,90 +564,92 @@ describe('ReadingPane', () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([MATTER])
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
       await user.click(await screen.findByRole('button', { name: 'Save' }))
 
       expect(window.api.data.messages.update).not.toHaveBeenCalled()
       // The filename button and the attachment's own file both remain: the
-      // real save call only ever touched the FileVine note API above.
+      // real save call only ever touched the Ghost Practice document API above.
       expect(await screen.findByRole('button', { name: /settlement-offer\.html/ })).toBeInTheDocument()
     })
 
-    it('AC4: with no FileVine folders yet, offers an inline create-folder-and-save path instead of a dead end', async () => {
+    it('AC4: with no Ghost Practice files yet, offers an inline create-file-and-save path instead of a dead end', async () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([])
-      vi.mocked(window.api.data.fileVineFolders.create).mockResolvedValue({
-        id: 'new-folder',
-        name: 'New Case',
-        parentId: null,
-        clientPersonaId: null
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([])
+      vi.mocked(window.api.gp.matters.create).mockResolvedValue({
+        ...BLANK_GP_MATTER_FIELDS,
+        id: 'new-matter',
+        matterNumber: 'AB-2026-0001',
+        createdAt: 0,
+        clientName: 'New Case'
       })
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
-      expect(await screen.findByText('No FileVine folders yet — create one to save into.')).toBeInTheDocument()
-      // No dead end: a real folder-name input and submit button are right there.
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
+      expect(await screen.findByText('No Ghost Practice files yet — create one to save into.')).toBeInTheDocument()
+      // No dead end: a real client-name input and submit button are right there.
       expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 
-      await user.type(screen.getByRole('textbox', { name: 'New FileVine folder name' }), 'New Case')
-      await user.click(screen.getByRole('button', { name: /Create folder/ }))
+      await user.type(screen.getByRole('textbox', { name: 'New file client name' }), 'New Case')
+      await user.click(screen.getByRole('button', { name: /Create file/ }))
 
-      expect(window.api.data.fileVineFolders.create).toHaveBeenCalledWith({ name: 'New Case' })
-      expect(window.api.data.fileVineNotes.create).toHaveBeenCalledWith({
-        folderId: 'new-folder',
+      expect(window.api.gp.matters.create).toHaveBeenCalledWith({ clientName: 'New Case' })
+      expect(window.api.gp.documents.create).toHaveBeenCalledWith({
+        matterId: 'new-matter',
         name: 'settlement-offer.html',
-        content: '# Settlement Offer\n\nAmount: $5,000'
+        content: '# Settlement Offer\n\nAmount: $5,000',
+        path: '/data/generated-attachments/uuid/settlement-offer.html'
       })
     })
 
-    it('does not submit the create-folder form with a blank name', async () => {
+    it('does not submit the create-file form with a blank client name', async () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([])
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([])
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
-      await screen.findByText('No FileVine folders yet — create one to save into.')
-      await user.click(screen.getByRole('button', { name: /Create folder/ }))
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
+      await screen.findByText('No Ghost Practice files yet — create one to save into.')
+      await user.click(screen.getByRole('button', { name: /Create file/ }))
 
-      expect(window.api.data.fileVineFolders.create).not.toHaveBeenCalled()
-      expect(window.api.data.fileVineNotes.create).not.toHaveBeenCalled()
+      expect(window.api.gp.matters.create).not.toHaveBeenCalled()
+      expect(window.api.gp.documents.create).not.toHaveBeenCalled()
     })
 
     it('Cancel closes the dialog without saving anything', async () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([MATTER])
 
       render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
       await screen.findByRole('button', { name: 'Save' })
       await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
-      expect(window.api.data.fileVineNotes.create).not.toHaveBeenCalled()
+      expect(window.api.gp.documents.create).not.toHaveBeenCalled()
     })
 
     it('resets the save dialog when a different message is selected', async () => {
       const user = userEvent.setup()
       const message: MailMessage = { ...MESSAGE, attachments: [ATTACHMENT_WITH_CONTENT] }
       vi.mocked(window.api.data.messages.get).mockResolvedValue(message)
-      vi.mocked(window.api.data.fileVineFolders.list).mockResolvedValue([FOLDER])
+      vi.mocked(window.api.gp.matters.list).mockResolvedValue([MATTER])
 
       const { rerender } = render(<ReadingPane selectedMessageId="msg-1" selectedCount={1} messagesVersion={0} onEditDraft={vi.fn()} onReply={vi.fn()} onReplyAll={vi.fn()} onForward={vi.fn()} onDelete={vi.fn()} onRestore={vi.fn()} onPermanentDelete={vi.fn()} />)
 
-      await user.click(await screen.findByRole('button', { name: /Save to FileVine/ }))
+      await user.click(await screen.findByRole('button', { name: /Save to Ghost Practice/ }))
       await screen.findByRole('button', { name: 'Save' })
 
       const otherMessage: MailMessage = { ...MESSAGE, id: 'msg-2', subject: 'Different message', attachments: [] }

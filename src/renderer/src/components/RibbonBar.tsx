@@ -5,12 +5,12 @@ import OfficeClock from './OfficeClock'
 // File is rendered separately, before this list — it opens a dropdown menu
 // rather than switching the active tab (feature 034), so it doesn't fit the
 // uniform tab-button rendering below.
-const TABS = ['Home', 'FileVine', 'View']
-// Home, FileVine, and View are real, clickable tabs. Send/Receive and
+const TABS = ['Home', 'Ghost Practice', 'View']
+// Home, Ghost Practice, and View are real, clickable tabs. Send/Receive and
 // Folder were disabled placeholders too, but never wired to anything and
 // are now hidden entirely rather than shown as permanently-disabled tabs
 // (feature 033).
-type ClickableTab = 'Home' | 'FileVine' | 'View'
+type ClickableTab = 'Home' | 'Ghost Practice' | 'View'
 
 // Reply/Reply All/Forward/New Items were also here originally but, like
 // Send/Receive and Folder above, were permanently-disabled placeholders
@@ -35,9 +35,9 @@ const VIEW_ACTIONS = ['Tasks']
 
 interface RibbonBarProps {
   activeModule: ModuleId
-  showFileVine: boolean
+  showGhostPractice: boolean
   // Whether the View tab is the one currently selected — independent of
-  // showFileVine/activeModule, since View doesn't change which module or
+  // showGhostPractice/activeModule, since View doesn't change which module or
   // mail/calendar content is showing, only which action set the ribbon
   // displays.
   viewTabActive: boolean
@@ -45,7 +45,7 @@ interface RibbonBarProps {
   // Mail search (feature 038) — whether the search box should render at
   // all (App.tsx computes this from the same conditions that used to gate
   // rendering the search box inside MessageListPane: Mail module, not
-  // FileVine, not Settings), plus its current value/scope and change
+  // Ghost Practice, not Settings), plus its current value/scope and change
   // handlers. The actual filtering happens in MessageListPane; this
   // component only owns the input.
   showMailSearch: boolean
@@ -58,7 +58,7 @@ interface RibbonBarProps {
   readingPaneMode: 'right' | 'off'
   onReadingPaneModeChange: (mode: 'right' | 'off') => void
   onSelectHomeTab: () => void
-  onSelectFileVineTab: () => void
+  onSelectGhostPracticeTab: () => void
   onSelectViewTab: () => void
   onToggleTasksPanel: () => void
   onOpenSettings: () => void
@@ -69,7 +69,7 @@ interface RibbonBarProps {
 
 function RibbonBar({
   activeModule,
-  showFileVine,
+  showGhostPractice,
   viewTabActive,
   showTasksPanel,
   showMailSearch,
@@ -80,7 +80,7 @@ function RibbonBar({
   readingPaneMode,
   onReadingPaneModeChange,
   onSelectHomeTab,
-  onSelectFileVineTab,
+  onSelectGhostPracticeTab,
   onSelectViewTab,
   onToggleTasksPanel,
   onOpenSettings,
@@ -131,10 +131,10 @@ function RibbonBar({
   }
   const tabHandlers: Partial<Record<ClickableTab, () => void>> = {
     Home: onSelectHomeTab,
-    FileVine: onSelectFileVineTab,
+    'Ghost Practice': onSelectGhostPracticeTab,
     View: onSelectViewTab
   }
-  const activeTab: ClickableTab = viewTabActive ? 'View' : showFileVine ? 'FileVine' : 'Home'
+  const activeTab: ClickableTab = viewTabActive ? 'View' : showGhostPractice ? 'Ghost Practice' : 'Home'
 
   return (
     <div className="ribbon">
