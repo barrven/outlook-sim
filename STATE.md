@@ -22,6 +22,11 @@ Valid values for **Phase**: `spec`, `features`, `implement`, `test`, `validate`,
 ## History
 
 <!-- Append a one-line entry here every time the phase changes, oldest last is fine, newest-first preferred. -->
+- 2026-11-11 — feature 069 (modern visual style + registry-based theme
+  system) implemented, tested and validated in one pass at the user's
+  direct request; uncommitted. Departs from Core Requirement 2 (classic,
+  unrounded chrome) — docs/SPEC.md not yet updated. build/lint pass,
+  978/978 tests. Also awaiting `accept`, alongside 068.
 - 2026-11-11 — feature 068 (Ghost Practice tab, replacing FileVine) implemented,
   tested and validated in a single pass outside the usual /features →
   /implement chain, from features/ghost-practice/SPEC.md (commit 63e7175).

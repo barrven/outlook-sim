@@ -1,0 +1,129 @@
+/* Element-level defaults shared by every window. Everything here is wrapped
+   in :where() so it carries no specificity: any component rule in
+   global.css wins without needing to fight it. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(button, input, select, textarea) {
+  font-family: inherit;
+}
+
+/* The default button: a quiet outlined control. Any button a component
+   doesn't style itself (calendar navigation, form actions) gets this
+   instead of the browser's native gray one. */
+:where(button) {
+  padding: 5px 12px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+:where(button:not(:disabled)) {
+  cursor: pointer;
+}
+
+:where(button:not(:disabled)):hover {
+  background: var(--hover-bg);
+  border-color: var(--selected-border);
+}
+
+:where(button:disabled) {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+  background: var(--pane-bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+:where(input, textarea)::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover {
+  border-color: var(--selected-border);
+}
+
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+:where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--accent);
+}
+
+/* Keyboard focus only — a mouse click doesn't leave a ring behind. */
+:where(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+:where(a) {
+  color: var(--accent);
+}
+
+::selection {
+  background: var(--selected-border);
+  color: var(--text);
+}
+
+/* Slim, theme-colored scrollbars that only show a thumb. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

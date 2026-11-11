@@ -1,214 +1,11 @@
-:root {
-  /* Border-radius tokens (037) — a modest, consistent rounding for
-     individual interactive elements (buttons, inputs, chips, dropdown
-     panels). The ribbon/pane chrome itself is deliberately left
-     unrounded (Core Requirement 2). Unconditional, not part of
-     color-scheme switching (058) below — these aren't colors, and every
-     scheme shares the same rounding. */
-  --radius: 6px;
-  --radius-pill: 999px;
-}
-
-/* Color-scheme infrastructure (058). The <html> element's data-theme
-   attribute (set in index.html; changed at runtime once Settings gets a
-   switcher, feature 061) selects which set of color tokens below
-   applies — swapping the whole app's palette is always just this one
-   attribute changing, never touching layout/chrome (Core Requirement 2).
-   "default", "sage", "plum" (059) and "dark" (060) exist so far, each a
-   further `:root[data-theme='...']` block exactly like this one, each
-   swapping colors only. */
-:root[data-theme='default'] {
-  /* Revised default palette (058) — less flat gray than the original
-     (037) neutrals, replaced with a soft blue tint that reads as
-     "distinct hue" while staying calm/professional enough for a classic
-     Outlook-style chrome (Core Requirement 2). --pane-bg stays pure
-     white: the message/reading content area itself should stay neutral
-     for readability regardless of scheme. */
-  --border: #a9c2dd;
-  --ribbon-bg: #e1e7ed;
-  --pane-bg: #ffffff;
-  --nav-rail-bg: #e1e7ed;
-  --selected-bg: #cce4f7;
-  --selected-border: #7ab6e6;
-  --text: #16233a;
-  --text-muted: #55698a;
-  --accent: #3573b0;
-  --hover-bg: #d6e7fa;
-
-  /* Semantic status colors (037) — the single source for every red/yellow/
-     green accent in the app, replacing what used to be several
-     slightly-different ad-hoc hex values per status. Already distinct,
-     non-gray hues, so left as-is by 058's gray-reduction pass. */
-  --danger: #ffff;
-  --danger-bg: #dc3545;
-  --danger-border: #dc3545;
-  --warning: #4a3f00;
-  --warning-bg: #fff4ce;
-  --warning-border: #c19c00;
-  --success: #107c10;
-  --primary: #fff;
-  --primary-bg: #0d6efd;
-  --primary-border: #0d6efd;
-
-  /* Flag/amber semantic color — distinct from --warning (a caution/error
-     state, used for the LLM failure banner) even though both land in the
-     yellow/brown family; this one is specifically the Flag action's own
-     identity color, an Outlook-style amber rather than a warning tone. */
-  --flag: #a15c00;
-  --flag-bg: #fdedd3;
-  --flag-border: #e2a33d;
-}
-
-/* Two more light schemes (059), same mechanism/structure as "default"
-   above — a full value for every token, selected purely by swapping
-   `data-theme`. --pane-bg stays pure white in both, same reasoning as
-   "default": message/reading content should stay neutral for readability
-   regardless of scheme. The semantic status colors (danger/warning/
-   success/flag) are deliberately identical across all light schemes —
-   already-validated, universally-recognizable red/yellow/green/amber
-   meanings that shouldn't shift with the "brand" palette; each scheme's
-   own identity comes entirely from its neutral chrome + accent/primary
-   hue. Muted-text and white-on-primary contrast checked by hand against
-   WCAG's relative-luminance formula (AC3): sage muted-on-white ~5.6:1,
-   plum muted-on-white ~6.5:1, sage white-on-primary ~5.1:1, plum
-   white-on-primary ~8.2:1 — all clear the 4.5:1 AA threshold for normal
-   text with room to spare. */
-:root[data-theme='sage'] {
-  --border: #9fc7a3;
-  --ribbon-bg: #e2eee3;
-  --pane-bg: #ffffff;
-  --nav-rail-bg: #e2eee3;
-  --selected-bg: #cdeacd;
-  --selected-border: #6fb876;
-  --text: #16301b;
-  --text-muted: #4f6f54;
-  --accent: #2e7d32;
-  --hover-bg: #d2ead4;
-
-  --danger: #ffff;
-  --danger-bg: #dc3545;
-  --danger-border: #dc3545;
-  --warning: #4a3f00;
-  --warning-bg: #fff4ce;
-  --warning-border: #c19c00;
-  --success: #107c10;
-  --primary: #fff;
-  --primary-bg: #2e7d32;
-  --primary-border: #2e7d32;
-
-  --flag: #a15c00;
-  --flag-bg: #fdedd3;
-  --flag-border: #e2a33d;
-}
-
-:root[data-theme='plum'] {
-  --border: #c5aedb;
-  --ribbon-bg: #f1e9f7;
-  --pane-bg: #ffffff;
-  --nav-rail-bg: #f1e9f7;
-  --selected-bg: #e3d3f2;
-  --selected-border: #a97fd1;
-  --text: #2c1b3d;
-  --text-muted: #6b5480;
-  --accent: #6a2fa3;
-  --hover-bg: #ead9f5;
-
-  --danger: #ffff;
-  --danger-bg: #dc3545;
-  --danger-border: #dc3545;
-  --warning: #4a3f00;
-  --warning-bg: #fff4ce;
-  --warning-border: #c19c00;
-  --success: #107c10;
-  --primary: #fff;
-  --primary-bg: #6a2fa3;
-  --primary-border: #6a2fa3;
-
-  --flag: #a15c00;
-  --flag-bg: #fdedd3;
-  --flag-border: #e2a33d;
-}
-
-/* Dark color scheme (060), same mechanism/structure as the light schemes
-   above — a full value for every token, selected purely by swapping
-   `data-theme`. Unlike the light schemes, --pane-bg goes dark here too:
-   the whole point of this scheme is dark backgrounds everywhere,
-   including the message/reading content area 058/059 kept pure white
-   on purpose. Most semantic status colors (danger-bg/danger, warning/
-   warning-bg/warning-border, flag/flag-bg/flag-border) are left
-   identical to every other scheme — each is only ever used as a
-   self-contained (text, background) pair (e.g. the reminder/error
-   banners), so their existing contrast against each other is unaffected
-   by the surrounding scheme being dark. --danger-border and --success
-   are the exception: both are also used as plain text with no
-   background of their own, directly against --pane-bg/--nav-rail-bg
-   (.settings-test-result-error, .calendar-event-form-error,
-   .settings-test-result-ok) — the light schemes' values for those
-   (a mid red, a dark green) read fine on white but fail WCAG AA against
-   a near-black background, so this scheme uses brighter red/green
-   here instead. --flag-border needed no change: standalone against
-   --pane-bg it already clears 8:1. Contrast checked by hand against
-   WCAG's relative-luminance formula (AC3): text/text-muted/accent on
-   --pane-bg run 7.4-14.9:1, white-on-primary-bg 5.2:1, the standalone
-   --danger-border/--success/--flag-border on --pane-bg or
-   --nav-rail-bg run 6.0-9.3:1 — all clear the 4.5:1 AA threshold for
-   normal text with room to spare. */
-:root[data-theme='dark'] {
-  --border: #3a4149;
-  --ribbon-bg: #20242b;
-  --pane-bg: #14171c;
-  --nav-rail-bg: #1b1f26;
-  --selected-bg: #24384f;
-  --selected-border: #5b9bd5;
-  --text: #e8eaed;
-  --text-muted: #9aa7b8;
-  --accent: #6cb6f2;
-  --hover-bg: #262b33;
-
-  --danger: #ffff;
-  --danger-bg: #dc3545;
-  --danger-border: #ff6b6b;
-  --warning: #4a3f00;
-  --warning-bg: #fff4ce;
-  --warning-border: #c19c00;
-  --success: #4caf50;
-  --primary: #fff;
-  --primary-bg: #2f6fb2;
-  --primary-border: #2f6fb2;
-
-  --flag: #a15c00;
-  --flag-bg: #fdedd3;
-  --flag-border: #e2a33d;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  font-family:
-    'Segoe UI',
-    -apple-system,
-    BlinkMacSystemFont,
-    Tahoma,
-    Arial,
-    sans-serif;
-  font-size: 13px;
-  color: var(--text);
-}
+/* Component styles. Colors come only from theme tokens (see tokens.css and
+   src/shared/themes.ts); element defaults live in base.css. */
 
 .app-shell {
   display: flex;
   flex-direction: column;
   height: 100%;
-  border: 1px solid var(--border);
+  background: var(--canvas);
 }
 
 .llm-error-banner {
@@ -216,11 +13,14 @@ body {
   align-items: center;
   justify-content: space-between;
   flex: 0 0 auto;
-  padding: 6px 12px;
+  margin: var(--pane-gap) var(--pane-gap) 0;
+  padding: 8px 14px;
   background: var(--danger-bg);
-  border-bottom: 1px solid var(--danger-border);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
   color: var(--danger);
   font-size: 12px;
+  box-shadow: var(--shadow-sm);
 }
 
 .llm-error-banner-actions {
@@ -244,11 +44,14 @@ body {
   align-items: center;
   justify-content: space-between;
   flex: 0 0 auto;
-  padding: 6px 12px;
+  margin: var(--pane-gap) var(--pane-gap) 0;
+  padding: 8px 14px;
   background: var(--warning-bg);
-  border-bottom: 1px solid var(--warning-border);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
   color: var(--warning);
   font-size: 12px;
+  box-shadow: var(--shadow-sm);
 }
 
 .reminder-banner button {
@@ -264,19 +67,20 @@ body {
 
 .ribbon {
   background: var(--ribbon-bg);
-  border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
+  padding: 6px calc(var(--pane-gap) + 4px) 0;
 }
 
 .ribbon-tabs {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+  gap: 12px;
 }
 
 .ribbon-tabs-list {
   display: flex;
+  gap: 2px;
 }
 
 /* Mail search (feature 038) — sits between the tab strip and the clock;
@@ -288,34 +92,53 @@ body {
 }
 
 .ribbon-search input {
-  width: 160px;
-  padding: 3px 8px;
+  width: 260px;
+  padding: 6px 14px;
+  background: var(--pane-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   font-size: 12px;
 }
 
 .ribbon-search select {
   flex: 0 0 auto;
-  font-size: 11px;
-  padding: 2px 4px;
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
 }
 
 .ribbon-tab {
-  padding: 6px 14px;
+  position: relative;
+  padding: 7px 14px;
   background: transparent;
   border: none;
-  border-right: 1px solid transparent;
+  border-radius: var(--radius);
   font-size: 13px;
-  color: var(--text);
-  cursor: default;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .ribbon-tab.active {
-  background: var(--pane-bg);
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
+  color: var(--text);
   font-weight: 600;
+}
+
+.ribbon-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+/* The active tab is marked by a short accent bar under its label rather
+   than a boxed-in tab. */
+.ribbon-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 1px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
 }
 
 .ribbon-tab-file {
@@ -324,27 +147,27 @@ body {
 
 .file-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  min-width: 170px;
-  padding: 4px 0;
-  background: var(--pane-bg);
+  min-width: 190px;
+  padding: 5px;
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
 }
 
 .file-menu button[role='menuitem'] {
   display: block;
   width: 100%;
-  padding: 6px 12px;
+  padding: 7px 10px;
   text-align: left;
   background: transparent;
   border: none;
-  cursor: pointer;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 12px;
 }
@@ -373,23 +196,31 @@ body {
 
 .ribbon-actions {
   display: flex;
-  gap: 4px;
-  padding: 6px 8px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 6px;
 }
 
 .ribbon-action {
-  padding: 6px 12px;
+  padding: 7px 14px;
   background: var(--pane-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 12px;
+  font-weight: 500;
   color: var(--text);
-  cursor: default;
+  box-shadow: var(--shadow-sm);
+}
+
+.ribbon-action:hover:not(:disabled) {
+  background: var(--hover-bg);
+  border-color: var(--selected-border);
 }
 
 .ribbon-action:disabled {
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
 .ribbon-action.active {
@@ -408,14 +239,31 @@ body {
   background: var(--primary-bg);
   border-color: var(--primary-border);
   color: var(--primary);
-  font-weight: bold;
+  font-weight: 600;
+}
+
+.ribbon-action-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .ribbon-action-danger:not(:disabled) {
-  background: var(--danger-bg);
+  background: transparent;
   border-color: var(--danger-border);
   color: var(--danger);
-  font-weight: bold;
+  font-weight: 600;
+}
+
+/* Outlined at rest, filled on hover: a destructive action shouldn't be the
+   loudest thing in the ribbon until you're actually about to press it. */
+.ribbon-action.ribbon-action-danger:not(:disabled) {
+  background: var(--pane-bg);
+  color: var(--danger-border);
+}
+
+.ribbon-action.ribbon-action-danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 /* Reading Pane Right/Off control (feature 042) — a View-tab action, like
@@ -431,28 +279,28 @@ body {
 }
 
 .ribbon-reading-pane-control select {
-  padding: 3px 6px;
+  padding: 6px 8px;
   font-size: 12px;
-  color: var(--primary);
-  background-color: var(--primary-bg);
-  border: 1px solid var(--primary-border);
-  border-radius: var(--radius);
 }
 
 .office-clock {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-right: 10px;
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.btn-primary{
+.btn-primary {
   color: var(--primary) !important;
   background-color: var(--primary-bg) !important;
   border-color: var(--primary-border) !important;
-  font-weight: bold;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
 }
 
 /* A <button> (feature 045) so it's clickable, styled to read like the
@@ -474,15 +322,15 @@ body {
 
 .office-clock-minicalendar {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 6px);
   left: 0;
   z-index: 100;
-  width: 220px;
-  padding: 8px;
-  background: var(--pane-bg);
+  width: 236px;
+  padding: 10px;
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
   color: var(--text);
   font-size: 12px;
 }
@@ -544,21 +392,19 @@ body {
 }
 
 .office-clock-toggle {
-  padding: 3px 10px;
+  padding: 5px 12px;
   background: var(--primary-bg);
   border: 1px solid var(--primary-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   font-size: 12px;
+  font-weight: 600;
   color: var(--primary);
-  cursor: pointer;
 }
 
 .office-clock-speed {
-  padding: 3px 4px;
+  padding: 4px 6px;
   font-size: 12px;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
 }
 
 /* Body layout */
@@ -566,14 +412,15 @@ body {
 .app-body {
   display: flex;
   flex: 1 1 auto;
+  gap: var(--pane-gap);
+  padding: 2px var(--pane-gap) var(--pane-gap);
   min-height: 0;
 }
 
 .app-nav-rail {
   display: flex;
   flex-direction: column;
-  flex: 0 0 200px;
-  border-right: 1px solid var(--border);
+  flex: 0 0 208px;
   background: var(--nav-rail-bg);
   min-height: 0;
 }
@@ -587,29 +434,30 @@ body {
 }
 
 .folder-pane-header {
-  padding: 8px 10px;
+  padding: 10px 14px 6px;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
 .folder-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 4px;
 }
 
 .folder-item {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 5px 10px 5px 18px;
+  padding: 7px 12px;
   background: transparent;
   border: none;
+  border-radius: var(--radius);
   font-size: 13px;
   color: var(--text);
-  cursor: pointer;
 }
 
 .folder-item:hover {
@@ -618,8 +466,14 @@ body {
 
 .folder-item.selected {
   background: var(--selected-bg);
-  border: 1px solid var(--selected-border);
-  padding: 4px 9px 4px 17px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* The Calendar rail's single entry is a disabled button used as a label;
+   it should read as selected, not dimmed. */
+.folder-item:disabled {
+  opacity: 1;
 }
 
 .folder-list-item {
@@ -671,15 +525,15 @@ body {
 
 .folder-new-btn {
   display: block;
-  width: 100%;
+  width: calc(100% - 8px);
+  margin: 4px;
   text-align: left;
-  padding: 6px 10px;
+  padding: 7px 12px;
   background: transparent;
   border: none;
-  border-top: 1px solid var(--border);
+  border-radius: var(--radius);
   font-size: 12px;
   color: var(--accent);
-  cursor: pointer;
 }
 
 .folder-new-btn:hover {
@@ -690,23 +544,28 @@ body {
 
 .nav-switcher {
   display: flex;
-  border-top: 1px solid var(--border);
   flex: 0 0 auto;
+  gap: 4px;
+  padding: 4px;
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .nav-switcher-item {
   flex: 1 1 0;
-  padding: 8px 0;
+  padding: 7px 0;
   background: transparent;
   border: none;
-  border-right: 1px solid var(--border);
+  border-radius: var(--radius);
   font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .nav-switcher-item:last-child {
-  border-right: none;
+  border: none;
 }
 
 .nav-switcher-item.active {
@@ -756,9 +615,13 @@ body {
 }
 
 .settings-view-scroll {
-  max-width: 480px;
   overflow-y: auto;
   min-height: 0;
+}
+
+/* The pane scrolls at full width; the form itself stays a readable column. */
+.settings-view-scroll > * {
+  max-width: 640px;
 }
 
 .settings-section {
@@ -849,11 +712,83 @@ body {
 .settings-view-actions button {
   padding: 6px 16px;
   background: var(--pane-bg);
-  border: 1px solid var(--selected-border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   font-size: 12px;
-  color: var(--accent);
-  cursor: pointer;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.settings-view-actions button:hover:not(:disabled) {
+  background: var(--hover-bg);
+  border-color: var(--selected-border);
+}
+
+/* Theme picker (Appearance): one swatch card per theme, each painted in
+   that theme's own seed colors (set inline from the registry) so the
+   choice can be seen before it is made. */
+.theme-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: var(--pane-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+}
+
+.theme-swatch:hover {
+  border-color: var(--selected-border);
+}
+
+.theme-swatch[aria-checked='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.theme-swatch-preview {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 54px;
+  padding: 7px;
+  border-radius: var(--radius);
+}
+
+.theme-swatch-pane {
+  flex: 1 1 auto;
+  height: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.theme-swatch-dot {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+}
+
+.theme-swatch-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.theme-swatch-mode {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .settings-view-saved {
@@ -980,8 +915,7 @@ body {
 /* Message list pane */
 
 .message-list-pane {
-  flex: 0 0 320px;
-  border-right: 1px solid var(--border);
+  flex: 0 0 340px;
   background: var(--pane-bg);
   display: flex;
   flex-direction: column;
@@ -992,7 +926,6 @@ body {
    pane, so it takes the freed space instead of leaving a blank gap. */
 .message-list-pane.full-width {
   flex: 1 1 auto;
-  border-right: none;
 }
 
 .message-list-header {
@@ -1000,7 +933,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 12px 14px;
+  font-size: 14px;
   font-weight: 600;
   border-bottom: 1px solid var(--border);
 }
@@ -1031,17 +965,31 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* The row, not just the button inside it, carries the state fill, so the
+   color runs under the flag button to the pane edge. Same order as the
+   item rules below: flagged first, selected last so selection wins. */
+.message-list-row:hover {
+  background: var(--hover-bg);
+}
+
+.message-list-row:has(.message-list-item.flagged) {
+  background: var(--flag-bg);
+}
+
+.message-list-row:has(.message-list-item.selected) {
+  background: var(--selected-bg);
+}
+
 .message-list-item {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   width: 100%;
   text-align: left;
-  gap: 2px;
-  padding: 6px 10px;
+  gap: 3px;
+  padding: 9px 14px;
   background: transparent;
   border: none;
-  cursor: pointer;
 }
 
 .message-list-item:hover {
@@ -1058,6 +1006,7 @@ body {
 
 .message-list-item.selected {
   background: var(--selected-bg);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .message-list-item.unread .message-list-item-subject {
@@ -1117,22 +1066,22 @@ body {
   z-index: 100;
   display: flex;
   flex-direction: column;
-  min-width: 170px;
-  padding: 4px 0;
-  background: var(--pane-bg);
+  min-width: 190px;
+  padding: 5px;
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
 }
 
 .message-context-menu button[role='menuitem'] {
   display: block;
   width: 100%;
-  padding: 6px 12px;
+  padding: 7px 10px;
   text-align: left;
   background: transparent;
   border: none;
-  cursor: pointer;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 12px;
 }
@@ -1197,6 +1146,7 @@ body {
 
 .reading-pane-subject-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -1204,8 +1154,10 @@ body {
 }
 
 .reading-pane-subject {
-  font-size: 16px;
+  flex: 1 1 260px;
+  font-size: 18px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .reading-pane-subject-row .reading-pane-subject {
@@ -1230,13 +1182,17 @@ body {
 }
 
 .reading-pane-actions button {
-  padding: 4px 10px;
+  padding: 5px 12px;
   background: var(--pane-bg);
-  border: 1px solid var(--selected-border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   font-size: 12px;
-  color: var(--accent);
-  cursor: pointer;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.reading-pane-actions button:hover {
+  filter: brightness(0.96);
 }
 
 /* Semantic action coloring (058): Reply/Reply All/Forward/Edit draft/
@@ -1256,7 +1212,7 @@ body {
   background: var(--nav-rail-bg);
   border-color: var(--border);
   color: var(--text-muted);
-  font-weight: bold;
+  font-weight: 600;
   width: 120px;
 }
 
@@ -2591,4 +2547,36 @@ body {
 
 .tasks-panel-form-row {
   padding: 4px 0;
+}
+
+/* Floating panes. Every top-level pane in the body is a rounded card
+   sitting on the canvas, instead of a column divided by 1px rules. Listed
+   here once rather than repeated in each pane's own rule; declared last so
+   it overrides the single-side borders those rules used to carry. */
+.message-list-pane,
+.reading-pane,
+.calendar-view,
+.settings-view,
+.gp-view,
+.tasks-panel {
+  background: var(--pane-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* These two scroll as a whole, so they keep their own scrolling. */
+.reading-pane,
+.tasks-panel {
+  overflow-y: auto;
+}
+
+/* Stand-alone windows (Compose, pop-outs) fill their whole window, so
+   they stay square and edge-to-edge. */
+.compose-window,
+.message-popout-window,
+.calendar-popout-window,
+.attachment-popout-window {
+  color: var(--text);
 }

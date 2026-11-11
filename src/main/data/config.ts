@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { isColorScheme } from '../../shared/themes'
 import type {
   AppearanceConfig,
   LlmFailureLogEntry,
@@ -117,8 +118,11 @@ export class ConfigStore {
     writeJsonFile(this.systemPromptPath, config)
   }
 
+  // A stored id that isn't a current theme (hand-edited file, a theme
+  // removed since) reads back as the default instead of an unknown id.
   getAppearance(): AppearanceConfig {
-    return readJsonFile(this.appearancePath, DEFAULT_APPEARANCE)
+    const stored = readJsonFile(this.appearancePath, DEFAULT_APPEARANCE)
+    return isColorScheme(stored.colorScheme) ? stored : DEFAULT_APPEARANCE
   }
 
   setAppearance(config: AppearanceConfig): void {

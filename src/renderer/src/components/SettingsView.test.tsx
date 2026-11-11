@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SettingsView from './SettingsView'
+import { THEMES, themeTokens, getTheme } from '../../../shared/themes'
 import type { ScenarioPack, Settings, SystemPromptConfig, TraineeIdentity } from '../../../shared/data-types'
 
 const SETTINGS: Settings = {
@@ -861,61 +862,58 @@ describe('SettingsView', () => {
     })
   })
 
-  describe('Appearance (061)', () => {
+  describe('Appearance', () => {
     afterEach(() => {
+      document.documentElement.removeAttribute('style')
       delete document.documentElement.dataset.theme
+      delete document.documentElement.dataset.themeMode
     })
 
-    it('AC1: lists all 4 available color schemes', async () => {
+    function swatch(name: string): HTMLElement {
+      return within(screen.getByRole('radiogroup', { name: 'Color scheme' })).getByRole('radio', { name })
+    }
+
+    it('offers one swatch per theme in the registry, labelled with its name and light/dark mode', async () => {
       render(<SettingsView />)
 
-      const select = await screen.findByLabelText('Color scheme')
-      const options = within(select).getAllByRole('option').map((option) => option.textContent)
-      expect(options).toEqual(['Default (light)', 'Sage (light)', 'Plum (light)', 'Dark'])
+      const group = await screen.findByRole('radiogroup', { name: 'Color scheme' })
+      expect(within(group).getAllByRole('radio').map((radio) => radio.getAttribute('aria-label'))).toEqual(
+        THEMES.map((theme) => `${theme.label} (${theme.mode})`)
+      )
     })
 
-    it('prefills the picker from the persisted color scheme', async () => {
+    it('marks the persisted theme as the selected one', async () => {
       vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'plum' })
 
       render(<SettingsView />)
 
-      expect(await screen.findByLabelText('Color scheme')).toHaveValue('plum')
+      await waitFor(() => expect(swatch('Plum (light)')).toHaveAttribute('aria-checked', 'true'))
+      expect(swatch('Azure (light)')).toHaveAttribute('aria-checked', 'false')
     })
 
-    it('AC2: selecting a scheme applies it to this window immediately, with no Save step', async () => {
+    it('choosing a swatch applies the theme to this window immediately, with no Save step', async () => {
       const user = userEvent.setup()
-      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'default' })
-
       render(<SettingsView />)
-
-      const select = await screen.findByLabelText('Color scheme')
+      await screen.findByRole('radiogroup', { name: 'Color scheme' })
       expect(appearanceSection().queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 
-      await user.selectOptions(select, 'dark')
+      await user.click(swatch('Graphite (dark)'))
 
-      expect(document.documentElement.dataset.theme).toBe('dark')
-      expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'dark' })
+      const root = document.documentElement
+      expect(root.dataset.theme).toBe('dark')
+      expect(root.dataset.themeMode).toBe('dark')
+      expect(root.style.getPropertyValue('--accent')).toBe(themeTokens(getTheme('dark'))['--accent'])
+      expect(swatch('Graphite (dark)')).toHaveAttribute('aria-checked', 'true')
     })
 
-    it('AC3: persists the selection the same way other settings are — through the config API, not just local state', async () => {
+    it('persists the choice through the config API, not just local state', async () => {
       const user = userEvent.setup()
-      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'default' })
-
       render(<SettingsView />)
+      await screen.findByRole('radiogroup', { name: 'Color scheme' })
 
-      const select = await screen.findByLabelText('Color scheme')
-      await user.selectOptions(select, 'sage')
+      await user.click(swatch('Midnight (dark)'))
 
-      await waitFor(() => expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'sage' }))
-    })
-
-    it('AC4: on launch, applies whatever scheme was persisted — not always the default', async () => {
-      vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'dark' })
-
-      render(<SettingsView />)
-
-      await screen.findByLabelText('Color scheme')
-      expect(window.api.data.appearance.get).toHaveBeenCalled()
+      await waitFor(() => expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'midnight' }))
     })
   })
 })

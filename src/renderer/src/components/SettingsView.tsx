@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactElement } from 'react'
 import type { ColorScheme, LlmGenerateResult, LlmProvider, Settings, TraineeIdentity } from '../../../shared/data-types'
+import { THEMES } from '../../../shared/themes'
+import { applyTheme } from '../theme'
 import PersonasSettings from './PersonasSettings'
 
 const PROVIDERS: { id: LlmProvider; label: string }[] = [
@@ -7,13 +9,6 @@ const PROVIDERS: { id: LlmProvider; label: string }[] = [
   { id: 'anthropic', label: 'Anthropic' },
   { id: 'gemini', label: 'Gemini' },
   { id: 'xai', label: 'Grok (xAI)' }
-]
-
-const COLOR_SCHEMES: { id: ColorScheme; label: string }[] = [
-  { id: 'default', label: 'Default (light)' },
-  { id: 'sage', label: 'Sage (light)' },
-  { id: 'plum', label: 'Plum (light)' },
-  { id: 'dark', label: 'Dark' }
 ]
 
 const EMPTY_API_KEYS: Record<LlmProvider, string> = {
@@ -122,7 +117,7 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
   // `set` call triggers for every other open window.
   async function handleChangeColorScheme(scheme: ColorScheme): Promise<void> {
     setColorScheme(scheme)
-    document.documentElement.dataset.theme = scheme
+    applyTheme(scheme)
     await window.api.data.appearance.set({ colorScheme: scheme })
   }
 
@@ -389,19 +384,28 @@ function SettingsView({ onClose, onFreePlayStarted, onScenarioPackLoaded }: Sett
         <section className="settings-section" aria-label="Appearance">
           <h2 className="settings-section-header">Appearance</h2>
           <div className="settings-section-body">
-            <div className="settings-field-row">
-              <label htmlFor="settings-color-scheme">Color scheme</label>
-              <select
-                id="settings-color-scheme"
-                value={colorScheme}
-                onChange={(event) => handleChangeColorScheme(event.target.value as ColorScheme)}
-              >
-                {COLOR_SCHEMES.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <div className="theme-picker" role="radiogroup" aria-label="Color scheme">
+              {THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={theme.id === colorScheme}
+                  aria-label={`${theme.label} (${theme.mode})`}
+                  className="theme-swatch"
+                  onClick={() => handleChangeColorScheme(theme.id)}
+                >
+                  <span className="theme-swatch-preview" style={{ background: theme.seeds.canvas }}>
+                    <span className="theme-swatch-pane" style={{ background: theme.seeds.surface }} />
+                    <span className="theme-swatch-dot" style={{ background: theme.seeds.accent }} />
+                    <span className="theme-swatch-dot" style={{ background: theme.seeds.text }} />
+                  </span>
+                  <span className="theme-swatch-label">
+                    {theme.label}
+                    <span className="theme-swatch-mode">{theme.mode === 'dark' ? 'Dark' : 'Light'}</span>
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </section>

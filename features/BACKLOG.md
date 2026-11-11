@@ -67,6 +67,7 @@
 | 066 | Mail — save an attachment into FileVine | done | medium | 066-save-attachment-to-filevine.md |
 | 067 | Mail — pop-out window for viewing attachments | done | medium | 067-attachment-popout-window.md |
 | 068 | Ghost Practice tab — Ontario accident-benefits file tool (replaces FileVine) | accept | high | 068-ghost-practice-tab.md |
+| 069 | Modern visual style and a registry-based theme system | accept | medium | 069-modern-theme-system.md |
 | 050 | Settings — Persona editor opens inline under the edited persona | done | low | 050-persona-editor-inline-placement.md |
 | 051 | Settings — Persona editor's Client checkbox left-aligned | done | low | 051-persona-editor-checkbox-alignment.md |
 | 052 | Settings — spacing between Scenario Pack Load and Save sections | done | low | 052-scenario-pack-load-save-spacing.md |

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RibbonBar from './RibbonBar'
+import { THEMES } from '../../../shared/themes'
 
 // Home/Ghost Practice/View are now real tabs (features 047/046), and File opens
 // a menu (034) — every render needs these, even tests unrelated to them.
@@ -17,6 +18,8 @@ function tabProps(overrides: Partial<{ showGhostPractice: boolean; viewTabActive
   onSearchScopeChange: () => void
   readingPaneMode: 'right' | 'off'
   onReadingPaneModeChange: () => void
+  colorScheme: 'default'
+  onColorSchemeChange: () => void
   onSelectHomeTab: () => void
   onSelectGhostPracticeTab: () => void
   onSelectViewTab: () => void
@@ -34,6 +37,8 @@ function tabProps(overrides: Partial<{ showGhostPractice: boolean; viewTabActive
     onSearchScopeChange: vi.fn(),
     readingPaneMode: 'right',
     onReadingPaneModeChange: vi.fn(),
+    colorScheme: 'default',
+    onColorSchemeChange: vi.fn(),
     onSelectHomeTab: vi.fn(),
     onSelectGhostPracticeTab: vi.fn(),
     onSelectViewTab: vi.fn(),
@@ -446,6 +451,33 @@ describe('RibbonBar', () => {
 
       fireEvent.change(screen.getByLabelText('Search scope'), { target: { value: 'folder' } })
       expect(onSearchScopeChange).toHaveBeenCalledWith('folder')
+    })
+  })
+
+  describe('View tab theme picker', () => {
+    it('lists every theme from the registry, showing the active one, only while View is selected', () => {
+      const { rerender } = render(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: false })} />)
+      expect(screen.queryByLabelText('Theme')).not.toBeInTheDocument()
+
+      rerender(<RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} colorScheme="plum" />)
+
+      const select = screen.getByLabelText('Theme')
+      expect(select).toHaveValue('plum')
+      expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual(
+        THEMES.map((theme) => theme.label)
+      )
+    })
+
+    it('reports the chosen theme id', async () => {
+      const user = userEvent.setup()
+      const onColorSchemeChange = vi.fn()
+      render(
+        <RibbonBar activeModule="mail" {...tabProps({ viewTabActive: true })} onColorSchemeChange={onColorSchemeChange} />
+      )
+
+      await user.selectOptions(screen.getByLabelText('Theme'), 'midnight')
+
+      expect(onColorSchemeChange).toHaveBeenCalledWith('midnight')
     })
   })
 })

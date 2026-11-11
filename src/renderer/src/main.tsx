@@ -6,6 +6,9 @@ import MessagePopoutWindow from './MessagePopoutWindow'
 import CalendarPopoutWindow from './CalendarPopoutWindow'
 import AttachmentPopoutWindow from './AttachmentPopoutWindow'
 import type { ComposeIntent } from '../../shared/data-types'
+import { applyCachedTheme, applyTheme } from './theme'
+import './styles/tokens.css'
+import './styles/base.css'
 import './styles/global.css'
 
 const params = new URLSearchParams(window.location.search)
@@ -24,15 +27,17 @@ const attachmentMessageId = params.get('messageId') ?? undefined
 const attachmentIndexParam = params.get('attachmentIndex')
 const attachmentIndex = attachmentIndexParam !== null ? Number(attachmentIndexParam) : undefined
 
-// Feature 061 — every window (main, Compose, pop-outs) is its own document
-// with its own `data-theme` attribute (058), so each one applies the
-// persisted scheme on its own launch here, and stays in sync afterward via
-// the same cross-window broadcast the rest of the app uses for live data.
+// Every window (main, Compose, pop-outs) is its own document, so each one
+// applies the theme itself: straight away from the last-used theme cached
+// in localStorage (no flash of the default), then from the persisted
+// config, and afterwards from the cross-window broadcast whenever the
+// theme is changed anywhere.
+applyCachedTheme()
 window.api.data.appearance.get().then(({ colorScheme }) => {
-  document.documentElement.dataset.theme = colorScheme
+  applyTheme(colorScheme)
 })
 window.api.onAppearanceChanged((colorScheme) => {
-  document.documentElement.dataset.theme = colorScheme
+  applyTheme(colorScheme)
 })
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

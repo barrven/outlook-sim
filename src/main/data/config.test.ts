@@ -287,6 +287,11 @@ describe('ConfigStore', () => {
     expect(config.getAppearance()).toEqual({ colorScheme: 'default' })
   })
 
+  it('reads an unknown stored theme id back as the default, rather than passing it on', () => {
+    writeFileSync(join(baseDir, 'config', 'appearance.json'), JSON.stringify({ colorScheme: 'neon' }), 'utf-8')
+    expect(config.getAppearance()).toEqual({ colorScheme: 'default' })
+  })
+
   it('061 AC3: round-trips the selected color scheme', () => {
     config.setAppearance({ colorScheme: 'dark' })
     expect(config.getAppearance()).toEqual({ colorScheme: 'dark' })

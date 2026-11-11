@@ -932,3 +932,37 @@ describe('App shell', () => {
     })
   })
 })
+
+describe('App — theme picker on the View tab', () => {
+  it('shows the persisted theme, and choosing another applies and saves it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.api.data.appearance.get).mockResolvedValue({ colorScheme: 'sage' })
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'View' }))
+    const picker = await screen.findByLabelText('Theme')
+    await vi.waitFor(() => expect(picker).toHaveValue('sage'))
+
+    await user.selectOptions(picker, 'midnight')
+
+    expect(window.api.data.appearance.set).toHaveBeenCalledWith({ colorScheme: 'midnight' })
+    expect(document.documentElement.dataset.theme).toBe('midnight')
+    expect(picker).toHaveValue('midnight')
+  })
+
+  it('follows a theme change made elsewhere (Settings, another window)', async () => {
+    const user = userEvent.setup()
+    let notify: (scheme: 'plum') => void = () => {}
+    vi.mocked(window.api.onAppearanceChanged).mockImplementation((callback) => {
+      notify = callback
+      return () => {}
+    })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'View' }))
+    const picker = await screen.findByLabelText('Theme')
+
+    notify('plum')
+
+    await vi.waitFor(() => expect(picker).toHaveValue('plum'))
+  })
+})

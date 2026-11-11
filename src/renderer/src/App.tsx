@@ -10,6 +10,8 @@ import type { FiredReminder, Folder, MailMessage } from '../../shared/data-types
 type LlmBackgroundFailure =
   | { kind: 'personaReply'; sentMessageId: string; error: string }
   | { kind: 'unsolicitedMail'; error: string }
+import { DEFAULT_THEME_ID, type ColorScheme } from '../../shared/themes'
+import { applyTheme } from './theme'
 import type { ModuleId } from './types'
 import RibbonBar from './components/RibbonBar'
 import NavSwitcher from './components/NavSwitcher'
@@ -60,6 +62,11 @@ function App(): ReactElement {
   // does the actual filtering. Visible in exactly the same circumstances the
   // search box was before it moved: the Mail module, its own message list
   // (not Ghost Practice), and not behind Settings.
+  // The active theme, mirrored here only so the View tab's picker shows
+  // the right value — applying it to the window is main.tsx's job, and a
+  // change made anywhere (here, Settings, another window) arrives through
+  // the same appearance broadcast.
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(DEFAULT_THEME_ID)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchScope, setSearchScope] = useState<'folder' | 'all'>('folder')
   const showMailSearch = activeModule === 'mail' && !showGhostPractice && !showSettings
@@ -78,6 +85,23 @@ function App(): ReactElement {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    window.api.data.appearance.get().then((appearance) => {
+      if (!cancelled) setColorScheme(appearance.colorScheme)
+    })
+    const unsubscribe = window.api.onAppearanceChanged(setColorScheme)
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [])
+
+  function handleColorSchemeChange(scheme: ColorScheme): void {
+    setColorScheme(applyTheme(scheme))
+    void window.api.data.appearance.set({ colorScheme: scheme })
+  }
 
   useEffect(() => {
     return window.api.onMessagesChanged(() => {
@@ -281,6 +305,8 @@ function App(): ReactElement {
         onSearchScopeChange={setSearchScope}
         readingPaneMode={readingPaneMode}
         onReadingPaneModeChange={setReadingPaneMode}
+        colorScheme={colorScheme}
+        onColorSchemeChange={handleColorSchemeChange}
         onSelectHomeTab={handleSelectHomeTab}
         onSelectGhostPracticeTab={handleSelectGhostPracticeTab}
         onSelectViewTab={handleSelectViewTab}

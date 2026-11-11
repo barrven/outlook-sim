@@ -1,0 +1,24 @@
+/* Design tokens that are the same in every theme: shape, type, motion.
+
+   Colors are deliberately NOT here. Every color token (--canvas, --pane-bg,
+   --text, --accent, --border, --shadow-*, ...) is derived from a theme's
+   seed colors in src/shared/themes.ts and set on <html> at runtime by
+   src/renderer/src/theme.ts. No stylesheet in this folder contains a color
+   literal — they only reference those tokens — so a new theme is one entry
+   in that registry and nothing here changes. */
+:root {
+  /* Radius scale: small controls, standard controls and menus, floating
+     panes, and fully-rounded chips. */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Gap between the floating panes, and between them and the window edge. */
+  --pane-gap: 8px;
+
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --transition-fast: 120ms ease;
+}

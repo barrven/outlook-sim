@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { THEMES, type ColorScheme } from '../../../shared/themes'
 import type { ModuleId } from '../types'
 import OfficeClock from './OfficeClock'
 
@@ -57,6 +58,10 @@ interface RibbonBarProps {
   // scoping as the Tasks toggle.
   readingPaneMode: 'right' | 'off'
   onReadingPaneModeChange: (mode: 'right' | 'off') => void
+  // Quick theme switcher on the View tab — the same choice as Settings'
+  // Appearance section, without leaving what you're doing.
+  colorScheme: ColorScheme
+  onColorSchemeChange: (scheme: ColorScheme) => void
   onSelectHomeTab: () => void
   onSelectGhostPracticeTab: () => void
   onSelectViewTab: () => void
@@ -79,6 +84,8 @@ function RibbonBar({
   onSearchScopeChange,
   readingPaneMode,
   onReadingPaneModeChange,
+  colorScheme,
+  onColorSchemeChange,
   onSelectHomeTab,
   onSelectGhostPracticeTab,
   onSelectViewTab,
@@ -247,6 +254,23 @@ function RibbonBar({
             >
               <option value="right">Right</option>
               <option value="off">Off</option>
+            </select>
+          </div>
+        )}
+        {viewTabActive && (
+          <div className="ribbon-reading-pane-control">
+            <label htmlFor="ribbon-theme">Theme</label>
+            <select
+              id="ribbon-theme"
+              aria-label="Theme"
+              value={colorScheme}
+              onChange={(event) => onColorSchemeChange(event.target.value as ColorScheme)}
+            >
+              {THEMES.map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.label}
+                </option>
+              ))}
             </select>
           </div>
         )}
