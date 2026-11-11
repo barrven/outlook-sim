@@ -23,6 +23,9 @@
     "react-dom": "^19.3.0",
     "sanitize-html": "^2.17.7"
   },
+  "overrides": {
+    "pdfjs-dist": "5.5.207"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.1",
